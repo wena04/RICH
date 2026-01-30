@@ -1,8 +1,24 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { 
+  Alert, 
+  Pressable, 
+  StyleSheet, 
+  TextInput, 
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Modal,
+} from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View } from '@/components/Themed';
+import { 
+  PRIMARY_GREEN, 
+  TEXT_PRIMARY, 
+  TEXT_SECONDARY,
+  EXPENSE_RED,
+} from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
 import {
   canDeleteCategory,
@@ -18,43 +34,59 @@ import {
 } from '@/src/db/repo/categories';
 import type { Category, Subcategory } from '@/src/domain/types';
 
+// Category icons (matching the original RICH app)
+const CATEGORY_ICONS: Record<string, string> = {
+  '餐饮': 'cutlery',
+  '衣服': 'shopping-bag',
+  '交通': 'bus',
+  '网费话费': 'mobile',
+  '学习': 'book',
+  '日用': 'home',
+  '住房': 'building',
+  '医疗': 'medkit',
+  '发红包': 'gift',
+  '汽车/加油': 'car',
+  '娱乐': 'gamepad',
+  '请客送礼': 'gift',
+  '电器数码': 'laptop',
+  '运动': 'futbol-o',
+  '理发': 'scissors',
+};
+
+function getCategoryIcon(name: string): string {
+  return CATEGORY_ICONS[name] ?? 'tag';
+}
+
 export default function CategoriesScreen() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Array<Category & { subcategoryCount: number }>>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-
+  
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showSubEditModal, setShowSubEditModal] = useState(false);
+  
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newSubcategoryName, setNewSubcategoryName] = useState('');
-
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
+  
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
-
-  const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === selectedCategoryId) ?? null,
-    [categories, selectedCategoryId]
-  );
-  const selectedSubcategory = useMemo(
-    () => subcategories.find((s) => s.id === selectedSubcategoryId) ?? null,
-    [subcategories, selectedSubcategoryId]
-  );
 
   const refresh = useCallback(async () => {
     const db = await getDb();
     const cats = await listCategoriesWithSubcategoryCounts(db);
     setCategories(cats);
 
-    if (selectedCategoryId) {
-      const subs = await listSubcategories(db, selectedCategoryId);
+    if (expandedCategoryId) {
+      const subs = await listSubcategories(db, expandedCategoryId);
       setSubcategories(subs);
-      if (selectedSubcategoryId && !subs.some((s) => s.id === selectedSubcategoryId)) {
-        setSelectedSubcategoryId(null);
-      }
     } else {
       setSubcategories([]);
-      setSelectedSubcategoryId(null);
     }
-  }, [selectedCategoryId, selectedSubcategoryId]);
+  }, [expandedCategoryId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,16 +94,28 @@ export default function CategoriesScreen() {
     }, [refresh])
   );
 
-  function selectCategory(c: Category) {
-    setSelectedCategoryId(c.id);
-    setEditCategoryName(c.name);
-    setSelectedSubcategoryId(null);
-    setEditSubcategoryName('');
+  async function toggleExpand(categoryId: string) {
+    if (expandedCategoryId === categoryId) {
+      setExpandedCategoryId(null);
+      setSubcategories([]);
+    } else {
+      setExpandedCategoryId(categoryId);
+      const db = await getDb();
+      const subs = await listSubcategories(db, categoryId);
+      setSubcategories(subs);
+    }
   }
 
-  function selectSubcategory(s: Subcategory) {
-    setSelectedSubcategoryId(s.id);
-    setEditSubcategoryName(s.name);
+  function openEditCategory(category: Category) {
+    setEditingCategory(category);
+    setEditCategoryName(category.name);
+    setShowEditModal(true);
+  }
+
+  function openEditSubcategory(subcategory: Subcategory) {
+    setEditingSubcategory(subcategory);
+    setEditSubcategoryName(subcategory.name);
+    setShowSubEditModal(true);
   }
 
   async function onCreateCategory() {
@@ -80,38 +124,42 @@ export default function CategoriesScreen() {
     const db = await getDb();
     await createCategory(db, name);
     setNewCategoryName('');
+    setShowAddModal(false);
     await refresh();
   }
 
   async function onSaveCategory() {
-    if (!selectedCategoryId) return;
+    if (!editingCategory) return;
     const name = editCategoryName.trim();
     if (!name) return;
     const db = await getDb();
-    await updateCategory(db, { id: selectedCategoryId, name });
+    await updateCategory(db, { id: editingCategory.id, name });
+    setShowEditModal(false);
+    setEditingCategory(null);
     await refresh();
   }
 
   async function onDeleteCategory() {
-    if (!selectedCategoryId) return;
+    if (!editingCategory) return;
     const db = await getDb();
-    const ok = await canDeleteCategory(db, selectedCategoryId);
+    const ok = await canDeleteCategory(db, editingCategory.id);
     if (!ok) {
-      Alert.alert(
-        'Cannot delete category',
-        'This category has subcategories and/or is referenced by existing transactions.'
-      );
+      Alert.alert('无法删除', '该分类有子分类或已关联交易记录');
       return;
     }
-    Alert.alert('Delete category?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('删除分类?', '此操作无法撤销', [
+      { text: '取消', style: 'cancel' },
       {
-        text: 'Delete',
+        text: '删除',
         style: 'destructive',
         onPress: async () => {
           const db2 = await getDb();
-          await deleteCategory(db2, selectedCategoryId);
-          setSelectedCategoryId(null);
+          await deleteCategory(db2, editingCategory.id);
+          setShowEditModal(false);
+          setEditingCategory(null);
+          if (expandedCategoryId === editingCategory.id) {
+            setExpandedCategoryId(null);
+          }
           await refresh();
         },
       },
@@ -119,41 +167,44 @@ export default function CategoriesScreen() {
   }
 
   async function onCreateSubcategory() {
-    if (!selectedCategoryId) return;
+    if (!expandedCategoryId) return;
     const name = newSubcategoryName.trim();
     if (!name) return;
     const db = await getDb();
-    await createSubcategory(db, selectedCategoryId, name);
+    await createSubcategory(db, expandedCategoryId, name);
     setNewSubcategoryName('');
     await refresh();
   }
 
   async function onSaveSubcategory() {
-    if (!selectedSubcategoryId) return;
+    if (!editingSubcategory) return;
     const name = editSubcategoryName.trim();
     if (!name) return;
     const db = await getDb();
-    await updateSubcategory(db, { id: selectedSubcategoryId, name });
+    await updateSubcategory(db, { id: editingSubcategory.id, name });
+    setShowSubEditModal(false);
+    setEditingSubcategory(null);
     await refresh();
   }
 
   async function onDeleteSubcategory() {
-    if (!selectedSubcategoryId) return;
+    if (!editingSubcategory) return;
     const db = await getDb();
-    const ok = await canDeleteSubcategory(db, selectedSubcategoryId);
+    const ok = await canDeleteSubcategory(db, editingSubcategory.id);
     if (!ok) {
-      Alert.alert('Cannot delete subcategory', 'This subcategory is referenced by existing transactions.');
+      Alert.alert('无法删除', '该子分类已关联交易记录');
       return;
     }
-    Alert.alert('Delete subcategory?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('删除子分类?', '此操作无法撤销', [
+      { text: '取消', style: 'cancel' },
       {
-        text: 'Delete',
+        text: '删除',
         style: 'destructive',
         onPress: async () => {
           const db2 = await getDb();
-          await deleteSubcategory(db2, selectedSubcategoryId);
-          setSelectedSubcategoryId(null);
+          await deleteSubcategory(db2, editingSubcategory.id);
+          setShowSubEditModal(false);
+          setEditingSubcategory(null);
           await refresh();
         },
       },
@@ -161,213 +212,380 @@ export default function CategoriesScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Categories</Text>
-      <Text style={styles.subtitle}>
-        Categories are user-configurable. Subcategory is optional and scoped to a category.
-      </Text>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Existing</Text>
-        {categories.length === 0 ? (
-          <Text>No categories yet.</Text>
-        ) : (
-          <View style={styles.list}>
-            {categories.map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => selectCategory(c)}
-                style={[styles.row, c.id === selectedCategoryId && styles.rowActive]}>
-                <Text style={styles.rowName}>{c.name}</Text>
-                <Text style={styles.rowMeta}>{c.subcategoryCount} sub</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+        </Pressable>
+        <Text style={styles.headerTitle}>自定义</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {selectedCategory ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Edit category</Text>
-          <View style={styles.field}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput value={editCategoryName} onChangeText={setEditCategoryName} style={styles.input} />
-          </View>
-          <View style={styles.actions}>
-            <Pressable onPress={onSaveCategory} style={styles.primary}>
-              <Text style={styles.primaryText}>Save</Text>
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Category List */}
+        {categories.map((category) => (
+          <View key={category.id} style={styles.categorySection}>
+            <Pressable 
+              style={styles.categoryRow}
+              onPress={() => toggleExpand(category.id)}
+            >
+              <Pressable 
+                style={styles.expandButton}
+                onPress={() => toggleExpand(category.id)}
+              >
+                <FontAwesome 
+                  name={expandedCategoryId === category.id ? 'caret-down' : 'caret-right'} 
+                  size={16} 
+                  color={TEXT_SECONDARY} 
+                />
+              </Pressable>
+              
+              <View style={styles.categoryIcon}>
+                <FontAwesome 
+                  name={getCategoryIcon(category.name) as any} 
+                  size={18} 
+                  color={PRIMARY_GREEN} 
+                />
+              </View>
+              
+              <Text style={styles.categoryName}>{category.name}</Text>
+              
+              <Pressable 
+                style={styles.menuButton}
+                onPress={() => openEditCategory(category)}
+              >
+                <FontAwesome name="ellipsis-h" size={16} color={TEXT_SECONDARY} />
+              </Pressable>
             </Pressable>
-            <Pressable onPress={onDeleteCategory} style={styles.danger}>
-              <Text style={styles.dangerText}>Delete</Text>
-            </Pressable>
+
+            {/* Subcategories */}
+            {expandedCategoryId === category.id && (
+              <View style={styles.subcategoryList}>
+                {subcategories.map((sub) => (
+                  <Pressable 
+                    key={sub.id}
+                    style={styles.subcategoryRow}
+                    onPress={() => openEditSubcategory(sub)}
+                  >
+                    <View style={styles.subcategoryIndent} />
+                    <Text style={styles.subcategoryName}>{sub.name}</Text>
+                    <FontAwesome name="ellipsis-h" size={14} color={TEXT_SECONDARY} />
+                  </Pressable>
+                ))}
+                
+                {/* Add subcategory inline */}
+                <View style={styles.addSubcategoryRow}>
+                  <View style={styles.subcategoryIndent} />
+                  <TextInput
+                    style={styles.addSubInput}
+                    value={newSubcategoryName}
+                    onChangeText={setNewSubcategoryName}
+                    placeholder="添加子分类..."
+                    placeholderTextColor={TEXT_SECONDARY}
+                  />
+                  {newSubcategoryName.trim() && (
+                    <Pressable onPress={onCreateSubcategory}>
+                      <FontAwesome name="plus-circle" size={20} color={PRIMARY_GREEN} />
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+            )}
           </View>
+        ))}
 
-          <View style={styles.divider} />
+        <View style={{ height: 100 }} />
+      </ScrollView>
 
-          <Text style={styles.cardTitle}>Subcategories</Text>
-          {subcategories.length === 0 ? (
-            <Text style={styles.hint}>No subcategories for this category.</Text>
-          ) : (
-            <View style={styles.list}>
-              {subcategories.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => selectSubcategory(s)}
-                  style={[styles.row, s.id === selectedSubcategoryId && styles.rowActive]}>
-                  <Text style={styles.rowName}>{s.name}</Text>
-                  <Text style={styles.rowMeta}>sub</Text>
-                </Pressable>
-              ))}
+      {/* Add Category Button */}
+      <Pressable style={styles.addButton} onPress={() => setShowAddModal(true)}>
+        <Text style={styles.addButtonText}>+ 添加自定义</Text>
+      </Pressable>
+
+      {/* Add Category Modal */}
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowAddModal(false)}>
+                <Text style={styles.modalCancel}>取消</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>添加自定义类目</Text>
+              <Pressable onPress={onCreateCategory}>
+                <Text style={styles.modalSave}>保存</Text>
+              </Pressable>
             </View>
-          )}
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Add subcategory</Text>
-            <TextInput
-              value={newSubcategoryName}
-              onChangeText={setNewSubcategoryName}
-              placeholder="e.g. Coffee"
-              style={styles.input}
-            />
-          </View>
-          <Pressable onPress={onCreateSubcategory} style={styles.primary} disabled={!newSubcategoryName.trim()}>
-            <Text style={styles.primaryText}>Create subcategory</Text>
-          </Pressable>
-
-          {selectedSubcategory ? (
-            <>
-              <View style={styles.divider} />
-              <Text style={styles.cardTitle}>Edit subcategory</Text>
+            <View style={styles.modalBody}>
               <View style={styles.field}>
-                <Text style={styles.label}>Name</Text>
+                <Text style={styles.fieldLabel}>分类名称</Text>
+                <TextInput
+                  value={newCategoryName}
+                  onChangeText={setNewCategoryName}
+                  placeholder="不超过6个字符"
+                  style={styles.input}
+                  placeholderTextColor={TEXT_SECONDARY}
+                  maxLength={6}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Category Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowEditModal(false)}>
+                <Text style={styles.modalCancel}>取消</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>编辑分类</Text>
+              <Pressable onPress={onSaveCategory}>
+                <Text style={styles.modalSave}>保存</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>分类名称</Text>
+                <TextInput
+                  value={editCategoryName}
+                  onChangeText={setEditCategoryName}
+                  style={styles.input}
+                  placeholderTextColor={TEXT_SECONDARY}
+                  maxLength={6}
+                />
+              </View>
+
+              <Pressable style={styles.deleteButton} onPress={onDeleteCategory}>
+                <Text style={styles.deleteButtonText}>删除该分类</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Subcategory Modal */}
+      <Modal visible={showSubEditModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowSubEditModal(false)}>
+                <Text style={styles.modalCancel}>取消</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>编辑子分类</Text>
+              <Pressable onPress={onSaveSubcategory}>
+                <Text style={styles.modalSave}>保存</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>子分类名称</Text>
                 <TextInput
                   value={editSubcategoryName}
                   onChangeText={setEditSubcategoryName}
                   style={styles.input}
+                  placeholderTextColor={TEXT_SECONDARY}
+                  maxLength={6}
                 />
               </View>
-              <View style={styles.actions}>
-                <Pressable onPress={onSaveSubcategory} style={styles.primary}>
-                  <Text style={styles.primaryText}>Save</Text>
-                </Pressable>
-                <Pressable onPress={onDeleteSubcategory} style={styles.danger}>
-                  <Text style={styles.dangerText}>Delete</Text>
-                </Pressable>
-              </View>
-            </>
-          ) : null}
-        </View>
-      ) : null}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Add new category</Text>
-        <View style={styles.field}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            value={newCategoryName}
-            onChangeText={setNewCategoryName}
-            placeholder="e.g. Food"
-            style={styles.input}
-          />
+              <Pressable style={styles.deleteButton} onPress={onDeleteSubcategory}>
+                <Text style={styles.deleteButtonText}>删除该子分类</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-        <Pressable onPress={onCreateCategory} style={styles.primary} disabled={!newCategoryName.trim()}>
-          <Text style={styles.primaryText}>Create</Text>
-        </Pressable>
-      </View>
-    </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    gap: 12,
+    backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  subtitle: {
-    opacity: 0.8,
-  },
-  card: {
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  cardTitle: {
-    fontWeight: '700',
-  },
-  hint: {
-    opacity: 0.7,
-  },
-  list: {
-    gap: 6,
-  },
-  row: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.2)',
+  header: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
   },
-  rowActive: {
-    borderColor: 'rgba(127,127,127,0.8)',
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  rowName: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+  },
+  scrollContent: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  categorySection: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  expandButton: {
+    width: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: `${PRIMARY_GREEN}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    marginRight: 12,
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: TEXT_PRIMARY,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subcategoryList: {
+    backgroundColor: '#FAFAFA',
+    paddingBottom: 8,
+  },
+  subcategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  subcategoryIndent: {
+    width: 72,
+  },
+  subcategoryName: {
+    flex: 1,
+    fontSize: 14,
+    color: TEXT_PRIMARY,
+  },
+  addSubcategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  addSubInput: {
+    flex: 1,
+    fontSize: 14,
+    color: TEXT_PRIMARY,
+    padding: 0,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
-  rowMeta: {
-    opacity: 0.7,
-    fontSize: 12,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: 'transparent',
+  },
+  modalCancel: {
+    fontSize: 16,
+    color: TEXT_SECONDARY,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+  },
+  modalSave: {
+    fontSize: 16,
+    color: PRIMARY_GREEN,
+    fontWeight: '600',
+  },
+  modalBody: {
+    padding: 20,
+    backgroundColor: 'transparent',
   },
   field: {
-    gap: 6,
+    marginBottom: 24,
+    backgroundColor: 'transparent',
   },
-  label: {
-    fontWeight: '600',
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: TEXT_PRIMARY,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.3)',
-    borderRadius: 10,
-    padding: 10,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  primary: {
-    flex: 1,
-    paddingVertical: 12,
+    borderColor: '#E5E5E5',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.3)',
+    padding: 14,
+    fontSize: 16,
+    color: TEXT_PRIMARY,
+  },
+  deleteButton: {
+    backgroundColor: EXPENSE_RED,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  primaryText: {
+  deleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
-  },
-  danger: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(193, 18, 31, 0.4)',
-    alignItems: 'center',
-  },
-  dangerText: {
-    color: '#c1121f',
-    fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(127,127,127,0.15)',
-    marginVertical: 6,
   },
 });
-

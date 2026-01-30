@@ -1,37 +1,56 @@
-# MVP progress
+# Progress
 
-This file is a **living progress log** intended to help both humans and coding assistants understand the current implementation state.
+Living status document for the RICH MVP.
 
-## Current milestone
+## Current Status: MVP Draft Complete ✓
 
-- **M0 — Expo app scaffold (in progress)**
+The app matches the original RICH 记账 visual design with working core features.
 
 ## Completed
 
-- Documentation + repository scaffolding (requirements, product, architecture, data model, export formats)
-- Privacy-safe `.gitignore` protections
-- CSV v1 legacy format aligned to `record.csv` structure (Chinese headers)
-- Expo + TypeScript scaffold with Expo Router route skeleton
-- SQLite schema + migrations (local-only)
-- Transactions MVP: list + add/edit/delete + last-used account default
-- Accounts CRUD (create/edit/delete with safety checks)
-- Categories/subcategories CRUD (create/edit/delete with safety checks)
-- Import/Export: CSV v1 import/export, CSV v2 export, database file export/import
-- Charts: expense category pie, monthly expense/income trends, subcategory drill-down (local SQLite aggregations)
+### Documentation
 
-## In progress
+- [x] Repository scaffolding
+- [x] Requirements, product, technical docs
+- [x] Privacy-safe `.gitignore`
 
-- (none)
+### Core Features
 
-## Next up
+- [x] SQLite schema + migrations
+- [x] Transactions CRUD
+- [x] Accounts CRUD
+- [x] Categories/subcategories CRUD
+- [x] Import/export (CSV v1, v2, database)
+- [x] Charts (pie, trends, drill-down)
+- [x] Demo seed data (37 sample transactions)
 
-- Polish: calendar-first Home, transaction entry UX (amount-first keypad), and balance “set-to-value” adjustment flow
+### UI Redesign
 
-## Decisions / notes
+- [x] Mint green color scheme (#3ECDA5)
+- [x] 3-tab navigation (Home, FAB, Charts)
+- [x] Calendar-first home screen
+- [x] Amount-first add transaction
+- [x] Custom numpad (no system keyboard)
+- [x] Category icon grid
+- [x] Grouped accounts display
+- [x] Expandable category list
+- [x] Chinese UI labels
 
-- **Offline-first**: local SQLite only; no backend, no sync, no analytics.
-- **CSV compatibility**:
-  - v1 is legacy (5 columns, Chinese headers, no account/subcategory, supports expense/income only).
-  - v2 is optional extended export for better round-trip and includes account/subcategory/IDs.
-- **Privacy**: never commit real finance exports/backups; keep sample/demo data synthetic only.
+## Next Up
 
+- Polish: error handling, loading states, edge cases
+- Balance adjustment "set-to-value" flow
+- Transaction save/persistence
+- Testing and bug fixes
+- Commit to GitHub as v0.1.0-alpha
+
+## Key Decisions
+
+| Decision     | Choice                             |
+| ------------ | ---------------------------------- |
+| Storage      | Local SQLite only                  |
+| UI Language  | Chinese labels (matching original) |
+| Navigation   | 3 tabs instead of 4                |
+| Amount entry | Custom numpad, not keyboard        |
+| Categories   | Icon grid, not text input          |
+| CSV format   | v1 = legacy Chinese, v2 = extended |

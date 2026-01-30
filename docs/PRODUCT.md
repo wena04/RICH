@@ -1,178 +1,174 @@
 # Product (MVP UX)
 
-This document describes the MVP user experience for a single-user, offline-first iPhone app inspired by “RICH 记账”.
+This document describes the MVP user experience for a single-user, offline-first iPhone app inspired by "RICH 记账".
+
+## Design System
+
+The app uses a **mint green color scheme** matching the original RICH app:
+
+- Primary color: `#3ECDA5` (mint green)
+- Background: Green headers with white content cards
+- Navigation: 3-element bottom bar (Home, center FAB, Charts)
 
 ## Principles
 
-- **Amount-first**: The fastest path to recording is: amount → classify → choose account → add optional note → save.
+- **Amount-first**: Quick entry via custom numpad → category grid → account → note → confirm.
+- **Calendar-first home**: Month calendar view with daily transaction drill-down.
 - **Local-first**: All data lives in local SQLite. No accounts, no backend, no sync, no analytics.
-- **Private by default**: The app should not transmit any finance data off-device.
-- **Configurable organization**: Categories/subcategories are user-configurable, and accounts are user-configurable.
+- **Private by default**: The app never transmits finance data off-device.
+- **Configurable organization**: Categories/subcategories and accounts are user-configurable.
+
+## Demo Data
+
+On first launch, the app seeds 37 sample transactions so users can explore immediately:
+
+- **Accounts**: 现金, Chase, 微信
+- **Categories**: 餐饮, 交通, 购物, 娱乐, 日用, 医疗, 工资, 兼职
+- **Transactions**: Mix of expenses and income over the past 30 days
+
+## Navigation
+
+The app uses a **3-element bottom navigation bar**:
+
+1. **首页 (Home)** - Calendar icon, leads to home/calendar screen
+2. **+ (Add)** - Large floating action button (FAB), opens add transaction screen
+3. **预算/计划 (Charts)** - Pie chart icon, leads to charts/budget screen
+
+Additional screens (Accounts, Categories, Settings) are accessed via the profile icon on the home screen.
 
 ## Screens & flows
 
-### 1) Home / Overview
+### 1) Home / Overview (Calendar-first)
 
-Purpose: quick access to current month status and primary actions.
+Purpose: Month overview with calendar and daily transaction list.
 
-- Primary actions:
-  - **Add transaction**
-  - Navigate to **Charts**
-  - Navigate to **Accounts**
-  - Navigate to **Categories**
-  - Navigate to **Import/Export**
-- Summary content (MVP):
-  - Current month totals: expense and income
-  - Quick filters (optional): month selector
+Layout (top to bottom):
 
-### 2) Transactions list
+- **Green header**: "Rich记账" branding + profile icon
+- **Calendar card** (white, rounded):
+  - Month selector (< 1月 >)
+  - Month totals: 总支出 (expense) and 总收入 (income)
+  - 7-column calendar grid (MON-SUN)
+  - Days with transactions are highlighted
+  - Selected day is circled
+- **Daily section** (white, bottom sheet style):
+  - Date header with daily expense/income totals
+  - Transaction list for selected date
+  - Tap transaction to edit
 
-Purpose: review and manage recorded transactions.
+### 2) Add Transaction (Amount-first with numpad)
 
-- Default sort: **date descending**, newest first.
-- Each row displays:
-  - Amount (signed or colored by type)
-  - Category (and subcategory if present)
-  - Account
-  - Date
-  - Optional note indicator if note is present
-- Row tap opens **Transaction detail / edit**.
-- Delete is available from detail/edit (with confirmation).
+Purpose: Create a transaction quickly using touch-first UI.
 
-### 3) Add Transaction (amount-first entry)
+Layout (top to bottom):
 
-Purpose: create a transaction quickly and correctly.
+- **Header**: Back arrow, 支出/收入 toggle, date selector
+- **Amount display**: Large "¥0" with cursor indicator
+- **Category grid**: Scrollable icon grid (餐饮, 衣服, 交通, etc.)
+- **Bottom bar**: Account selector (icon + name) | Note input field
+- **Custom numpad**:
+  - 3×4 digit grid (1-9, 0, decimal)
+  - Backspace and +/- operators on right
+  - "确定" (confirm) button spanning bottom-right
 
-The form flow must follow this order:
+Behavior:
 
-1. **Amount** (required)
-2. **Type** (required): `expense` / `income` / `balance_adjustment`
-3. **Date** (required)
-4. **Category** (required for `expense` and `income`)
-5. **Subcategory** (optional; only shown after category selection; scoped to chosen category; max 1)
-6. **Account** (required; default is last-used account)
-7. **Note** (optional; max 100 characters)
-8. **Save**
+- Tap category icon to select (highlight with green border)
+- Type amount using custom numpad (no system keyboard)
+- Tap "确定" to save (disabled until category selected and amount > 0)
 
-Behavior by type:
+### 3) Transaction detail / edit
 
-- **Expense**
-  - Category required
-  - Subcategory optional
-  - Amount stored as a positive value in UI (implementation may store signed); charts treat it as expense
-- **Income**
-  - Category required
-  - Subcategory optional
-  - Charts treat it as income
-- **Balance adjustment**
-  - Used for **state corrections** to an account balance
-  - **Category and subcategory are not applicable** and must be hidden/disabled
-  - Amount represents an adjustment amount (delta) and should be clearly labeled as correction
+Purpose: View and modify an existing transaction.
 
-Validation:
+- Full-screen view showing all transaction fields
+- Edit mode allows changing amount, date, category, account, note
+- Red "删除该笔支出" delete button at bottom
 
-- Amount must be provided and valid.
-- Date must be provided.
-- Account must be provided.
-- Category must be provided for expense/income.
-- Note length is capped at **100 characters**.
+### 4) Charts / Budget (预算/计划)
 
-### 4) Transaction detail / edit
+Purpose: Visualize spending patterns.
 
-Purpose: view and modify an existing transaction.
+Layout:
 
-- Displays all fields relevant to the transaction type.
-- Edit supports:
-  - Changing amount, date, category, subcategory, account, note
-  - Changing type (subject to rules; if switching to/from `balance_adjustment`, category fields are cleared and hidden)
-- Delete supports:
-  - Confirm deletion before removing
+- **Green header**: "预算/计划" title
+- **Summary cards**: 计划清单, 结余 (balance), 趋势图 icons
+- **Content area** (white, rounded top):
+  - Month selector
+  - **Category pie chart**: Donut with legend showing category breakdown
+  - **Monthly trends**: Line chart showing expense vs income over 6 months
+  - **Subcategory drill-down**: Tap category to see subcategory breakdown
 
-### 5) Categories management
+### 5) Categories management (自定义)
 
-Purpose: configure category taxonomy.
+Purpose: Configure category taxonomy.
 
-- List of categories (user-configurable)
-- For each category:
-  - View/edit category name
-  - Manage subcategories within that category
-  - Delete category (see data impact note below)
+Layout:
 
-Subcategories:
+- **Header**: Back arrow, "自定义" title
+- **Category list**: Each row shows:
+  - Expand arrow (▶/▼)
+  - Category icon (green background)
+  - Category name
+  - Menu button (⋯)
+- **Expandable subcategories**: Indented list when category expanded
+- **Bottom button**: "+ 添加自定义" (black, full-width)
 
-- Subcategory creation is **within** a category.
-- Subcategory is always scoped to exactly one category.
+Modals:
 
-Data impact note (MVP):
+- Add category: Name input (max 6 characters)
+- Edit category: Name input + delete button
 
-- If deleting a category/subcategory that is referenced by existing transactions, the app must define a safe behavior (e.g., prevent deletion or require reassignment). The MVP should prefer **preventing deletion when in use** to avoid data loss.
+### 6) Accounts management (资产管理)
 
-### 6) Accounts management
+Purpose: Manage where money lives.
 
-Purpose: manage where money lives.
+Layout:
 
-- Accounts list with:
-  - Name
-  - Type (cash/bank/credit/stored value/investment)
-  - Current balance (derived; see architecture/data model)
-- Create/edit/delete account
-- Default account behavior:
-  - The app remembers the last-used account for quick entry.
+- **Green header**: "资产管理" title
+- **Asset summary**: Illustration + 目标资产 + 已有总资产
+- **Account groups** (3 sections):
+  - 资金账户 (cash/bank)
+  - 信用账户 (credit)
+  - 储值账户 (stored value/investment)
+- Each group shows: Total + "+ 添加" button + account list
+- Each account row: Icon + name + balance + chevron
 
-Balance adjustments:
+Modals:
 
-- Creating a `balance_adjustment` transaction should be accessible from accounts (optional) or from Add Transaction type selection.
-- The UI should clearly communicate that it’s a **correction**, not income/expense.
+- Add account: Name + type selector (icon grid)
+- Edit account: Name + type + delete button
 
-### 7) Assets & goals (visualization-only)
+### 7) Profile / Settings (我的)
 
-Purpose: allow the user to set target values for visualization.
+Purpose: Access settings and data management.
 
-- User can create an asset goal with:
-  - Name/label
-  - Target amount
-  - Optional account association (implementation choice), but it remains visualization-only
-- Asset goals do not:
-  - Create transactions
-  - Affect balances automatically
-  - Trigger notifications
+Layout:
 
-### 8) Charts
+- **Green header**: "我的" title
+- **Menu sections**:
+  - 设置: 账户管理, 分类管理
+  - 数据: 导出数据, 导入数据
+  - 关于: 关于应用, 隐私政策
+- **App info**: Version and privacy statement
 
-Purpose: understand spending and income trends.
+### 8) Import / Export
 
-#### Category pie chart
-
-- Default scope: selected month (current month by default).
-- Expense categories are aggregated for the pie.
-- Drill-down:
-  - Tap a category slice to show its **subcategories breakdown** (subcategory drill-down).
-  - If no subcategories exist or were used, show “No subcategory data”.
-
-#### Monthly expense/income trends
-
-- Displays month-by-month totals for expense and income.
-- `balance_adjustment` is excluded from expense/income totals.
-
-#### Subcategory drill-down behavior
-
-- Drill-down is always within a selected category.
-- Subcategory rows include total amount and (optionally) percentage of category total.
-
-### 9) Import / Export (backup & migration)
-
-Purpose: user-controlled portability.
+Purpose: User-controlled data portability.
 
 - Export options:
-  - CSV **v1** (compatible)
-  - Optional CSV **v2** (extended)
-  - Export database file
+  - CSV v1 (legacy format, Chinese headers)
+  - CSV v2 (extended format)
+  - Database file export
 - Import options:
-  - Import CSV (v1 required; v2 optional)
-  - Import database file
+  - CSV import (with account selection)
+  - Database file import
+- Privacy warnings for sensitive data
 
-UX warnings:
+## Validation rules
 
-- Exported files may contain sensitive data; the app should warn the user to store them securely.
-- Import should validate format and reject malformed rows safely.
-
+- Amount: Required, must be valid positive number
+- Date: Required, YYYY-MM-DD format
+- Category: Required for expense/income
+- Account: Required, defaults to last-used
+- Note: Optional, max 100 characters

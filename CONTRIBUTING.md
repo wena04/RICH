@@ -1,69 +1,55 @@
 # Contributing
 
-This is a personal project, but contributions and suggestions are welcome as long as they remain **privacy-safe** and aligned with the MVP scope.
+Contributions welcome if they remain **privacy-safe** and aligned with MVP scope.
 
-## Privacy-first contribution rules
+## Privacy Rules
 
-- **Never commit real finance data**:
-  - Do not add personal CSV exports, backups, or SQLite database files.
-  - Use `data/sample.csv` or generate synthetic data only.
-- **Never include sensitive screenshots**:
-  - If you add references in `docs/reference/`, they must be redacted and contain no personal data.
-- **Avoid “helpful” telemetry**:
-  - Do not propose or add analytics, tracking, ads, or cloud sync (explicit non-goals for MVP).
+- **Never commit real finance data** — use `data/sample.csv` or synthetic data
+- **No sensitive screenshots** — redact personal information
+- **No telemetry** — analytics, tracking, ads, and cloud sync are explicit non-goals
 
-## Project scope (MVP)
+## Project Scope
 
-The MVP scope is defined in:
+Scope is defined in:
+- `docs/REQUIREMENTS.md` — Goals and acceptance criteria
+- `docs/PRODUCT.md` — UX and screens
+- `docs/TECHNICAL.md` — Architecture and data model
 
-- `docs/REQUIREMENTS.md`
-- `docs/PRODUCT.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATA_MODEL.md`
-- `docs/EXPORT_FORMAT.md`
+Changes outside scope should be documented as future ideas, not implemented.
 
-If you propose changes outside this scope, document them as a future idea rather than implementing them.
+## Code Structure
 
-## Repo structure
+```
+app/           # Expo Router screens
+src/db/        # SQLite + migrations + repos
+src/domain/    # TypeScript types
+src/features/  # Charts, import/export
+src/utils/     # Helpers
+```
 
-- `docs/`: product, requirements, architecture, schema, and export format
-- `data/`: privacy-safe sample data (committed) and local-only guidance
-- `src/`: planned app source code location (not yet implemented)
+## Guidelines
 
-## Code style (when implementation starts)
+- Keep domain logic separate from UI
+- Validate all imports at the boundary layer
+- Enforce data model invariants in code
+- Use synthetic data in tests
+- Exclude `balance_adjustment` from expense/income charts
 
-Expected tech direction:
+## Adding Features
 
-- React Native + Expo
-- SQLite local storage
+### New Chart
+1. Define aggregation input/output
+2. Implement deterministic query
+3. Test with synthetic data
 
-Guidelines:
+### New Category Behavior
+1. Keep subcategories scoped to parent category
+2. Each transaction has exactly one account
+3. Enforce note ≤ 100 chars
 
-- Keep domain logic (transactions/categories/accounts) separate from UI components.
-- Treat import/export as a boundary layer that must validate and sanitize inputs.
-- Enforce invariants from `docs/DATA_MODEL.md` in code and tests.
-- Prefer small, composable chart aggregation functions that are easy to test with synthetic data.
+## Documentation
 
-## How to add a new chart (guidance)
-
-When adding a chart (within the existing visualization scope):
-
-- **Define the aggregation input/output** clearly (time range, filters, grouping keys).
-- **Implement a deterministic aggregation** from SQLite query results.
-- **Use only synthetic data** in tests and examples.
-- Ensure `balance_adjustment` remains excluded from expense/income charts as specified.
-
-## How to add a new category/subcategory behavior (guidance)
-
-- Ensure subcategories remain **scoped to a category**.
-- Ensure each transaction still has **exactly one account**.
-- Keep note length constraints (≤ 100 chars).
-
-## Documentation changes
-
-Documentation-only changes are very welcome:
-
-- Clarifying acceptance criteria
-- Improving import/export examples (fake data only)
-- Tightening privacy rules and repository safety practices
-
+Doc-only changes are welcome:
+- Clarifying requirements
+- Improving examples (fake data only)
+- Tightening privacy practices
