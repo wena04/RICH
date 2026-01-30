@@ -1,0 +1,387 @@
+import type { AppDb } from "./db";
+import { newId } from "../utils/id";
+
+/**
+ * Seed data for demo/testing purposes.
+ * Only runs if database is empty (no transactions).
+ */
+export async function seedDemoData(db: AppDb): Promise<void> {
+  // Check if already seeded
+  const existing = await db.getFirstAsync<{ count: number }>(
+    "SELECT COUNT(*) as count FROM transactions",
+  );
+  if (existing && existing.count > 0) {
+    return; // Already has data
+  }
+
+  const now = new Date().toISOString();
+  const today = new Date();
+
+  // Create accounts
+  const accounts = [
+    { id: newId("acc"), name: "现金", type: "cash" },
+    { id: newId("acc"), name: "Chase", type: "bank" },
+    { id: newId("acc"), name: "微信", type: "stored_value" },
+  ];
+
+  for (const acc of accounts) {
+    await db.runAsync(
+      "INSERT INTO accounts (id, name, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+      [acc.id, acc.name, acc.type, now, now],
+    );
+  }
+
+  // Create categories
+  const categories = [
+    { id: newId("cat"), name: "餐饮" },
+    { id: newId("cat"), name: "交通" },
+    { id: newId("cat"), name: "购物" },
+    { id: newId("cat"), name: "娱乐" },
+    { id: newId("cat"), name: "日用" },
+    { id: newId("cat"), name: "医疗" },
+    { id: newId("cat"), name: "工资" },
+    { id: newId("cat"), name: "兼职" },
+  ];
+
+  for (const cat of categories) {
+    await db.runAsync(
+      "INSERT INTO categories (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)",
+      [cat.id, cat.name, now, now],
+    );
+  }
+
+  // Helper to get random item
+  const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  // Helper to format date
+  const formatDate = (d: Date): string => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  // Helper to get date N days ago
+  const daysAgo = (n: number): Date => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - n);
+    return d;
+  };
+
+  // Sample transactions (37 entries)
+  const expenseCategories = categories.filter(
+    (c) => !["工资", "兼职"].includes(c.name),
+  );
+  const incomeCategories = categories.filter((c) =>
+    ["工资", "兼职"].includes(c.name),
+  );
+
+  const sampleTransactions = [
+    // Today
+    {
+      type: "expense",
+      amount: 2580,
+      date: formatDate(today),
+      cat: "餐饮",
+      note: "午餐",
+    },
+    {
+      type: "expense",
+      amount: 1500,
+      date: formatDate(today),
+      cat: "交通",
+      note: "地铁",
+    },
+
+    // Yesterday
+    {
+      type: "expense",
+      amount: 3200,
+      date: formatDate(daysAgo(1)),
+      cat: "餐饮",
+      note: "晚餐",
+    },
+    {
+      type: "expense",
+      amount: 850,
+      date: formatDate(daysAgo(1)),
+      cat: "日用",
+      note: "纸巾",
+    },
+    {
+      type: "expense",
+      amount: 4500,
+      date: formatDate(daysAgo(1)),
+      cat: "娱乐",
+      note: "电影票",
+    },
+
+    // 2 days ago
+    {
+      type: "expense",
+      amount: 1280,
+      date: formatDate(daysAgo(2)),
+      cat: "餐饮",
+      note: "早餐",
+    },
+    {
+      type: "expense",
+      amount: 2100,
+      date: formatDate(daysAgo(2)),
+      cat: "餐饮",
+      note: "咖啡",
+    },
+    {
+      type: "expense",
+      amount: 3500,
+      date: formatDate(daysAgo(2)),
+      cat: "交通",
+      note: "打车",
+    },
+
+    // 3 days ago
+    {
+      type: "expense",
+      amount: 8900,
+      date: formatDate(daysAgo(3)),
+      cat: "购物",
+      note: "衣服",
+    },
+    {
+      type: "expense",
+      amount: 2200,
+      date: formatDate(daysAgo(3)),
+      cat: "餐饮",
+      note: "午餐",
+    },
+    {
+      type: "income",
+      amount: 1500000,
+      date: formatDate(daysAgo(3)),
+      cat: "工资",
+      note: "月薪",
+    },
+
+    // 5 days ago
+    {
+      type: "expense",
+      amount: 5600,
+      date: formatDate(daysAgo(5)),
+      cat: "餐饮",
+      note: "聚餐",
+    },
+    {
+      type: "expense",
+      amount: 1200,
+      date: formatDate(daysAgo(5)),
+      cat: "日用",
+      note: "洗衣液",
+    },
+    {
+      type: "expense",
+      amount: 3800,
+      date: formatDate(daysAgo(5)),
+      cat: "交通",
+      note: "公交卡充值",
+    },
+
+    // 7 days ago
+    {
+      type: "expense",
+      amount: 15000,
+      date: formatDate(daysAgo(7)),
+      cat: "医疗",
+      note: "感冒药",
+    },
+    {
+      type: "expense",
+      amount: 2500,
+      date: formatDate(daysAgo(7)),
+      cat: "餐饮",
+      note: "外卖",
+    },
+    {
+      type: "expense",
+      amount: 6800,
+      date: formatDate(daysAgo(7)),
+      cat: "娱乐",
+      note: "游戏",
+    },
+
+    // 10 days ago
+    {
+      type: "expense",
+      amount: 4200,
+      date: formatDate(daysAgo(10)),
+      cat: "餐饮",
+      note: "下午茶",
+    },
+    {
+      type: "expense",
+      amount: 18500,
+      date: formatDate(daysAgo(10)),
+      cat: "购物",
+      note: "数码配件",
+    },
+    {
+      type: "income",
+      amount: 80000,
+      date: formatDate(daysAgo(10)),
+      cat: "兼职",
+      note: "外快",
+    },
+
+    // 14 days ago
+    {
+      type: "expense",
+      amount: 3100,
+      date: formatDate(daysAgo(14)),
+      cat: "餐饮",
+      note: "早餐",
+    },
+    {
+      type: "expense",
+      amount: 2800,
+      date: formatDate(daysAgo(14)),
+      cat: "餐饮",
+      note: "午餐",
+    },
+    {
+      type: "expense",
+      amount: 4500,
+      date: formatDate(daysAgo(14)),
+      cat: "餐饮",
+      note: "晚餐",
+    },
+    {
+      type: "expense",
+      amount: 1500,
+      date: formatDate(daysAgo(14)),
+      cat: "交通",
+      note: "地铁",
+    },
+
+    // 18 days ago
+    {
+      type: "expense",
+      amount: 25000,
+      date: formatDate(daysAgo(18)),
+      cat: "购物",
+      note: "鞋子",
+    },
+    {
+      type: "expense",
+      amount: 3200,
+      date: formatDate(daysAgo(18)),
+      cat: "娱乐",
+      note: "KTV",
+    },
+
+    // 21 days ago
+    {
+      type: "expense",
+      amount: 2100,
+      date: formatDate(daysAgo(21)),
+      cat: "餐饮",
+      note: "午餐",
+    },
+    {
+      type: "expense",
+      amount: 8500,
+      date: formatDate(daysAgo(21)),
+      cat: "日用",
+      note: "生活用品",
+    },
+    {
+      type: "expense",
+      amount: 1800,
+      date: formatDate(daysAgo(21)),
+      cat: "交通",
+      note: "公交",
+    },
+
+    // 25 days ago
+    {
+      type: "expense",
+      amount: 12000,
+      date: formatDate(daysAgo(25)),
+      cat: "娱乐",
+      note: "演唱会",
+    },
+    {
+      type: "expense",
+      amount: 3500,
+      date: formatDate(daysAgo(25)),
+      cat: "餐饮",
+      note: "聚餐",
+    },
+
+    // 28 days ago
+    {
+      type: "expense",
+      amount: 2200,
+      date: formatDate(daysAgo(28)),
+      cat: "餐饮",
+      note: "外卖",
+    },
+    {
+      type: "expense",
+      amount: 4800,
+      date: formatDate(daysAgo(28)),
+      cat: "交通",
+      note: "打车",
+    },
+    {
+      type: "income",
+      amount: 1500000,
+      date: formatDate(daysAgo(28)),
+      cat: "工资",
+      note: "月薪",
+    },
+
+    // 30 days ago
+    {
+      type: "expense",
+      amount: 6500,
+      date: formatDate(daysAgo(30)),
+      cat: "购物",
+      note: "书籍",
+    },
+    {
+      type: "expense",
+      amount: 2800,
+      date: formatDate(daysAgo(30)),
+      cat: "餐饮",
+      note: "午餐",
+    },
+    {
+      type: "expense",
+      amount: 9200,
+      date: formatDate(daysAgo(30)),
+      cat: "日用",
+      note: "护肤品",
+    },
+  ];
+
+  // Insert transactions
+  for (const tx of sampleTransactions) {
+    const cat = categories.find((c) => c.name === tx.cat);
+    const acc = pick(accounts);
+
+    await db.runAsync(
+      `INSERT INTO transactions (id, type, amount_cents, date, account_id, category_id, subcategory_id, note, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newId("txn"),
+        tx.type,
+        tx.amount,
+        tx.date,
+        acc.id,
+        cat?.id ?? null,
+        null,
+        tx.note,
+        now,
+        now,
+      ],
+    );
+  }
+
+  console.log(`Seeded ${sampleTransactions.length} demo transactions`);
+}

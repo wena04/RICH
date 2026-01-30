@@ -1,58 +1,42 @@
 # Security Policy
 
-This is a personal, offline-first finance app MVP. The primary security goal is **privacy by default**: your finance data stays on your device unless you explicitly export it.
+Offline-first personal finance app. Primary goal: **privacy by default**.
 
-## Threat model (MVP)
+## Threat Model
 
-### In scope
+### In Scope
+- **Device compromise**: Lost/stolen phone, malware, physical access
+- **Data leakage**: Accidental git commits, insecure file sharing
+- **App bugs**: Import parsing errors, incorrect aggregations
 
-- **Local device compromise**:
-  - Lost/stolen phone
-  - Malware on device
-  - Untrusted physical access
-- **Accidental data leakage**:
-  - Committing real CSV exports/backups to git
-  - Sharing exported backups insecurely
-- **App-level bugs**:
-  - Incorrect import parsing causing data loss
-  - Incorrect aggregation causing misleading charts
+### Out of Scope
+- Network attacks (no backend)
+- Account takeover (no authentication)
 
-### Out of scope
+## Data Storage
 
-- Network-based attacks against backend services (there is no backend).
-- Account takeover / authentication threats (single-user, local-only).
+All data stored locally in SQLite:
+- Transactions (amount, date, type, category, account, note)
+- Categories and subcategories
+- Accounts
+- Asset goals
 
-## What data is stored
+## Not Collected
 
-Stored locally in SQLite:
+- ✗ Analytics or tracking
+- ✗ Crash reporting
+- ✗ Advertising IDs
+- ✗ Cloud sync
+- ✗ Server logs
 
-- Transactions (amount, date, type, category/subcategory where applicable, account, optional note)
-- Categories and subcategories (user-defined)
-- Accounts (user-defined)
-- Asset goals (visualization-only)
+## Export Security
 
-## What is intentionally NOT collected
+Exports contain sensitive information:
+- Store in encrypted/trusted locations only
+- Verify `git status` before commits
+- `.gitignore` blocks common export patterns
 
-- No analytics or tracking
-- No crash reporting that uploads data
-- No advertising identifiers
-- No cloud sync
-- No server-side logs (no servers)
+## Reporting Vulnerabilities
 
-## Backup/export risks and your responsibility
-
-Exports contain sensitive information.
-
-- **CSV exports** and **database file exports** may reveal spending patterns, merchants, locations (via notes), and other personal details.
-- Store exports only in places you trust (ideally encrypted).
-- Be careful when sharing files or screenshots.
-
-This repository includes a `.gitignore` that is designed to prevent accidental commits of finance data, but you should still verify `git status` before committing.
-
-## Reporting a vulnerability
-
-If you discover a security issue:
-
-- Prefer reporting privately using **GitHub Security Advisories** for this repository.
-- If that’s not possible, open an issue with **no sensitive details** (no real data, no reproduction steps that expose private information) and request a private contact channel.
-
+1. Use **GitHub Security Advisories** (preferred)
+2. Or open an issue with no sensitive details and request private contact

@@ -1,97 +1,106 @@
-# RICH (MVP) — personal finance iOS app (offline-first)
+# Rich记账 MVP
 
-This is a **documentation + scaffolding** repository for a personal finance iOS app (MVP) inspired by “RICH 记账”.
+Personal finance iOS app inspired by "RICH 记账" — offline-first, privacy-focused.
 
-## What this app is
+<img src="https://img.shields.io/badge/platform-iOS-lightgrey" alt="iOS"> <img src="https://img.shields.io/badge/storage-SQLite-blue" alt="SQLite"> <img src="https://img.shields.io/badge/privacy-local--only-green" alt="Privacy">
 
-- **Single-user** bookkeeping app for iPhone
-- **Offline-first**: all data stored locally
-- Tech direction: **React Native + Expo + SQLite**
-- **No backend**, **no cloud sync**, **no analytics**
+## Features
 
-## Key features (MVP)
+- **Calendar-first home** — Month view with daily transaction list
+- **Amount-first entry** — Custom numpad, category icon grid
+- **Category pie chart** — Visualize spending by category
+- **Monthly trends** — Expense vs income over time
+- **Accounts** — Cash, bank, credit, stored value, investment
+- **Import/Export** — CSV (v1 legacy, v2 extended) + database file
 
-- **Transactions**
-  - Types: `expense`, `income`, `balance_adjustment`
-  - **Amount-first entry**
-  - Required: amount, date, category (except balance adjustments), account
-  - Optional: subcategory (scoped to category), note (≤ 100 chars)
-  - Each transaction belongs to exactly one account
-  - Default account is the last-used account
-- **Categories**
-  - Category → Subcategory (subcategory optional; scoped to category)
-  - User-configurable categories and subcategories
-- **Accounts & assets**
-  - Multiple accounts (cash, bank, credit, stored value, investment)
-  - Balance updates are **state corrections** (not normal income/expense)
-  - Asset goals are visualization-only
-- **Visualization**
-  - Category pie chart
-  - Monthly expense/income trends
-  - Subcategory drill-down
-- **Privacy & portability**
-  - Local SQLite storage only
-  - CSV export (v1 compatible) and optional extended CSV export (v2)
-  - Export/import database file for migration and backup
+## Tech Stack
 
-## Privacy-first statement
+| Layer      | Technology                        |
+| ---------- | --------------------------------- |
+| Framework  | React Native + Expo               |
+| Language   | TypeScript                        |
+| Database   | SQLite (local-only)               |
+| Navigation | Expo Router                       |
+| UI         | Custom (matching RICH app design) |
 
-This app is designed to keep your data **private by default**:
+## Privacy
 
-- No backend servers
-- No cloud sync
-- No analytics or tracking
+This app keeps your data **private by default**:
 
-Data stays on your device unless you explicitly export it.
+- ✓ No backend servers
+- ✓ No cloud sync
+- ✓ No analytics or tracking
+- ✓ Data stays on-device unless you export
 
-## MVP scope
+## Getting Started
 
-The MVP scope and “done” criteria are documented in:
+```bash
+# Install dependencies
+npm install
 
-- `docs/REQUIREMENTS.md`
-- `docs/PRODUCT.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DATA_MODEL.md`
-- `docs/EXPORT_FORMAT.md`
-- `docs/PROGRESS.md` (implementation tracker)
+# Start Expo dev server
+npm run start
 
-## Sample data (safe)
+# Run on iOS Simulator
+npm run ios
+```
 
-This repo includes **fake** sample data for testing and demos:
+> **Note**: This app uses `expo-sqlite` which requires iOS/Android. It does not work in the web browser.
 
-- `data/sample.csv` (matches CSV v1 exactly)
+## Project Structure
 
-### How to import sample data (once the app import screen exists)
+```
+app/                    # Expo Router screens
+├── (tabs)/             # Tab navigation (Home, Charts)
+├── transaction/        # Add/edit transaction
+├── accounts.tsx        # Account management
+├── categories.tsx      # Category management
+└── import-export.tsx   # Data portability
 
-- On your iPhone, copy `data/sample.csv` to Files (or AirDrop it to the device).
-- In the app, open **Import/Export → Import CSV (v1)**.
-- Select `sample.csv` and complete the import.
+src/                    # Business logic
+├── db/                 # SQLite + migrations
+├── domain/             # TypeScript types
+├── features/           # Charts, import/export
+└── utils/              # Helpers
 
-## Backups & phone migration
+docs/                   # Documentation
+├── REQUIREMENTS.md     # Goals, scope, acceptance criteria
+├── PRODUCT.md          # UX design, screens, flows
+├── TECHNICAL.md        # Architecture, data model, formats
+└── PROGRESS.md         # Implementation status
+```
 
-This MVP supports **manual** portability (user-controlled):
+## Sample Data
 
-- **CSV export**:
-  - v1 (compatible)
-  - optional v2 (extended, more stable round-trips)
-- **Database file export/import**:
-  - full-fidelity backup and fast phone migration
+The app automatically seeds **37 demo transactions** on first run, so you can explore all features immediately.
 
-Recommended migration flow:
+Demo data includes:
 
-- On old phone: export database file (or CSV v1/v2).
-- Transfer securely to new phone.
-- On new phone: import database file (or CSV).
+- 3 accounts (现金, Chase, 微信)
+- 8 categories (餐饮, 交通, 购物, 娱乐, 日用, 医疗, 工资, 兼职)
+- Transactions spanning the last 30 days
 
-Important: exports are sensitive. Store them securely (prefer encrypted storage).
+Additional sample CSV for testing imports: `data/sample.csv`
 
-## Critical: never commit personal finance data
+## Data Safety
 
-Your real exports/backups must **NOT** be committed to git.
+Your real finance data must **NOT** be committed to git.
 
-- Keep real CSV exports and database backups local-only.
-- This repo’s `.gitignore` is configured to ignore:
-  - all CSV files except `data/sample.csv`
-  - SQLite databases and WAL/SHM files
-  - common export/backup outputs
+The `.gitignore` protects against accidental commits:
 
+- All CSV files except `data/sample.csv`
+- SQLite databases (`.db`, `.sqlite`)
+- Export/backup files
+
+## Documentation
+
+| Doc                                     | Description                       |
+| --------------------------------------- | --------------------------------- |
+| [REQUIREMENTS.md](docs/REQUIREMENTS.md) | Goals, scope, acceptance criteria |
+| [PRODUCT.md](docs/PRODUCT.md)           | UX design, screens, navigation    |
+| [TECHNICAL.md](docs/TECHNICAL.md)       | Architecture, data model, formats |
+| [PROGRESS.md](docs/PROGRESS.md)         | Implementation status             |
+
+## License
+
+MIT
