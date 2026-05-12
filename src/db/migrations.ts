@@ -104,17 +104,12 @@ export const migrations: Migration[] = [
         END;
       END;
       `,
-      `
-      CREATE TABLE IF NOT EXISTS asset_goals (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        target_amount_cents INTEGER NOT NULL,
-        account_id TEXT,
-        created_at TEXT,
-        updated_at TEXT,
-        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
-      );
-      `,
+    ],
+  },
+  {
+    version: 2,
+    statements: [
+      `DROP TABLE IF EXISTS asset_goals;`,
     ],
   },
 ];

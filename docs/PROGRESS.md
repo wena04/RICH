@@ -36,13 +36,17 @@ The app matches the original RICH 记账 visual design with working core feature
 - [x] Expandable category list
 - [x] Chinese UI labels
 
+## Recently Closed
+
+- Real account balances (sum of signed transactions, replaces 0.00 placeholders)
+- Balance adjustment "set-to-value" flow (`app/transaction/adjust.tsx` reached via account edit modal)
+- Dropped unused `asset_goals` table (migration v2) and removed the hardcoded "目标资产" header
+- Smoke-test suite via `tsx --test` covering `money.ts` and `date.ts` (22 tests)
+
 ## Next Up
 
-- Polish: error handling, loading states, edge cases
-- Balance adjustment "set-to-value" flow
-- Transaction save/persistence
-- Testing and bug fixes
-- Commit to GitHub as v0.1.0-alpha
+- Manual simulator walkthrough: `npm run ios`, exercise add → adjust balance → charts → CSV round-trip
+- Tag v0.1.0-alpha after the walkthrough passes
 
 ## Key Decisions
 

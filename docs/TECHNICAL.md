@@ -99,17 +99,6 @@ Invariants:
 - `balance_adjustment` must have NULL category/subcategory
 - `subcategory_id` must reference a subcategory of `category_id`
 
-#### `asset_goals`
-
-| Field               | Type    | Notes    |
-| ------------------- | ------- | -------- |
-| id                  | TEXT PK | UUID     |
-| name                | TEXT    | Required |
-| target_amount_cents | INTEGER | Required |
-| account_id          | TEXT FK | Optional |
-
-Visualization-only, does not affect transactions.
-
 ## Export Formats
 
 ### CSV v1 (Legacy)

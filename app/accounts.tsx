@@ -24,8 +24,9 @@ import {
   canDeleteAccount,
   createAccount,
   deleteAccount,
-  listAccounts,
+  listAccountsWithBalances,
   updateAccount,
+  type AccountWithBalance,
 } from '@/src/db/repo/accounts';
 import type { Account, AccountType } from '@/src/domain/types';
 import { centsToYuan } from '@/src/utils/money';
@@ -64,10 +65,10 @@ const ICON_COLORS: Record<AccountType, string> = {
 
 export default function AccountsScreen() {
   const router = useRouter();
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<AccountWithBalance | null>(null);
 
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<AccountType>('cash');
@@ -77,39 +78,37 @@ export default function AccountsScreen() {
 
   // Group accounts by category
   const groupedAccounts = useMemo(() => {
-    const groups: Record<string, Account[]> = {
+    const groups: Record<string, AccountWithBalance[]> = {
       '资金账户': [],
       '信用账户': [],
       '储值账户': [],
     };
-    
+
     accounts.forEach(acc => {
       const groupName = ACCOUNT_TYPE_LABELS[acc.type];
       if (groups[groupName]) {
         groups[groupName].push(acc);
       }
     });
-    
+
     return groups;
   }, [accounts]);
 
-  // Calculate group totals (placeholder - would need balance data)
   const groupTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    Object.keys(groupedAccounts).forEach(group => {
-      // For now, just show 0 - real implementation would calculate from transactions
-      totals[group] = 0;
+    Object.entries(groupedAccounts).forEach(([group, accs]) => {
+      totals[group] = accs.reduce((sum, a) => sum + a.balanceCents, 0);
     });
     return totals;
   }, [groupedAccounts]);
 
   const totalAssets = useMemo(() => {
-    return Object.values(groupTotals).reduce((a, b) => a + b, 0);
-  }, [groupTotals]);
+    return accounts.reduce((sum, a) => sum + a.balanceCents, 0);
+  }, [accounts]);
 
   const refresh = useCallback(async () => {
     const db = await getDb();
-    const rows = await listAccounts(db);
+    const rows = await listAccountsWithBalances(db);
     setAccounts(rows);
   }, []);
 
@@ -119,7 +118,7 @@ export default function AccountsScreen() {
     }, [refresh])
   );
 
-  function openEdit(account: Account) {
+  function openEdit(account: AccountWithBalance) {
     setSelectedAccount(account);
     setEditName(account.name);
     setEditType(account.type);
@@ -189,14 +188,8 @@ export default function AccountsScreen() {
       <View style={styles.assetSummary}>
         <View style={styles.assetIllustration}>
           <FontAwesome name="building" size={40} color="#FFFFFF" />
-          <Text style={styles.assetPercent}>--</Text>
         </View>
         <View style={styles.assetInfo}>
-          <View style={styles.goalRow}>
-            <Text style={styles.goalLabel}>目标资产</Text>
-            <Text style={styles.goalValue}>¥10000.00</Text>
-            <FontAwesome name="pencil" size={12} color={TEXT_PRIMARY} />
-          </View>
           <Text style={styles.totalLabel}>已有总资产</Text>
           <Text style={styles.totalValue}>¥{centsToYuan(totalAssets)}</Text>
         </View>
@@ -240,7 +233,7 @@ export default function AccountsScreen() {
                     />
                   </View>
                   <Text style={styles.accountName}>{account.name}</Text>
-                  <Text style={styles.accountBalance}>0.00</Text>
+                  <Text style={styles.accountBalance}>{centsToYuan(account.balanceCents)}</Text>
                   <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
                 </Pressable>
               ))
@@ -346,6 +339,23 @@ export default function AccountsScreen() {
                   ))}
                 </View>
               </View>
+
+              <Pressable
+                style={styles.adjustButton}
+                onPress={() => {
+                  if (!selectedAccount) return;
+                  const id = selectedAccount.id;
+                  const name = selectedAccount.name;
+                  setShowEditModal(false);
+                  setSelectedAccount(null);
+                  router.push({
+                    pathname: '/transaction/adjust',
+                    params: { accountId: id, accountName: name },
+                  });
+                }}
+              >
+                <Text style={styles.adjustButtonText}>调整余额</Text>
+              </Pressable>
 
               <Pressable style={styles.deleteButton} onPress={onDeleteSelected}>
                 <Text style={styles.deleteButtonText}>删除该账户</Text>
@@ -591,12 +601,24 @@ const styles = StyleSheet.create({
     color: PRIMARY_GREEN,
     fontWeight: '600',
   },
+  adjustButton: {
+    backgroundColor: PRIMARY_GREEN,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  adjustButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   deleteButton: {
     backgroundColor: EXPENSE_RED,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 12,
   },
   deleteButtonText: {
     color: '#FFFFFF',
