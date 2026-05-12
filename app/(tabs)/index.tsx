@@ -25,7 +25,6 @@ import {
   TransactionListItem,
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
-import { getCurrentMonth, addMonths } from "@/src/utils/month";
 
 // Calendar helpers
 function getDaysInMonth(year: number, month: number): number {

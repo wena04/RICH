@@ -72,7 +72,7 @@ Personal finance iOS app (MVP) inspired by "RICH 记账".
 - [x] Category icon grid selection
 - [x] Last-used account as default
 - [x] Edit and delete transactions
-- [ ] Balance adjustment flow
+- [x] Balance adjustment flow
 
 ### Categories
 
