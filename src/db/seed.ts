@@ -50,6 +50,41 @@ export async function seedDemoData(db: AppDb): Promise<void> {
     );
   }
 
+  // Create subcategories (two-level taxonomy → richer charts + entry tagging)
+  const subcategoryDefs: Record<string, string[]> = {
+    餐饮: ["早餐", "午餐", "晚餐", "外卖", "咖啡", "聚餐"],
+    交通: ["地铁", "公交", "打车"],
+    购物: ["衣服", "数码", "书籍"],
+    娱乐: ["电影", "游戏", "KTV", "演唱会"],
+    日用: ["洗护", "日杂"],
+    医疗: ["买药", "看病"],
+  };
+
+  const subcategories: Array<{ id: string; categoryId: string; name: string }> =
+    [];
+  for (const [catName, subNames] of Object.entries(subcategoryDefs)) {
+    const parent = categories.find((c) => c.name === catName);
+    if (!parent) continue;
+    for (const subName of subNames) {
+      const id = newId("sub");
+      subcategories.push({ id, categoryId: parent.id, name: subName });
+      await db.runAsync(
+        "INSERT INTO subcategories (id, category_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        [id, parent.id, subName, now, now],
+      );
+    }
+  }
+
+  // Map a sample transaction's note to one of its category's subcategories.
+  const noteToSub: Record<string, string> = {
+    午餐: "午餐", 早餐: "早餐", 晚餐: "晚餐", 外卖: "外卖", 咖啡: "咖啡",
+    下午茶: "咖啡", 聚餐: "聚餐",
+    地铁: "地铁", 公交: "公交", 公交卡充值: "公交", 打车: "打车",
+    衣服: "衣服", 鞋子: "衣服", 数码配件: "数码", 书籍: "书籍",
+    电影票: "电影", 游戏: "游戏", KTV: "KTV", 演唱会: "演唱会",
+    感冒药: "买药",
+  };
+
   // Helper to get random item
   const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
@@ -364,6 +399,10 @@ export async function seedDemoData(db: AppDb): Promise<void> {
   for (const tx of sampleTransactions) {
     const cat = categories.find((c) => c.name === tx.cat);
     const acc = pick(accounts);
+    const subName = noteToSub[tx.note ?? ""];
+    const sub = subName
+      ? subcategories.find((s) => s.categoryId === cat?.id && s.name === subName)
+      : undefined;
 
     await db.runAsync(
       `INSERT INTO transactions (id, type, amount_cents, date, account_id, category_id, subcategory_id, note, created_at, updated_at)
@@ -375,7 +414,7 @@ export async function seedDemoData(db: AppDb): Promise<void> {
         tx.date,
         acc.id,
         cat?.id ?? null,
-        null,
+        sub?.id ?? null,
         tx.note,
         now,
         now,

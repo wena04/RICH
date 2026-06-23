@@ -65,6 +65,11 @@ export default function ChartsScreen() {
     [categories]
   );
 
+  const subTotal = useMemo(
+    () => subcategories.reduce((acc, s) => acc + s.totalCents, 0),
+    [subcategories]
+  );
+
   const totalIncome = useMemo(
     () => monthly.find(m => m.month === month)?.incomeCents ?? 0,
     [monthly, month]
@@ -173,6 +178,9 @@ export default function ChartsScreen() {
               </View>
             </View>
           )}
+          {categories.length > 0 && (
+            <Text style={styles.tapHint}>点击分类查看子分类明细 ›</Text>
+          )}
         </View>
 
         {/* Monthly Trends */}
@@ -218,20 +226,46 @@ export default function ChartsScreen() {
         {/* Subcategory Drill-down */}
         {selectedCategoryId && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>分类明细</Text>
+            <Text style={styles.cardTitle}>子分类明细</Text>
             <Text style={styles.cardSubtitle}>
-              {selectedCategoryName}
+              {selectedCategoryName} · ¥{centsToYuan(subTotal)}
             </Text>
             {subcategories.length === 0 ? (
-              <Text style={styles.emptyText}>该分类无子分类数据</Text>
+              <Text style={styles.emptyText}>该分类暂无子分类记录</Text>
             ) : (
               <View style={styles.subList}>
-                {subcategories.map((s) => (
-                  <View key={s.subcategoryId ?? 'none'} style={styles.subRow}>
-                    <Text style={styles.subName}>{s.subcategoryName ?? '(无子分类)'}</Text>
-                    <Text style={styles.subAmount}>¥{centsToYuan(s.totalCents)}</Text>
-                  </View>
-                ))}
+                {subcategories.map((s, idx) => {
+                  const pct =
+                    subTotal > 0
+                      ? Math.round((s.totalCents / subTotal) * 100)
+                      : 0;
+                  return (
+                    <View
+                      key={s.subcategoryId ?? 'none'}
+                      style={styles.subBarRow}
+                    >
+                      <View style={styles.subBarHeader}>
+                        <Text style={styles.subName}>
+                          {s.subcategoryName ?? '(未分类)'}
+                        </Text>
+                        <Text style={styles.subAmount}>
+                          ¥{centsToYuan(s.totalCents)} · {pct}%
+                        </Text>
+                      </View>
+                      <View style={styles.subBarTrack}>
+                        <View
+                          style={[
+                            styles.subBarFill,
+                            {
+                              width: `${pct}%`,
+                              backgroundColor: palette[idx % palette.length],
+                            },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             )}
           </View>
@@ -442,5 +476,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: TEXT_PRIMARY,
     fontVariant: ['tabular-nums'],
+  },
+  subBarRow: {
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  subBarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    backgroundColor: 'transparent',
+  },
+  subBarTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F0F0F0',
+    overflow: 'hidden',
+  },
+  subBarFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  tapHint: {
+    fontSize: 11,
+    color: PRIMARY_GREEN,
+    marginTop: 10,
   },
 });
