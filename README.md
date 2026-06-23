@@ -77,10 +77,20 @@ The app automatically seeds **37 demo transactions** on first run, so you can ex
 Demo data includes:
 
 - 3 accounts (现金, Chase, 微信)
-- 8 categories (餐饮, 交通, 购物, 娱乐, 日用, 医疗, 工资, 兼职)
-- Transactions spanning the last 30 days
+- 8 categories with subcategories (餐饮 → 早餐/午餐/晚餐/外卖/咖啡/聚餐, etc.)
+- Transactions spanning the last 30 days with subcategory tags
 
 Additional sample CSV for testing imports: `data/sample.csv`
+
+## Design Workflow
+
+We use a **mockup-first workflow** to match the original RICH app pixel-by-pixel:
+
+1. Open `docs/mockups.html` in any browser (no build step)
+2. Compare mockups against original screenshots
+3. Port designs to React Native code
+
+See [PROGRESS.md](docs/PROGRESS.md) for current design-fidelity status.
 
 ## Data Safety
 
@@ -94,12 +104,13 @@ The `.gitignore` protects against accidental commits:
 
 ## Documentation
 
-| Doc                                     | Description                       |
-| --------------------------------------- | --------------------------------- |
-| [REQUIREMENTS.md](docs/REQUIREMENTS.md) | Goals, scope, acceptance criteria |
-| [PRODUCT.md](docs/PRODUCT.md)           | UX design, screens, navigation    |
-| [TECHNICAL.md](docs/TECHNICAL.md)       | Architecture, data model, formats |
-| [PROGRESS.md](docs/PROGRESS.md)         | Implementation status             |
+| Doc                                     | Description                          |
+| --------------------------------------- | ------------------------------------ |
+| [REQUIREMENTS.md](docs/REQUIREMENTS.md) | Goals, scope, acceptance criteria    |
+| [PRODUCT.md](docs/PRODUCT.md)           | UX design, screens, navigation       |
+| [TECHNICAL.md](docs/TECHNICAL.md)       | Architecture, data model, formats    |
+| [PROGRESS.md](docs/PROGRESS.md)         | Implementation status & future plans |
+| [mockups.html](docs/mockups.html)       | Visual mockups (open in browser)     |
 
 ## License
 

@@ -2,34 +2,70 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-import Colors, { PRIMARY_GREEN, FAB_BACKGROUND, FAB_ICON } from '@/constants/Colors';
+import { Text } from '@/components/Themed';
+import Colors, { PRIMARY_GREEN, FAB_BACKGROUND, FAB_ICON, TEXT_PRIMARY, TEXT_MUTED } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// Tab bar icon component
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-  size?: number;
-}) {
-  return <FontAwesome size={props.size ?? 24} style={{ marginBottom: -3 }} {...props} />;
-}
-
-// Custom center FAB button component
-function AddButton() {
+// Custom Tab Bar Component
+function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
   
+  const isHomeActive = state.index === 0;
+  const isChartsActive = state.index === 2;
+
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.fabButton,
-        { opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }
-      ]}
-      onPress={() => router.push('/transaction/new')}
-    >
-      <FontAwesome name="plus" size={24} color={FAB_ICON} />
-    </Pressable>
+    <View style={styles.tabBar}>
+      {/* Home Tab */}
+      <Pressable
+        style={styles.tab}
+        onPress={() => navigation.navigate('index')}
+        accessibilityLabel="首页"
+        accessibilityRole="tab"
+      >
+        <FontAwesome
+          name="home"
+          size={26}
+          color={isHomeActive ? TEXT_PRIMARY : TEXT_MUTED}
+        />
+        <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>
+          首页
+        </Text>
+      </Pressable>
+
+      {/* Center FAB */}
+      <View style={styles.fabContainer}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.fab,
+            pressed && styles.fabPressed,
+          ]}
+          onPress={() => router.push('/transaction/new')}
+          accessibilityLabel="记一笔"
+          accessibilityRole="button"
+        >
+          <FontAwesome name="plus" size={24} color={FAB_ICON} />
+        </Pressable>
+      </View>
+
+      {/* Charts/Budget Tab */}
+      <Pressable
+        style={styles.tab}
+        onPress={() => navigation.navigate('charts')}
+        accessibilityLabel="预算/计划"
+        accessibilityRole="tab"
+      >
+        <FontAwesome
+          name="pie-chart"
+          size={24}
+          color={isChartsActive ? TEXT_PRIMARY : TEXT_MUTED}
+        />
+        <Text style={[styles.tabLabel, isChartsActive && styles.tabLabelActive]}>
+          预算/计划
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -39,65 +75,48 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: colors.tabIconSelected,
-        tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
         headerStyle: { backgroundColor: PRIMARY_GREEN },
         headerTintColor: '#1A1A1A',
         headerTitleStyle: { fontWeight: '600' },
       }}>
-      {/* Home tab - left side */}
+      {/* Home tab */}
       <Tabs.Screen
         name="index"
         options={{
           title: '首页',
-          headerShown: false, // Home has custom green header
-          tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
         }}
       />
       
-      {/* Placeholder for center FAB - this creates the space */}
+      {/* Placeholder for center FAB */}
       <Tabs.Screen
         name="add-placeholder"
         options={{
-          title: '',
-          tabBarIcon: () => <AddButton />,
-          tabBarLabel: () => null,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault(); // FAB handles navigation
-          },
+          href: null,
         }}
       />
       
-      {/* Charts/Budget tab - right side */}
+      {/* Charts/Budget tab */}
       <Tabs.Screen
         name="charts"
         options={{
           title: '预算/计划',
-          headerTitle: '预算/计划',
-          tabBarIcon: ({ color }) => <TabBarIcon name="pie-chart" color={color} />,
         }}
       />
 
-      {/* Hidden tabs - accessible from within screens but not in tab bar */}
+      {/* Hidden tabs */}
       <Tabs.Screen
         name="transactions"
         options={{
-          href: null, // Hide from tab bar
-          title: 'Transactions',
+          href: null,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
-          href: null, // Hide from tab bar
-          title: 'More',
+          href: null,
         }}
       />
     </Tabs>
@@ -106,33 +125,55 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
+    height: 70,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 0,
-    elevation: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 24,
+    paddingBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    height: 80,
-    paddingBottom: 20,
-    paddingTop: 8,
+    elevation: 8,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 10,
   },
   tabLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 12,
+    color: TEXT_MUTED,
   },
-  fabButton: {
+  tabLabelActive: {
+    color: TEXT_PRIMARY,
+    fontWeight: '600',
+  },
+  fabContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: FAB_BACKGROUND,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginTop: -24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  fabPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.95 }],
   },
 });

@@ -1,12 +1,14 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState, useCallback } from "react";
 import {
+  Alert,
   Pressable,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   TextInput,
   Dimensions,
+  Platform,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
@@ -20,9 +22,20 @@ import {
 } from "@/constants/Colors";
 import { getDb } from "@/src/db/db";
 import { getLastUsedAccountId, listAccounts } from "@/src/db/repo/accounts";
-import { ensureCategory, listCategories } from "@/src/db/repo/categories";
+import {
+  ensureCategory,
+  getCategoryByName,
+  listCategories,
+  listSubcategories,
+  ensureSubcategory,
+} from "@/src/db/repo/categories";
 import { createTransaction } from "@/src/db/repo/transactions";
-import type { Account, Category, TransactionType } from "@/src/domain/types";
+import type {
+  Account,
+  Category,
+  Subcategory,
+  TransactionType,
+} from "@/src/domain/types";
 import { isoDateToday } from "@/src/utils/date";
 import { newId } from "@/src/utils/id";
 
@@ -77,6 +90,8 @@ export default function NewTransactionScreen() {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -95,6 +110,37 @@ export default function NewTransactionScreen() {
       setCategories(cats);
     })();
   }, []);
+
+  // When a category is tapped, load its subcategories (if it exists in the DB yet).
+  async function onSelectCategory(name: string) {
+    setSelectedCategory(name);
+    setSelectedSubId(null);
+    try {
+      const db = await getDb();
+      const existing = await getCategoryByName(db, name);
+      setSubcategories(existing ? await listSubcategories(db, existing.id) : []);
+    } catch {
+      setSubcategories([]);
+    }
+  }
+
+  // Inline "add subcategory" from the entry tray (iOS prompt).
+  function onAddSubcategory() {
+    if (!selectedCategory || Platform.OS !== "ios") return;
+    Alert.prompt(
+      "添加子类",
+      `为「${selectedCategory}」添加一个子分类`,
+      async (text) => {
+        const name = (text ?? "").trim().slice(0, 20);
+        if (!name) return;
+        const db = await getDb();
+        const cat = await ensureCategory(db, selectedCategory);
+        const sub = await ensureSubcategory(db, cat.id, name);
+        setSubcategories(await listSubcategories(db, cat.id));
+        setSelectedSubId(sub.id);
+      },
+    );
+  }
 
   // Numpad handlers
   const handleNumPress = (num: string) => {
@@ -139,6 +185,11 @@ export default function NewTransactionScreen() {
       const db = await getDb();
       const category = await ensureCategory(db, selectedCategory);
 
+      const subcategoryId =
+        selectedSubId && subcategories.some((s) => s.id === selectedSubId)
+          ? selectedSubId
+          : null;
+
       await createTransaction(db, {
         id: newId("txn"),
         type,
@@ -146,7 +197,7 @@ export default function NewTransactionScreen() {
         date,
         accountId,
         categoryId: category.id,
-        subcategoryId: null,
+        subcategoryId,
         note: note.trim() ? note.trim().slice(0, 100) : null,
       });
 
@@ -171,6 +222,13 @@ export default function NewTransactionScreen() {
       .filter((c) => !DEFAULT_CATEGORIES.some((dc) => dc.name === c.name))
       .map((c) => ({ name: c.name, icon: "tag" })),
   ];
+
+  // Chunk into rows so the subcategory zone can expand under the selected row.
+  const COLUMNS = 5;
+  const categoryRows: { name: string; icon: string }[][] = [];
+  for (let i = 0; i < displayCategories.length; i += COLUMNS) {
+    categoryRows.push(displayCategories.slice(i, i + COLUMNS));
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -236,41 +294,115 @@ export default function NewTransactionScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.categoryGrid}>
-          {displayCategories.map((cat) => (
-            <Pressable
-              key={cat.name}
-              style={[
-                styles.categoryItem,
-                selectedCategory === cat.name && styles.categoryItemSelected,
-              ]}
-              onPress={() => setSelectedCategory(cat.name)}
-            >
-              <View
-                style={[
-                  styles.categoryIcon,
-                  selectedCategory === cat.name && styles.categoryIconSelected,
-                ]}
-              >
-                <FontAwesome
-                  name={cat.icon as any}
-                  size={22}
-                  color={
-                    selectedCategory === cat.name
-                      ? PRIMARY_GREEN
-                      : TEXT_SECONDARY
-                  }
-                />
+          {categoryRows.map((row, rowIdx) => {
+            const selIdx = row.findIndex((c) => c.name === selectedCategory);
+            const showZone = selIdx !== -1 && subcategories.length > 0;
+            return (
+              <View key={rowIdx}>
+                <View style={styles.catRow}>
+                  {row.map((cat) => (
+                    <Pressable
+                      key={cat.name}
+                      style={styles.categoryItem}
+                      onPress={() => onSelectCategory(cat.name)}
+                    >
+                      <View
+                        style={[
+                          styles.categoryIcon,
+                          selectedCategory === cat.name &&
+                            styles.categoryIconSelected,
+                        ]}
+                      >
+                        <FontAwesome
+                          name={cat.icon as any}
+                          size={22}
+                          color={
+                            selectedCategory === cat.name
+                              ? PRIMARY_GREEN
+                              : TEXT_SECONDARY
+                          }
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          styles.categoryName,
+                          selectedCategory === cat.name &&
+                            styles.categoryNameSelected,
+                        ]}
+                      >
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Inline subcategory zone — expands under the selected category */}
+                {showZone && (
+                  <View style={styles.subZone}>
+                    <View
+                      style={[
+                        styles.subZoneCaret,
+                        {
+                          left:
+                            selIdx * CATEGORY_ITEM_WIDTH +
+                            CATEGORY_ITEM_WIDTH / 2 -
+                            8,
+                        },
+                      ]}
+                    />
+                    <View style={styles.subGrid}>
+                      {subcategories.map((s) => {
+                        const active = selectedSubId === s.id;
+                        return (
+                          <Pressable
+                            key={s.id}
+                            style={styles.subItem}
+                            onPress={() => setSelectedSubId(active ? null : s.id)}
+                          >
+                            <View
+                              style={[
+                                styles.subItemIcon,
+                                active && styles.subItemIconSelected,
+                              ]}
+                            >
+                              <FontAwesome
+                                name="tag"
+                                size={16}
+                                color={active ? PRIMARY_GREEN : TEXT_SECONDARY}
+                              />
+                            </View>
+                            <Text
+                              style={[
+                                styles.subItemName,
+                                active && styles.subItemNameSelected,
+                              ]}
+                            >
+                              {s.name}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                      {Platform.OS === "ios" && (
+                        <Pressable
+                          style={styles.subItem}
+                          onPress={onAddSubcategory}
+                        >
+                          <View style={[styles.subItemIcon, styles.subAddIcon]}>
+                            <FontAwesome
+                              name="plus"
+                              size={14}
+                              color={TEXT_SECONDARY}
+                            />
+                          </View>
+                          <Text style={styles.subItemName}>添加</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                )}
               </View>
-              <Text
-                style={[
-                  styles.categoryName,
-                  selectedCategory === cat.name && styles.categoryNameSelected,
-                ]}
-              >
-                {cat.name}
-              </Text>
-            </Pressable>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -520,18 +652,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     paddingHorizontal: 16,
     paddingBottom: 16,
     backgroundColor: "#FFFFFF",
+  },
+  catRow: {
+    flexDirection: "row",
   },
   categoryItem: {
     width: CATEGORY_ITEM_WIDTH,
     alignItems: "center",
     paddingVertical: 12,
   },
-  categoryItemSelected: {},
   categoryIcon: {
     width: 48,
     height: 48,
@@ -677,5 +809,65 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  subZone: {
+    position: "relative",
+    backgroundColor: "#F0F0F0",
+    borderRadius: 14,
+    marginTop: 2,
+    marginBottom: 8,
+    paddingTop: 14,
+    paddingBottom: 4,
+    paddingHorizontal: 4,
+  },
+  subZoneCaret: {
+    position: "absolute",
+    top: -7,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderBottomColor: "#F0F0F0",
+  },
+  subGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  subItem: {
+    width: CATEGORY_ITEM_WIDTH,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  subItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  subItemIconSelected: {
+    backgroundColor: `${PRIMARY_GREEN}20`,
+    borderWidth: 2,
+    borderColor: PRIMARY_GREEN,
+  },
+  subItemName: {
+    fontSize: 10,
+    color: TEXT_SECONDARY,
+    textAlign: "center",
+  },
+  subItemNameSelected: {
+    color: PRIMARY_GREEN,
+    fontWeight: "500",
+  },
+  subAddIcon: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#C8C8C8",
+    borderStyle: "dashed",
   },
 });
