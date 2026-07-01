@@ -1,18 +1,19 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState, useCallback } from "react";
 import {
-  Alert,
   Pressable,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   TextInput,
   Dimensions,
-  Platform,
+  Modal,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { Text, View } from "@/components/Themed";
+import { CategoryIcon } from "@/components/CategoryIcon";
+import { DatePickerModal } from "@/components/DatePickerModal";
 import {
   PRIMARY_GREEN,
   TEXT_PRIMARY,
@@ -21,40 +22,30 @@ import {
   INCOME_GREEN,
 } from "@/constants/Colors";
 import { getDb } from "@/src/db/db";
-import { getLastUsedAccountId, listAccounts } from "@/src/db/repo/accounts";
+import {
+  getLastUsedAccountId,
+  listAccountsWithBalances,
+  type AccountWithBalance,
+} from "@/src/db/repo/accounts";
 import {
   ensureCategory,
   getCategoryByName,
   listCategories,
+  listCategoriesWithSubcategoryCounts,
   listSubcategories,
   ensureSubcategory,
 } from "@/src/db/repo/categories";
 import { createTransaction } from "@/src/db/repo/transactions";
 import type {
-  Account,
   Category,
   Subcategory,
   TransactionType,
 } from "@/src/domain/types";
-import { isoDateToday } from "@/src/utils/date";
+import { isoDateToday, isIsoDate } from "@/src/utils/date";
+import { centsToYuan } from "@/src/utils/money";
 import { newId } from "@/src/utils/id";
 
-// Default categories with icons (matching original RICH app)
-const DEFAULT_CATEGORIES = [
-  { name: "餐饮", icon: "cutlery" },
-  { name: "衣服", icon: "shopping-bag" },
-  { name: "交通", icon: "bus" },
-  { name: "网费话费", icon: "mobile" },
-  { name: "学习", icon: "book" },
-  { name: "日用", icon: "home" },
-  { name: "住房", icon: "building" },
-  { name: "医疗", icon: "medkit" },
-  { name: "娱乐", icon: "gamepad" },
-  { name: "汽车/加油", icon: "car" },
-  { name: "请客送礼", icon: "gift" },
-  { name: "运动", icon: "futbol-o" },
-];
-
+import { DEFAULT_CATEGORIES } from "@/src/domain/categories";
 const MONTH_NAMES_CN = [
   "1月",
   "2月",
@@ -75,15 +66,27 @@ function formatDateCN(dateStr: string): string {
   return `${parseInt(month)}月${parseInt(day)}日`;
 }
 
+// RN can't reliably render a dashed bottom-border, so draw the dashes manually.
+function DashedLine() {
+  return (
+    <View style={styles.dashRow}>
+      {Array.from({ length: 60 }).map((_, i) => (
+        <View key={i} style={styles.dash} />
+      ))}
+    </View>
+  );
+}
+
 export default function NewTransactionScreen() {
   const router = useRouter();
+  const { date: initialDateParam } = useLocalSearchParams<{ date?: string }>();
   const today = new Date();
 
   const [type, setType] = useState<"expense" | "income">("expense");
   const [amountStr, setAmountStr] = useState("0");
   const [date, setDate] = useState(isoDateToday());
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [accountId, setAccountId] = useState<string>("");
   const [selectedAccountName, setSelectedAccountName] = useState<string>("");
   const [note, setNote] = useState("");
@@ -92,11 +95,18 @@ export default function NewTransactionScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  // Category names that have subcategories (for the "…" badge).
+  const [catsWithSubs, setCatsWithSubs] = useState<Set<string>>(new Set());
+  const [pendingValue, setPendingValue] = useState<number | null>(null);
+  const [pendingOp, setPendingOp] = useState<"+" | "-" | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [subInput, setSubInput] = useState("");
 
   useEffect(() => {
     (async () => {
       const db = await getDb();
-      const list = await listAccounts(db);
+      const list = await listAccountsWithBalances(db);
       setAccounts(list);
       const last = await getLastUsedAccountId(db);
       const chosen =
@@ -105,11 +115,23 @@ export default function NewTransactionScreen() {
       const chosenAccount = list.find((a) => a.id === chosen);
       setSelectedAccountName(chosenAccount?.name ?? "Account");
 
-      // Load existing categories
+      // Load existing categories + which ones have subcategories (for the "…" badge)
       const cats = await listCategories(db);
       setCategories(cats);
+      const withCounts = await listCategoriesWithSubcategoryCounts(db);
+      setCatsWithSubs(
+        new Set(
+          withCounts.filter((c) => c.subcategoryCount > 0).map((c) => c.name),
+        ),
+      );
     })();
   }, []);
+
+  useEffect(() => {
+    if (typeof initialDateParam === "string" && isIsoDate(initialDateParam)) {
+      setDate(initialDateParam);
+    }
+  }, [initialDateParam]);
 
   // When a category is tapped, load its subcategories (if it exists in the DB yet).
   async function onSelectCategory(name: string) {
@@ -124,22 +146,24 @@ export default function NewTransactionScreen() {
     }
   }
 
-  // Inline "add subcategory" from the entry tray (iOS prompt).
+  // Inline "add subcategory" from the entry tray.
   function onAddSubcategory() {
-    if (!selectedCategory || Platform.OS !== "ios") return;
-    Alert.prompt(
-      "添加子类",
-      `为「${selectedCategory}」添加一个子分类`,
-      async (text) => {
-        const name = (text ?? "").trim().slice(0, 20);
-        if (!name) return;
-        const db = await getDb();
-        const cat = await ensureCategory(db, selectedCategory);
-        const sub = await ensureSubcategory(db, cat.id, name);
-        setSubcategories(await listSubcategories(db, cat.id));
-        setSelectedSubId(sub.id);
-      },
-    );
+    if (!selectedCategory) return;
+    setSubInput("");
+    setShowSubModal(true);
+  }
+
+  async function onSaveSubcategory() {
+    if (!selectedCategory) return;
+    const name = subInput.trim().slice(0, 20);
+    if (!name) return;
+    const db = await getDb();
+    const cat = await ensureCategory(db, selectedCategory);
+    const sub = await ensureSubcategory(db, cat.id, name);
+    setSubcategories(await listSubcategories(db, cat.id));
+    setSelectedSubId(sub.id);
+    setShowSubModal(false);
+    setSubInput("");
   }
 
   // Numpad handlers
@@ -168,14 +192,25 @@ export default function NewTransactionScreen() {
     }
   };
 
-  const handleClear = () => {
+  // Inline calculator: fold any pending "+/-" operation into the current amount.
+  function evalPending(cur: number): number {
+    if (pendingOp && pendingValue != null) {
+      return pendingOp === "+" ? pendingValue + cur : pendingValue - cur;
+    }
+    return cur;
+  }
+  function handleOperator(op: "+" | "-") {
+    const cur = parseFloat(amountStr) || 0;
+    setPendingValue(evalPending(cur));
+    setPendingOp(op);
     setAmountStr("0");
-  };
+  }
 
   async function onSave() {
     if (saving) return;
 
-    const cents = Math.round(parseFloat(amountStr) * 100);
+    const total = evalPending(parseFloat(amountStr) || 0);
+    const cents = Math.round(total * 100);
     if (isNaN(cents) || cents <= 0) return;
     if (!selectedCategory) return;
     if (!accountId) return;
@@ -209,23 +244,19 @@ export default function NewTransactionScreen() {
     }
   }
 
-  // Get icon for category
-  const getCategoryIcon = (name: string): string => {
-    const defaultCat = DEFAULT_CATEGORIES.find((c) => c.name === name);
-    return defaultCat?.icon ?? "tag";
-  };
-
-  // All categories to display (default + user created)
-  const displayCategories = [
-    ...DEFAULT_CATEGORIES,
+  // All categories to display (default + user created), plus the 管理分类 tile.
+  type CatCell = { name: string; iconId?: string | null; manage?: boolean };
+  const displayCategories: CatCell[] = [
+    ...DEFAULT_CATEGORIES.map((c) => ({ name: c.name, iconId: c.icon })),
     ...categories
       .filter((c) => !DEFAULT_CATEGORIES.some((dc) => dc.name === c.name))
-      .map((c) => ({ name: c.name, icon: "tag" })),
+      .map((c) => ({ name: c.name, iconId: c.icon })),
+    { name: "管理分类", manage: true },
   ];
 
   // Chunk into rows so the subcategory zone can expand under the selected row.
   const COLUMNS = 5;
-  const categoryRows: { name: string; icon: string }[][] = [];
+  const categoryRows: CatCell[][] = [];
   for (let i = 0; i < displayCategories.length; i += COLUMNS) {
     categoryRows.push(displayCategories.slice(i, i + COLUMNS));
   }
@@ -275,10 +306,17 @@ export default function NewTransactionScreen() {
         </View>
 
         {/* Date selector */}
-        <Pressable style={styles.dateButton}>
+        <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
           <Text style={styles.dateText}>{formatDateCN(date)} ▼</Text>
         </Pressable>
       </View>
+
+      <DatePickerModal
+        visible={showDatePicker}
+        value={date}
+        onSelect={setDate}
+        onClose={() => setShowDatePicker(false)}
+      />
 
       {/* Amount display */}
       <View style={styles.amountContainer}>
@@ -287,6 +325,7 @@ export default function NewTransactionScreen() {
           <Text style={styles.cursor}>|</Text>
         </Text>
       </View>
+      <DashedLine />
 
       {/* Category grid */}
       <ScrollView
@@ -300,40 +339,50 @@ export default function NewTransactionScreen() {
             return (
               <View key={rowIdx}>
                 <View style={styles.catRow}>
-                  {row.map((cat) => (
-                    <Pressable
-                      key={cat.name}
-                      style={styles.categoryItem}
-                      onPress={() => onSelectCategory(cat.name)}
-                    >
-                      <View
-                        style={[
-                          styles.categoryIcon,
-                          selectedCategory === cat.name &&
-                            styles.categoryIconSelected,
-                        ]}
+                  {row.map((cat) =>
+                    cat.manage ? (
+                      <Pressable
+                        key="__manage"
+                        style={styles.categoryItem}
+                        onPress={() => router.push("/categories")}
                       >
-                        <FontAwesome
-                          name={cat.icon as any}
-                          size={22}
-                          color={
-                            selectedCategory === cat.name
-                              ? PRIMARY_GREEN
-                              : TEXT_SECONDARY
-                          }
-                        />
-                      </View>
-                      <Text
-                        style={[
-                          styles.categoryName,
-                          selectedCategory === cat.name &&
-                            styles.categoryNameSelected,
-                        ]}
+                        <View style={[styles.categoryIcon, styles.manageIcon]}>
+                          <FontAwesome name="cog" size={22} color="#FFFFFF" />
+                        </View>
+                        <Text style={styles.categoryName}>管理分类</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        key={cat.name}
+                        style={styles.categoryItem}
+                        onPress={() => onSelectCategory(cat.name)}
                       >
-                        {cat.name}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <View
+                          style={[
+                            styles.categoryIcon,
+                            selectedCategory === cat.name &&
+                              styles.categoryIconSelected,
+                          ]}
+                        >
+                          <CategoryIcon id={cat.iconId ?? undefined} name={cat.name} size={26} />
+                          {catsWithSubs.has(cat.name) && (
+                            <View style={styles.catBadge}>
+                              <Text style={styles.catBadgeText}>⋯</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.categoryName,
+                            selectedCategory === cat.name &&
+                              styles.categoryNameSelected,
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </Pressable>
+                    ),
+                  )}
                 </View>
 
                 {/* Inline subcategory zone — expands under the selected category */}
@@ -382,21 +431,19 @@ export default function NewTransactionScreen() {
                           </Pressable>
                         );
                       })}
-                      {Platform.OS === "ios" && (
-                        <Pressable
-                          style={styles.subItem}
-                          onPress={onAddSubcategory}
-                        >
-                          <View style={[styles.subItemIcon, styles.subAddIcon]}>
-                            <FontAwesome
-                              name="plus"
-                              size={14}
-                              color={TEXT_SECONDARY}
-                            />
-                          </View>
-                          <Text style={styles.subItemName}>添加</Text>
-                        </Pressable>
-                      )}
+                      <Pressable
+                        style={styles.subItem}
+                        onPress={onAddSubcategory}
+                      >
+                        <View style={[styles.subItemIcon, styles.subAddIcon]}>
+                          <FontAwesome
+                            name="plus"
+                            size={14}
+                            color={TEXT_SECONDARY}
+                          />
+                        </View>
+                        <Text style={styles.subItemName}>添加</Text>
+                      </Pressable>
                     </View>
                   </View>
                 )}
@@ -412,7 +459,7 @@ export default function NewTransactionScreen() {
         <View style={styles.bottomBar}>
           <Pressable
             style={styles.accountSelector}
-            onPress={() => setShowAccountPicker(!showAccountPicker)}
+            onPress={() => setShowAccountPicker(true)}
           >
             <View style={styles.accountIcon}>
               <FontAwesome name="bank" size={14} color="#FFA500" />
@@ -438,31 +485,61 @@ export default function NewTransactionScreen() {
           </View>
         </View>
 
-        {/* Account picker dropdown */}
-        {showAccountPicker && (
-          <View style={styles.accountDropdown}>
-            {accounts.map((acc) => (
-              <Pressable
-                key={acc.id}
-                style={styles.accountOption}
-                onPress={() => {
-                  setAccountId(acc.id);
-                  setSelectedAccountName(acc.name);
-                  setShowAccountPicker(false);
-                }}
-              >
-                <Text
+        <Modal visible={showAccountPicker} animationType="slide" transparent>
+          <View style={styles.accountSheetOverlay}>
+            <Pressable
+              style={styles.accountSheetBackdrop}
+              onPress={() => setShowAccountPicker(false)}
+            />
+            <View style={styles.accountSheet}>
+              <Text style={styles.accountSheetTitle}>
+                {type === "expense" ? "选择支出账户" : "选择收入账户"}
+              </Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Pressable
                   style={[
-                    styles.accountOptionText,
-                    acc.id === accountId && styles.accountOptionActive,
+                    styles.accountSheetRow,
+                    !accountId && styles.accountSheetRowActive,
                   ]}
+                  onPress={() => {
+                    setAccountId("");
+                    setSelectedAccountName("不选择账户");
+                    setShowAccountPicker(false);
+                  }}
                 >
-                  {acc.name}
-                </Text>
-              </Pressable>
-            ))}
+                  <View style={[styles.accountSheetIcon, { backgroundColor: "#EDEDED" }]}>
+                    <FontAwesome name="close" size={14} color={TEXT_SECONDARY} />
+                  </View>
+                  <Text style={styles.accountSheetName}>不选择账户</Text>
+                  <View style={{ width: 84 }} />
+                </Pressable>
+
+                {accounts.map((acc) => (
+                  <Pressable
+                    key={acc.id}
+                    style={[
+                      styles.accountSheetRow,
+                      acc.id === accountId && styles.accountSheetRowActive,
+                    ]}
+                    onPress={() => {
+                      setAccountId(acc.id);
+                      setSelectedAccountName(acc.name);
+                      setShowAccountPicker(false);
+                    }}
+                  >
+                    <View style={[styles.accountSheetIcon, { backgroundColor: "#FFF3E0" }]}>
+                      <FontAwesome name="money" size={14} color="#FF9D2E" />
+                    </View>
+                    <Text style={styles.accountSheetName}>{acc.name}</Text>
+                    <Text style={styles.accountSheetBal}>
+                      ¥ {centsToYuan(acc.balanceCents)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
           </View>
-        )}
+        </Modal>
 
         {/* Custom numpad */}
         <View style={styles.numpad}>
@@ -554,10 +631,10 @@ export default function NewTransactionScreen() {
 
             {/* Right side: operators + confirm */}
             <View style={styles.numpadOps}>
-              <Pressable style={styles.numKeyOp} onPress={handleClear}>
+              <Pressable style={styles.numKeyOp} onPress={() => handleOperator("+")}>
                 <Text style={styles.numKeyOpText}>+</Text>
               </Pressable>
-              <Pressable style={styles.numKeyOp} onPress={handleClear}>
+              <Pressable style={styles.numKeyOp} onPress={() => handleOperator("-")}>
                 <Text style={styles.numKeyOpText}>−</Text>
               </Pressable>
               <Pressable
@@ -577,6 +654,36 @@ export default function NewTransactionScreen() {
           </View>
         </View>
       </View>
+
+      <Modal visible={showSubModal} animationType="slide" transparent>
+        <View style={styles.subModalOverlay}>
+          <View style={styles.subModalContent}>
+            <View style={styles.subModalHeader}>
+              <Pressable onPress={() => setShowSubModal(false)}>
+                <Text style={styles.subModalCancel}>取消</Text>
+              </Pressable>
+              <Text style={styles.subModalTitle}>添加子类</Text>
+              <Pressable onPress={onSaveSubcategory}>
+                <Text style={styles.subModalSave}>保存</Text>
+              </Pressable>
+            </View>
+            <View style={styles.subModalBody}>
+              <Text style={styles.subModalHint}>
+                为「{selectedCategory}」添加子分类
+              </Text>
+              <TextInput
+                value={subInput}
+                onChangeText={setSubInput}
+                placeholder="子分类名称"
+                style={styles.subModalInput}
+                placeholderTextColor={TEXT_SECONDARY}
+                maxLength={20}
+                autoFocus
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -634,9 +741,18 @@ const styles = StyleSheet.create({
   },
   amountContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 24,
+    paddingBottom: 10,
     backgroundColor: "#FFFFFF",
   },
+  dashRow: {
+    flexDirection: "row",
+    overflow: "hidden",
+    height: 1,
+    marginHorizontal: 18,
+    marginBottom: 6,
+  },
+  dash: { width: 5, height: 1, backgroundColor: "#D8D8D8", marginRight: 4 },
   amountText: {
     fontSize: 42,
     fontWeight: "300",
@@ -677,6 +793,26 @@ const styles = StyleSheet.create({
     backgroundColor: `${PRIMARY_GREEN}20`,
     borderWidth: 2,
     borderColor: PRIMARY_GREEN,
+  },
+  manageIcon: {
+    backgroundColor: PRIMARY_GREEN,
+  },
+  catBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#D8D8D8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  catBadgeText: {
+    fontSize: 10,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    marginTop: -4,
   },
   categoryName: {
     fontSize: 11,
@@ -735,26 +871,44 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
     padding: 0,
   },
-  accountDropdown: {
+  accountSheetOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  accountSheetBackdrop: { flex: 1 },
+  accountSheet: {
     backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 14,
+    paddingBottom: 22,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    maxHeight: "62%",
   },
-  accountOption: {
-    paddingVertical: 10,
+  accountSheetTitle: { fontSize: 14, color: TEXT_SECONDARY, marginBottom: 10 },
+  accountSheetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F5F5",
+    borderBottomColor: "#F2F2F2",
   },
-  accountOptionText: {
-    fontSize: 14,
-    color: TEXT_PRIMARY,
+  accountSheetRowActive: {
+    backgroundColor: "#F8F8F8",
+    borderRadius: 10,
+    paddingHorizontal: 10,
   },
-  accountOptionActive: {
-    color: PRIMARY_GREEN,
-    fontWeight: "600",
+  accountSheetIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
+  accountSheetName: { flex: 1, fontSize: 15, color: TEXT_PRIMARY },
+  accountSheetBal: { width: 84, textAlign: "right", fontSize: 14, color: TEXT_PRIMARY },
   numpad: {
     backgroundColor: "#F8F8F8",
     paddingBottom: 20,
@@ -869,5 +1023,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#C8C8C8",
     borderStyle: "dashed",
+  },
+  subModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  subModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+  },
+  subModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+  },
+  subModalCancel: { fontSize: 16, color: TEXT_SECONDARY },
+  subModalTitle: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
+  subModalSave: { fontSize: 16, fontWeight: "600", color: PRIMARY_GREEN },
+  subModalBody: { padding: 16 },
+  subModalHint: { fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12 },
+  subModalInput: {
+    fontSize: 16,
+    color: TEXT_PRIMARY,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    paddingVertical: 10,
   },
 });

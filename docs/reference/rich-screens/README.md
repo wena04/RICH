@@ -19,11 +19,11 @@ when the images don't. To reuse the references in another project, copy the
 | File | Screen | What it shows |
 | --- | --- | --- |
 | `01-budget-empty.png` | 预算/计划 (budget) | Tab landing. Summary card (计划清单 / 结余 / 趋势图), empty-state "您还未创建预算" + 创建预算. |
-| `02-home-list.png` | 首页 (home, list) | Brand header + dropdown + avatar, month summary card, date-grouped transaction list. |
-| `03-transaction-detail.png` | 支出编辑 (detail) | Single transaction card + 所属预算/计划 link row + 删除该笔支出. |
-| `04-add-expense.png` | 记一笔 (add) | 支出/收入 toggle, amount, ~20-category icon grid (with "…" subcategory badges), account + note, custom numpad. |
-| `05-home-daily-sheet.png` | 首页 (daily sheet) | A single day's transactions as an expandable sheet (✕ close + 添加一笔支出/收入). |
-| `06-home-calendar.png` | 首页 (calendar) | Month calendar with per-day highlights, today marker, then the grouped list. |
+| `02-home-calendar.png` | 首页 (calendar) | Month calendar with per-day highlights, today marker, then the grouped list. |
+| `03-home-list.png` | 首页 (home, list) | Brand header + dropdown + avatar, month summary card, date-grouped transaction list. |
+| `04-home-daily-sheet.png` | 首页 (daily sheet) | A single day's transactions as an expandable sheet (✕ close + 添加一笔支出/收入). |
+| `05-add-expense.png` | 记一笔 (add) | 支出/收入 toggle, amount, ~22-category icon grid (with "…" subcategory badges), account + note, custom numpad. |
+| `06-transaction-detail.png` | 支出编辑 (detail) | Single transaction card + 所属预算/计划 link row + 删除该笔支出. |
 | `07-assets-accounts.png` | 资产管理 (assets) | 目标资产 goal (monument + %), 已有总资产, grouped accounts, 账户转账 button. |
 | `08-account-transfer.png` | 账户转账 (transfer) | Transfer flow: 选择转出账户 → 选择转入账户 + amount + 添加备注 + numpad. |
 

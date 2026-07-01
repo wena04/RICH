@@ -112,5 +112,42 @@ export const migrations: Migration[] = [
       `DROP TABLE IF EXISTS asset_goals;`,
     ],
   },
+  {
+    version: 3,
+    statements: [
+      // Custom categories can store a chosen icon id (see components/CategoryIcon).
+      `ALTER TABLE categories ADD COLUMN icon TEXT;`,
+    ],
+  },
+  {
+    version: 4,
+    statements: [
+      `
+      CREATE TABLE IF NOT EXISTS budgets (
+        id TEXT PRIMARY KEY,
+        period TEXT NOT NULL UNIQUE,
+        total_cents INTEGER,
+        created_at TEXT,
+        updated_at TEXT
+      );
+      `,
+      `
+      CREATE TABLE IF NOT EXISTS budget_categories (
+        id TEXT PRIMARY KEY,
+        budget_id TEXT NOT NULL,
+        category_id TEXT NOT NULL,
+        limit_cents INTEGER NOT NULL,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+      );
+      `,
+      `
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_categories
+        ON budget_categories(budget_id, category_id);
+      `,
+    ],
+  },
 ];
 

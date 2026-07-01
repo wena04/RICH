@@ -121,6 +121,7 @@
   .cat .ci{width:44px;height:44px;border-radius:50%;background:#F5F5F5;display:flex;align-items:center;justify-content:center;color:var(--sec);font-size:18px;margin-bottom:5px;}
   .cat .cn{font-size:10px; color:var(--sec); text-align:center;}
   .cat.sel .ci{background:rgba(62,205,165,.13); border:2px solid var(--green); color:var(--green);}
+  .cat .ci.mgr{background:var(--green); color:#fff;}
   .cat.sel .cn{color:var(--green); font-weight:500;}
   .cat .badge{position:absolute; top:6px; right:50%; margin-right:-30px; width:18px;height:18px;border-radius:50%;background:#D8D8D8;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;}
   /* inline subcategory expansion zone (matches original RICH) */
@@ -202,7 +203,7 @@
   .grp-head{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--hair);}
   .grp-head .gl{font-size:13px; font-weight:600; color:var(--ink);}
   .grp-head .gr{font-size:12px; color:var(--sec);}
-  .grp-head .add{font-size:12px; color:var(--green); font-weight:600;}
+  .grp-head .add{font-size:12px; color:var(--sec); font-weight:600; background:#F0F0F0; border-radius:14px; padding:5px 12px;}
   .arow{display:flex; align-items:center; padding:10px 14px; border-bottom:1px solid #F5F5F5;}
   .arow .ic{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;margin-right:11px;}
   .arow .an{flex:1; font-size:13px; color:var(--ink);}
@@ -217,6 +218,33 @@
   .crow .menu{color:var(--mut); font-size:14px;}
   .subrow{display:flex; align-items:center; padding:9px 14px 9px 53px; background:#FAFAFA; border-bottom:1px solid var(--hair); font-size:11.5px; color:var(--sec);}
   .addbtn{margin:16px; background:var(--fab); color:#fff; border-radius:12px; text-align:center; padding:14px; font-size:15px; font-weight:600;}
+  /* icon picker (添加自定义类目) */
+  .pk-input{padding:12px 18px; font-size:13px; color:var(--mut); border-bottom:1px solid var(--hair);}
+  .pk-sec{padding:14px 16px 0;}
+  .pk-sec-t{font-size:14px; font-weight:700; color:var(--ink);}
+  .pk-dash{border-bottom:1px dashed #D8D8D8; margin:8px 0 2px;}
+  .pk-grid{display:flex; flex-wrap:wrap;}
+  .pk-item{width:20%; display:flex; flex-direction:column; align-items:center; padding:10px 0;}
+  .pk-item .ci{width:44px;height:44px;border-radius:50%;background:#F5F5F5;display:flex;align-items:center;justify-content:center;color:var(--sec);font-size:18px;margin-bottom:5px;}
+  .pk-item .cn{font-size:10px; color:var(--sec);}
+  .svgic{width:22px; height:22px; color:inherit;}
+  .cat .svgic{width:24px; height:24px;}
+  /* transaction detail (支出编辑) */
+  .dt-page{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--green);}
+  .dt-head{position:relative; display:flex; align-items:center; justify-content:center; padding:12px 16px;}
+  .dt-head .back{position:absolute; left:12px; color:var(--ink);}
+  .dt-head .t{font-size:16px; font-weight:600; color:var(--ink);}
+  .dt-card{background:#fff; margin:12px 16px 0; border-radius:8px; overflow:hidden;}
+  .dt-row{display:flex; align-items:center; padding:16px;}
+  .dt-ic{width:46px;height:46px;border-radius:50%;background:#F0F0F0;display:flex;align-items:center;justify-content:center;color:var(--sec);margin-right:12px;}
+  .dt-info{flex:1;}
+  .dt-title{font-size:15px; font-weight:600; color:var(--ink);}
+  .dt-sub{font-size:12px; color:var(--sec); margin-top:3px;}
+  .dt-amt{font-size:16px; font-weight:600; color:var(--ink); margin-right:8px;}
+  .dt-div{height:1px; background:#EFEFEF; margin:0 16px;}
+  .dt-plan{flex:1; font-size:14px; color:var(--sec);}
+  .dt-del{margin:0 16px 24px; background:var(--red); color:#fff; border-radius:12px; text-align:center; padding:15px; font-size:15px; font-weight:600;}
+  .pk-done{color:var(--green); font-weight:600; font-size:14px;}
 
   /* more / settings */
   .sec{margin-bottom:20px;}
@@ -316,6 +344,126 @@
   .tdonut::after{content:"";width:16px;height:16px;border-radius:50%;background:#fff;}
 </style>
 
+<!-- Custom hand-drawn icon sprite (full set). viewBox 0 0 24 24, thin rounded line style. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <style>#svgsprite symbol{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round;}</style>
+  </defs>
+  <g id="svgsprite">
+<symbol id="ic-food" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3 V9 M4.3 3 V6.5 M7.7 3 V6.5 M6 9 V21"/><path stroke="#3ECDA5" d="M16 3 C13.6 3 13 6 13.6 8.4 C13.9 9.6 15 9.9 16 9.9 V21"/></symbol>
+<symbol id="ic-snack" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="12" cy="7" rx="6" ry="3.4"/><path d="M12 10.4 V20"/><path stroke="#3ECDA5" d="M6 7 H18"/></symbol>
+<symbol id="ic-tshirt" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M8.6 4 L4 7.2 L6.2 10.8 L8 9.6 V20 H16 V9.6 L18 10.8 L20 7.2 L15.4 4 C14.9 5.6 13.6 6.6 12 6.6 C10.4 6.6 9.1 5.6 8.6 4 Z"/><path stroke="#3ECDA5" d="M8.6 4 C9.1 5.6 10.4 6.6 12 6.6 C13.6 6.6 14.9 5.6 15.4 4"/></symbol>
+<symbol id="ic-bus" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="4" width="16" height="13" rx="3"/><path d="M8 17 V19 M16 17 V19"/><path stroke="#3ECDA5" d="M4 12 H20"/><circle cx="8.5" cy="14.5" r="0.9"/><circle cx="15.5" cy="14.5" r="0.9"/></symbol>
+<symbol id="ic-suitcase" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="7" width="16" height="13" rx="2.5"/><path d="M9 7 V5 A1.5 1.5 0 0 1 10.5 3.5 H13.5 A1.5 1.5 0 0 1 15 5 V7"/><path stroke="#3ECDA5" d="M12 10 V17"/></symbol>
+<symbol id="ic-baby" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="11" r="0.7" fill="#1A1A1A" stroke="none"/><circle cx="15" cy="11" r="0.7" fill="#1A1A1A" stroke="none"/><path stroke="#3ECDA5" d="M9.5 14.5 C10.6 16 13.4 16 14.5 14.5"/></symbol>
+<symbol id="ic-paw" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="12" cy="16" rx="4" ry="3"/><circle cx="6.5" cy="12" r="1.5"/><circle cx="17.5" cy="12" r="1.5"/><circle cx="9.5" cy="8" r="1.5"/><circle cx="14.5" cy="8" r="1.5" fill="#3ECDA5" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-phone" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path stroke="#3ECDA5" d="M10.5 18 H13.5"/></symbol>
+<symbol id="ic-wine" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6.5 4 H12.5 L11.5 11 A2.5 2.5 0 0 1 7.5 11 Z M9.5 13.5 V20 M7.5 20 H11.5"/><path stroke="#3ECDA5" d="M15.5 5 V13 M15.5 5 H18 M17.5 5 V13"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 5 A2 2 0 0 1 7 3 H18 V19 H7 A2 2 0 0 0 5 21 Z M5 21 A2 2 0 0 1 7 19 H18"/><path stroke="#3ECDA5" d="M13 3 V8.5 L15 6.8 L17 8.5 V3"/></symbol>
+<symbol id="ic-jug" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M9 3 H15 V6 H9 Z M8 6 H16 A1 1 0 0 1 17 7 V19 A2 2 0 0 1 15 21 H9 A2 2 0 0 1 7 19 V7 A1 1 0 0 1 8 6 Z"/><path stroke="#3ECDA5" d="M12 10 V14"/></symbol>
+<symbol id="ic-house" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 L12 4 L20 11 M6 10 V20 H18 V10"/><path stroke="#3ECDA5" d="M10 20 V14 H14 V20"/></symbol>
+<symbol id="ic-lipstick" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M9 21 H14 V12 H9 Z M9 12 L10 8 L13 7 L14 12"/><path stroke="#3ECDA5" d="M12.6 7 L12 4"/></symbol>
+<symbol id="ic-medkit" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M7 5 V9 A4 4 0 0 0 15 9 V7"/><circle cx="7" cy="4.5" r="1.3"/><path stroke="#3ECDA5" d="M15 6 A2.5 2.5 0 1 1 17.5 8.5 V11 A3 3 0 0 1 11 13.5"/><circle cx="15" cy="6" r="1.3" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-redpacket" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path stroke="#3ECDA5" d="M5 9 C9 12.5 15 12.5 19 9"/><circle cx="12" cy="12.5" r="1.6" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-fuel" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 20 V6 A2 2 0 0 1 7 4 H11 A2 2 0 0 1 13 6 V20 M4 20 H14"/><path stroke="#3ECDA5" d="M7 8 H11 V12 H7 Z"/><path d="M13 9 H16 A1.5 1.5 0 0 1 17.5 10.5 V15 A1.5 1.5 0 0 0 19 16.5"/></symbol>
+<symbol id="ic-gamepad" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="8" width="18" height="9" rx="4.5"/><path stroke="#3ECDA5" d="M7.5 11 V14 M6 12.5 H9"/><circle cx="16" cy="11.5" r="0.9" fill="#1A1A1A" stroke="none"/><circle cx="17.5" cy="14" r="0.9" fill="#1A1A1A" stroke="none"/></symbol>
+<symbol id="ic-gift" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9 H21 M12 9 V20"/><path stroke="#3ECDA5" d="M12 9 C12 9 10 4 7.5 5 C5.5 6 8 9 12 9 C12 9 14 4 16.5 5 C18.5 6 16 9 12 9"/></symbol>
+<symbol id="ic-camera" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7 L9.5 4 H14.5 L16 7"/><circle cx="12" cy="13.5" r="3.2" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-dumbbell" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 8 V16 M7 6 V18 M17 6 V18 M20 8 V16"/><path stroke="#3ECDA5" d="M7 12 H17"/></symbol>
+<symbol id="ic-drop" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 C12 3 6 10 6 15 A6 6 0 0 0 18 15 C18 10 12 3 12 3 Z"/><path stroke="#3ECDA5" d="M12 9 L10 14 H13 L11 18"/></symbol>
+<symbol id="ic-grid" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.4"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"/><circle cx="16.75" cy="7.25" r="3.25" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-scissors" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="6" cy="7" r="2.4"/><circle cx="6" cy="17" r="2.4"/><path d="M8 8.4 L20 16 M8 15.6 L20 8"/><path stroke="#3ECDA5" d="M8 8.4 L14 12 M8 15.6 L14 12"/></symbol>
+<symbol id="ic-gem" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 4 H18 L21 9 L12 21 L3 9 Z M3 9 H21"/><path stroke="#3ECDA5" d="M9 4 L7.5 9 L12 21 M15 4 L16.5 9 L12 21"/></symbol>
+<symbol id="ic-coins" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="9" cy="8" rx="5" ry="2.4"/><path d="M4 8 V12 A5 2.4 0 0 0 14 12 V8"/><path d="M4 12 V15 A5 2.4 0 0 0 14 15 V12"/><path stroke="#3ECDA5" d="M14.5 6.5 A5 5 0 1 1 18 15 M18 8 V11 H21"/></symbol>
+<symbol id="ic-briefcase" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7 V5 A1.5 1.5 0 0 1 9.5 3.5 H14.5 A1.5 1.5 0 0 1 16 5 V7"/><path stroke="#3ECDA5" d="M3 12 H21"/></symbol>
+<symbol id="ic-bag" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8 H18 L17 20 H7 Z"/><path stroke="#3ECDA5" d="M9 8 V6 A3 3 0 0 1 15 6 V8"/></symbol>
+<symbol id="ic-handshake" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8 L8 6 L12 8 L16 6 L21 8 M3 8 V15 L9 19 L12 17 L15 19 L21 15 V8"/><path stroke="#3ECDA5" d="M12 8 L10 11 A1.4 1.4 0 0 0 12 13 L14 11"/></symbol>
+<symbol id="ic-carrot" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 19 C9 22.5 13.5 19 16 14.5 L9.5 8 C5 10.5 2 15.5 5.5 19 Z"/><path stroke="#3ECDA5" d="M12 8.5 L15.5 5 M13 9.5 L17.5 7.5 M10.5 7 L12.5 3"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 V6 M12 18 V21 M3 12 H6 M18 12 H21 M5.5 5.5 L7.5 7.5 M16.5 16.5 L18.5 18.5 M18.5 5.5 L16.5 7.5 M7.5 16.5 L5.5 18.5"/><circle cx="12" cy="12" r="3" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-bread" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 10 A6 4 0 0 1 18 10 V19 A1 1 0 0 1 17 20 H7 A1 1 0 0 1 6 19 Z"/><path stroke="#3ECDA5" d="M9 20 V12"/></symbol>
+<symbol id="ic-noodles" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 H20 A8 8 0 0 1 4 11 Z"/><path stroke="#3ECDA5" d="M8 11 C8 7 10 5 12 5 M12 11 C12 6 14 5 16 5"/></symbol>
+<symbol id="ic-drumstick" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M14 4 A5 5 0 0 0 8.5 11.5 L6.5 13.5 A2.2 2.2 0 1 0 10.5 17.5 L12.5 15.5 A5 5 0 0 0 20 10 A5 5 0 0 0 14 4 Z"/><path stroke="#3ECDA5" d="M6.5 13.5 L5 12 M10.5 17.5 L12 19"/></symbol>
+<symbol id="ic-bowl" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 H20 A8 8 0 0 1 4 11 Z"/><path stroke="#3ECDA5" d="M8 8 C8 6 9 5 10 5 M12 8 C12 5 13 4 14 4 M16 8 C16 6 17 5 18 5"/></symbol>
+<symbol id="ic-pizza" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 L21 20 A20 20 0 0 1 3 20 Z"/><circle cx="10" cy="12" r="1" fill="#3ECDA5" stroke="none"/><circle cx="14" cy="14" r="1" fill="#3ECDA5" stroke="none"/><circle cx="12" cy="17" r="1" fill="#3ECDA5" stroke="none"/></symbol>
+<symbol id="ic-apple" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 7 C10 5 5 5 5 11 C5 16 9 21 12 21 C15 21 19 16 19 11 C19 5 14 5 12 7 Z"/><path stroke="#3ECDA5" d="M12 7 C12 4 13 3 15 3"/></symbol>
+<symbol id="ic-drink" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M7 8 H17 L16 20 A1 1 0 0 1 15 21 H9 A1 1 0 0 1 8 20 Z M7 8 H17"/><path stroke="#3ECDA5" d="M13 8 L15 3"/></symbol>
+<symbol id="ic-coffee" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 9 H17 V15 A4 4 0 0 1 13 19 H9 A4 4 0 0 1 5 15 Z M17 10 H19 A2 2 0 0 1 21 12 A2 2 0 0 1 19 14 H17"/><path stroke="#3ECDA5" d="M8 4 V6 M12 4 V6"/></symbol>
+<symbol id="ic-burger" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 9 A8 5 0 0 1 20 9 Z M4 15 A8 5 0 0 0 20 15 L20 15 A2 2 0 0 1 4 15 Z"/><path stroke="#3ECDA5" d="M4 12 H20"/></symbol>
+<symbol id="ic-bottles" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8 L6 6 L9 6 L9 8 A1 1 0 0 1 10 9 V19 A1 1 0 0 1 9 20 H6 A1 1 0 0 1 5 19 V9 A1 1 0 0 1 6 8 Z"/><path stroke="#3ECDA5" d="M14 10 L14 5 L17 5 L17 10 A1 1 0 0 1 18 11 V19 A1 1 0 0 1 17 20 H14 A1 1 0 0 1 13 19 V11 A1 1 0 0 1 14 10 Z"/></symbol>
+<symbol id="ic-broom" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M18 3 L11 10 M7 20 C7 16 9 13 11.5 12.5 L14 15 C13.5 17.5 11 20 7 20 Z"/><path stroke="#3ECDA5" d="M8 18 L8.5 15 M10 19 L11 15.5 M12 19 L13 16"/></symbol>
+<symbol id="ic-bathtub" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 13 H21 V15 A3 3 0 0 1 18 18 H6 A3 3 0 0 1 3 15 Z M5 13 V7 A2 2 0 0 1 9 7 M6 18 V20 M18 18 V20"/><path stroke="#3ECDA5" d="M12 5 L12 7 M14 4 L14 6 M16 5 L16 7"/></symbol>
+<symbol id="ic-box" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 L20 7 V16 L12 20 L4 16 V7 Z M4 7 L12 11 L20 7 M12 11 V20"/><path stroke="#3ECDA5" d="M8 5 L16 9"/></symbol>
+<symbol id="ic-necklace" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4 A9 8 0 0 0 12 15 A9 8 0 0 0 19 4"/><path stroke="#3ECDA5" d="M12 15 L9.5 18 L12 21 L14.5 18 Z"/></symbol>
+<symbol id="ic-shoe" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 16 L4 11 C4 11 6 12 8 11 L12 8 C13 10 16 12 20 13 A2 2 0 0 1 21 15 V16 Z"/><path stroke="#3ECDA5" d="M3 16 H21"/></symbol>
+<symbol id="ic-laptop" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 6 H19 V16 H5 Z"/><path stroke="#3ECDA5" d="M3 19 H21 L19.5 16 H4.5 Z"/></symbol>
+<symbol id="ic-washer" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="14" r="4.5"/><path stroke="#3ECDA5" d="M8 6 H9 M11.5 6 H12.5"/></symbol>
+<symbol id="ic-sofa" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 11 V8 A2 2 0 0 1 7 6 H17 A2 2 0 0 1 19 8 V11 M4 12 A2 2 0 0 1 6 14 V17 H18 V14 A2 2 0 0 1 20 12 A2 2 0 0 1 22 14 V18 H2 V14 A2 2 0 0 1 4 12 Z"/><path stroke="#3ECDA5" d="M6 14 H18"/></symbol>
+<symbol id="ic-cable" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 8 H8 V12 A2 2 0 0 1 4 12 Z M5 8 V6 M7 8 V6"/><path stroke="#3ECDA5" d="M20 16 H16 V12 A2 2 0 0 1 20 12 Z M17 16 V18 M19 16 V18 M6 14 V15 A3 3 0 0 0 9 18 H15 A3 3 0 0 0 18 15 V14"/></symbol>
+<symbol id="ic-appstore" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 18 L12 5 L18 18"/><path stroke="#3ECDA5" d="M8.5 13.5 H15.5"/></symbol>
+<symbol id="ic-party" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 20 L9 8 L16 15 Z M9 8 L16 15"/><path stroke="#3ECDA5" d="M15 4 V6 M18 5 L16.5 6.5 M19 9 H17 M14 3 L15 4.5 M13 8 L14.5 8.5"/></symbol>
+<symbol id="ic-film" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2" stroke="#3ECDA5"/><circle cx="12" cy="6.5" r="1" fill="#1A1A1A" stroke="none"/><circle cx="12" cy="17.5" r="1" fill="#1A1A1A" stroke="none"/><circle cx="6.5" cy="12" r="1" fill="#1A1A1A" stroke="none"/><circle cx="17.5" cy="12" r="1" fill="#1A1A1A" stroke="none"/></symbol>
+<symbol id="ic-mic" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="13" y="3" width="6" height="9" rx="3" transform="rotate(45 16 7.5)"/><path d="M13.5 9 L5 17.5 A1.8 1.8 0 0 0 7.5 20 L15 10.5"/><path stroke="#3ECDA5" d="M6 18.5 L8 16.5"/></symbol>
+<symbol id="ic-handheart" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 15 H6 L9 17 H13 A1.5 1.5 0 0 0 13 14 H10 M6 15 V20 H3 Z M13 14 C15 13 21 12 21 15 C21 17 16 20 13 20 H6"/><path stroke="#3ECDA5" d="M12 4 C10.5 2.5 8 3.5 8 6 C8 8 12 11 12 11 C12 11 16 8 16 6 C16 3.5 13.5 2.5 12 4 Z"/></symbol>
+<symbol id="ic-ticket" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 8 H20 V11 A1.5 1.5 0 0 0 20 14 V16 H4 V14 A1.5 1.5 0 0 0 4 11 Z"/><path stroke="#3ECDA5" d="M9 12 A2 2 0 0 0 13 12 A2 2 0 0 0 12 10.5 M15 12 H17"/></symbol>
+<symbol id="ic-family" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="8" cy="7" r="2.5"/><path d="M4 18 V15 A4 4 0 0 1 12 15 V18"/><circle cx="16" cy="8" r="2"/><path d="M13 18 V16 A3 3 0 0 1 19 16 V18"/><path stroke="#3ECDA5" d="M16 12.5 C15 11.5 13.5 12 13.5 13.3 C13.5 14.5 16 16 16 16 C16 16 18.5 14.5 18.5 13.3 C18.5 12 17 11.5 16 12.5 Z"/></symbol>
+<symbol id="ic-parent" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="6" r="3"/><path d="M6 20 V15 A6 6 0 0 1 18 15 V20"/><path stroke="#3ECDA5" d="M15 12 C15.5 14 16 17 15.5 20"/></symbol>
+<symbol id="ic-love" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 9 C9.5 5.5 4 6.5 4 11 C4 15 12 21 12 21 C12 21 20 15 20 11 C20 6.5 14.5 5.5 12 9 Z"/><circle cx="9" cy="5" r="1.3" fill="#3ECDA5" stroke="none"/><circle cx="15" cy="5" r="1.3" fill="#3ECDA5" stroke="none"/></symbol>
+<symbol id="ic-milkcan" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8 H18 V19 A2 2 0 0 1 16 21 H8 A2 2 0 0 1 6 19 Z"/><ellipse cx="12" cy="8" rx="6" ry="2"/><path stroke="#3ECDA5" d="M13 6 C13 6 17 5 18 8 C18.5 9.5 16 10 16 10"/></symbol>
+<symbol id="ic-babybottle" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M9 8 H15 V19 A2 2 0 0 1 13 21 H11 A2 2 0 0 1 9 19 Z M10 5 H14 V8 H10 Z M11.5 3 H12.5 V5 H11.5 Z"/><path stroke="#3ECDA5" d="M9 12 H12 M9 15 H12"/></symbol>
+<symbol id="ic-babyfood" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 12 H16 A6 6 0 0 1 4 12 Z"/><path stroke="#3ECDA5" d="M9 8 C9 6 10 5 11 5 M12 8 C12 5 13 4 14 4"/><path d="M18 6 V13 M18 6 A2 2 0 0 0 18 10"/></symbol>
+<symbol id="ic-diaper" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 7 H20 V11 C20 16 16 19 12 19 C8 19 4 16 4 11 Z M4 9 C8 9 8 13 8 13 M20 9 C16 9 16 13 16 13"/><path stroke="#3ECDA5" d="M4 7 H20"/></symbol>
+<symbol id="ic-pinwheel" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 12 C12 12 8 6 12 4 C16 6 12 12 12 12 M12 12 C12 12 18 8 20 12 C18 16 12 12 12 12 M12 12 C12 12 16 18 12 20 C8 18 12 12 12 12 M12 12 C12 12 6 16 4 12 C6 8 12 12 12 12 Z M12 12 V21"/><circle cx="12" cy="12" r="1.5" fill="#3ECDA5" stroke="#3ECDA5"/></symbol>
+<symbol id="ic-bulb" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M8 13 A5 5 0 1 1 16 13 C15 14.5 14.5 15 14.5 16.5 H9.5 C9.5 15 9 14.5 8 13 Z M10 19 H14 M10.5 21 H13.5"/><path stroke="#3ECDA5" d="M12 2 V4 M4 8 L5.5 8.7 M20 8 L18.5 8.7"/></symbol>
+<symbol id="ic-parentchild" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="9" cy="6" r="2.5"/><path d="M5 20 V15 A4 4 0 0 1 13 15 V20"/><circle cx="17" cy="10" r="1.8"/><path d="M14 20 V16 A3 3 0 0 1 20 16 V20"/><path stroke="#3ECDA5" d="M15 4 L18 6 L15 8"/></symbol>
+<symbol id="ic-syringe" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M14 4 L20 10 M17 5 L13 9 L15 11 L19 7 M13 9 L6 16 L5 20 L4 21 M8 12 L12 16 M6 14 L8 16"/><path stroke="#3ECDA5" d="M5 20 L4 21"/></symbol>
+<symbol id="ic-car" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15 V12 L6 8 H18 L20 12 V15 M4 15 H20 M4 15 V17 M20 15 V17"/><path stroke="#3ECDA5" d="M5 12 H19"/><circle cx="8" cy="15.5" r="1"/><circle cx="16" cy="15.5" r="1"/></symbol>
+<symbol id="ic-parkpin" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21 C12 21 5 14 5 9 A7 7 0 0 1 19 9 C19 14 12 21 12 21 Z"/><path stroke="#3ECDA5" d="M10 12 V6 H13 A2 2 0 0 1 13 10 H10"/></symbol>
+<symbol id="ic-carwash" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 18 V15 L6 11 H18 L20 15 V18 M4 18 H20"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/><path stroke="#3ECDA5" d="M7 4 V7 M12 3 V6 M17 4 V7"/></symbol>
+<symbol id="ic-toll" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="7" cy="6" r="2.5"/><path d="M4 20 V15 A3 3 0 0 1 10 15 V20"/><path stroke="#3ECDA5" d="M13 12 H20 M17 9 L20 12 L17 15"/></symbol>
+<symbol id="ic-minuscircle" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path stroke="#3ECDA5" d="M8 12 H16"/></symbol>
+<symbol id="ic-wrench" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M15 4 A4 4 0 0 0 19 10 L11 18 A2.8 2.8 0 1 1 6 21 L14 13 A4 4 0 0 0 15 4 Z"/><path stroke="#3ECDA5" d="M3 6 L6 3 L9 6 L7 8 L9 10 L6 13 L3 10 Z"/></symbol>
+<symbol id="ic-caryen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15 V12 L6 8 H18 L20 12 V15 M4 15 H20 M4 15 V17 M20 15 V17"/><circle cx="8" cy="15.5" r="1"/><circle cx="16" cy="15.5" r="1"/><path stroke="#3ECDA5" d="M10 10 L12 12.5 L14 10 M12 12.5 V15 M10.5 13.2 H13.5 M10.5 14.2 H13.5"/></symbol>
+<symbol id="ic-steering" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5" stroke="#3ECDA5"/><path d="M4 11 H20 M12 14.5 V20.5 M4.5 12 L9.8 13.2 M19.5 12 L14.2 13.2"/></symbol>
+<symbol id="ic-carshield" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3 L19 6 V12 C19 17 15 20 12 21 C9 20 5 17 5 12 V6 Z"/><path stroke="#3ECDA5" d="M8 13 V11 L9.5 8 H14.5 L16 11 V13 M8 13 H16"/><circle cx="9.5" cy="13" r="0.7"/><circle cx="14.5" cy="13" r="0.7"/></symbol>
+<symbol id="ic-carsearch" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M2 14 V11 L4 8 H13 L15 11 V13"/><path d="M2 14 H10 M2 14 V15.5"/><circle cx="5" cy="14" r="1"/><path stroke="#3ECDA5" d="M15 15 A3 3 0 1 0 18 18 M20 21 L18.5 19.5"/></symbol>
+<symbol id="ic-envmoney" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 8 L12 13 L21 8"/><path stroke="#3ECDA5" d="M10 15 L12 17.2 L14 15 M12 17.2 V19.5 M10.5 17.8 H13.5 M10.5 18.8 H13.5"/></symbol>
+<symbol id="ic-plane" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M10 3 C11.5 3 11.5 6 11.5 8 L20 13 V15 L11.5 12.5 V17 L14 19 V20.5 L10 19.5 L6 20.5 V19 L8.5 17 V12.5 L0 15 V13 L8.5 8 C8.5 6 8.5 3 10 3 Z" transform="translate(2 0)"/><path stroke="#3ECDA5" d="M12 3.5 C12 5 12 6.5 12 6.5"/></symbol>
+<symbol id="ic-train" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 4 H18 V16 A2 2 0 0 1 16 18 H8 A2 2 0 0 1 6 16 Z M7 20 L9 18 M17 20 L15 18"/><path stroke="#3ECDA5" d="M6 11 H18"/><path d="M9 4 V2 M15 4 V2"/><circle cx="9.5" cy="14.5" r="1"/><circle cx="14.5" cy="14.5" r="1"/></symbol>
+<symbol id="ic-metro" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 7 H19 V15 A2 2 0 0 1 17 17 H7 A2 2 0 0 1 5 15 Z M7 20 L9 17 M17 20 L15 17"/><path stroke="#3ECDA5" d="M5 12 H19"/><path d="M4 4 C7 6 17 6 20 4"/></symbol>
+<symbol id="ic-taxi" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15 V12 L6 8 H18 L20 12 V15 M4 15 H20 M4 15 V17 M20 15 V17"/><circle cx="8" cy="15.5" r="1"/><circle cx="16" cy="15.5" r="1"/><path stroke="#3ECDA5" d="M9 8 V6 H15 V8"/></symbol>
+<symbol id="ic-bike" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16 L10 8 H14 M9 8 L14 16 M12 8 L16 8"/><path stroke="#3ECDA5" d="M6 16 L18 16"/></symbol>
+<symbol id="ic-ship" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 14 H20 L18 19 H6 Z M6 14 V9 H16 V14 M11 9 V5 M8 9 H14"/><path stroke="#3ECDA5" d="M3 21 C5 21 5 20 7 20 C9 20 9 21 11 21 C13 21 13 20 15 20 C17 20 17 21 19 21"/></symbol>
+<symbol id="ic-hotel" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 20 V13 A2 2 0 0 1 6 11 H18 V20 M4 15 H18 M4 20 V17 M18 20 V17"/><path stroke="#3ECDA5" d="M7 11 V7 A2 2 0 0 1 9 5 H15 A2 2 0 0 1 17 7 V11 M9 8 H13"/></symbol>
+<symbol id="ic-houseyen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 L12 4 L20 11 M6 10 V20 H18 V10"/><path stroke="#3ECDA5" d="M10 13 L12 15.5 L14 13 M12 15.5 V19 M10.5 16.5 H13.5 M10.5 17.5 H13.5"/></symbol>
+<symbol id="ic-houseloan" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 10 L10 4 L17 10 M5 9 V18 H15 V9"/><circle cx="17" cy="16" r="4" stroke="#3ECDA5"/><path stroke="#3ECDA5" d="M17 14.5 V17.5 M15.8 16 H18.2"/></symbol>
+<symbol id="ic-regbox" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path stroke="#3ECDA5" d="M12 8 V15 M8.5 11.5 H15.5"/></symbol>
+<symbol id="ic-clipplus" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5 V4 A1 1 0 0 1 10 3 H14 A1 1 0 0 1 15 4 V5 H9 Z"/><path stroke="#3ECDA5" d="M12 10 V16 M9 13 H15"/></symbol>
+<symbol id="ic-pill" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><path stroke="#3ECDA5" d="M12 6 L18 12"/></symbol>
+<symbol id="ic-hospbed" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 8 V18 M3 13 H21 V18 M3 18 V20 M21 18 V20 M21 13 V11 A2 2 0 0 0 19 9 H12 V13"/><circle cx="8" cy="11" r="1.6"/><path stroke="#3ECDA5" d="M17 4 V8 M15 6 H19"/></symbol>
+<symbol id="ic-heartpulse" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 8 C9.5 4.5 4 5.5 4 10 C4 14 12 20 12 20 C12 20 20 14 20 10 C20 5.5 14.5 4.5 12 8 Z"/><path stroke="#3ECDA5" d="M4.5 12 H9 L10.5 9 L13 15 L14.5 12 H19"/></symbol>
+<symbol id="ic-exam" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4 H15 V13 M5 4 V20 H15 V13 M5 8 H12 M5 11 H10"/><path stroke="#3ECDA5" d="M14 18 L19 13 L21 15 L16 20 L13.5 20.5 Z"/></symbol>
+<symbol id="ic-ruler" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M9 3 H14 V21 H9 Z M9 6 H11 M9 9 H11 M9 12 H11 M9 15 H11 M9 18 H11"/><path stroke="#3ECDA5" d="M17 4 L20 7 L9 18 L5.5 19 L6.5 15.5 Z"/></symbol>
+<symbol id="ic-grad" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M2 9 L12 5 L22 9 L12 13 Z"/><path d="M6 11 V16 C6 16 8.5 18 12 18 C15.5 18 18 16 18 16 V11"/><path stroke="#3ECDA5" d="M22 9 V14"/></symbol>
+<symbol id="ic-bell" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 16 A8 8 0 0 1 20 16 Z M3 16 H21 M12 8 V6 M10 6 H14"/><path stroke="#3ECDA5" d="M12 20 A1.5 1.5 0 0 0 12 17 A1.5 1.5 0 0 0 12 20 Z"/></symbol>
+<symbol id="ic-ticketyen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4 L7 6 L9 4 L11 6 L13 4 L15 6 L17 4 V20 L15 18 L13 20 L11 18 L9 20 L7 18 L5 20 Z"/><path stroke="#3ECDA5" d="M8 9 L11 12 L14 9 M11 12 V16 M8.5 13 H13.5 M8.5 14.5 H13.5"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="6" width="16" height="13" rx="2"/><path d="M4 10 H14 A2 2 0 0 1 14 14 H4"/><path stroke="#3ECDA5" d="M16 12 H17.5"/></symbol>
+<symbol id="ic-signal" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 14 L7 21 H17 Z"/><circle cx="12" cy="12" r="1.5" fill="#3ECDA5" stroke="#3ECDA5"/><path stroke="#3ECDA5" d="M8.5 15 A5 5 0 0 1 15.5 15 M6 12.5 A9 9 0 0 1 18 12.5"/></symbol>
+<symbol id="ic-printer" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M7 8 V4 H17 V8 M5 8 H19 A1 1 0 0 1 20 9 V15 A1 1 0 0 1 19 16 H17 M7 16 H5 A1 1 0 0 1 4 15 V9 A1 1 0 0 1 5 8"/><path stroke="#3ECDA5" d="M7 13 H17 V20 H7 Z"/></symbol>
+<symbol id="ic-buildingyen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 L10 6 L16 11 M6 10 V19 H14 V10 M8 13 H10 M8 16 H10"/><circle cx="17" cy="15" r="4" stroke="#3ECDA5"/><path stroke="#3ECDA5" d="M15.8 13.5 L17 15 L18.2 13.5 M17 15 V17 M16 15.7 H18 M16 16.5 H18"/></symbol>
+<symbol id="ic-cartbox" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 4 H5 L7 15 H18 L20 7 H6"/><circle cx="8" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/><path stroke="#3ECDA5" d="M11 9 V13 M9 11 H13"/></symbol>
+<symbol id="ic-boxstack" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 13 H11 V20 H3 Z M13 13 H21 V20 H13 Z"/><path stroke="#3ECDA5" d="M8 4 H16 V11 H8 Z M12 4 V11"/><path d="M7 13 V16 H4 M17 13 V16 H14"/></symbol>
+<symbol id="ic-truck" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 6 H14 V16 H3 Z M14 9 H18 L21 12 V16 H14"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/><path stroke="#3ECDA5" d="M14 9 H18 L21 12"/></symbol>
+<symbol id="ic-trophyyen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M7 4 H17 V9 A5 5 0 0 1 7 9 Z M7 6 H4 A2 2 0 0 0 6 9 H7 M17 6 H20 A2 2 0 0 1 18 9 H17 M10 14 H14 M9 20 H15 M12 14 V20"/><path stroke="#3ECDA5" d="M10 6 L12 8 L14 6 M12 8 V11 M10.5 9 H13.5"/></symbol>
+<symbol id="ic-flag" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3 V21"/><path stroke="#3ECDA5" d="M6 4 H18 L15 8 L18 12 H6 Z"/><circle cx="12" cy="8" r="0.8" fill="#3ECDA5" stroke="none"/></symbol>
+<symbol id="ic-umbrella" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3 12 A9 8 0 0 1 21 12 Z M12 4 V12 M12 18 V19 A2 2 0 0 1 8 19"/><path stroke="#3ECDA5" d="M3 12 A9 8 0 0 1 21 12"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 4 V20 H20"/><path stroke="#3ECDA5" d="M6 15 L10 11 L13 13 L19 6"/><path stroke="#3ECDA5" d="M19 6 H15 M19 6 V10"/></symbol>
+<symbol id="ic-refund" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M12 9 L15 12 L18 9 M15 12 V16 M13 13.5 H17 M13 15 H17"/><path stroke="#3ECDA5" d="M6 12 A6 6 0 1 1 8 16.5 M6 12 V8.5 M6 12 H9.5"/></symbol>
+<symbol id="ic-piggy" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M4 13 C4 9 7 7 11 7 C16 7 20 10 20 13 C20 15 19 16 18 17 V20 H15 V18 H10 V20 H7 V17 C5.5 16 4 15 4 13 Z M4 12 H2.5 M11 7 L9 4 C9 4 12 4 13 7"/><circle cx="8" cy="12" r="0.8" fill="#1A1A1A" stroke="none"/><path stroke="#3ECDA5" d="M14 9 H17"/></symbol>
+<symbol id="ic-moneybag" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M9 6 L8 3 H16 L15 6 M9 6 C5 8 4 13 4 16 A5 5 0 0 0 9 21 H15 A5 5 0 0 0 20 16 C20 13 19 8 15 6 Z"/><path stroke="#3ECDA5" d="M10 12 L12 14.5 L14 12 M12 14.5 V18 M10.5 15.5 H13.5 M10.5 16.5 H13.5"/></symbol>
+<symbol id="ic-clockyen" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><circle cx="10" cy="11" r="7"/><path d="M10 7 V11 L13 13"/><circle cx="18" cy="18" r="4" stroke="#3ECDA5"/><path stroke="#3ECDA5" d="M16.8 16.5 L18 18 L19.2 16.5 M18 18 V20 M17 18.7 H19 M17 19.5 H19"/></symbol>
+</g>
+</svg>
+
 <div class="page-head">
   <h1>RICH 记账 — design mockups (aligned to original screenshots)</h1>
   <p>Updated against the 8 original-app screenshots. Screens flagged <span class="flag">faithful to original</span> match the real app; <span class="flag">PROPOSED</span> are my design suggestions for things not built yet. Key corrections applied: nav bar = only 首页 + ➕ + 预算/计划 (no More tab); date-header & amount dividers are <b>dashed</b>; expense amounts are <b>black</b> (green only for income); 预算/计划 is a budget page (charts live under 趋势图); added 账户转账 + 目标资产.</p>
@@ -391,10 +539,10 @@
         <div class="catgrid">
           <div class="catrow">
             <div class="cat sel"><span class="badge">⋯</span><span class="ci"><i class="fa fa-cutlery"></i></span><span class="cn">餐饮</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">衣服</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-bus"></i></span><span class="cn">交通</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-mobile"></i></span><span class="cn">网费话费</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-book"></i></span><span class="cn">学习</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-tshirt"/></svg></span><span class="cn">衣服</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">交通</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-phone"/></svg></span><span class="cn">网费话费</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-book"/></svg></span><span class="cn">学习</span></div>
           </div>
           <!-- inline subcategory zone, expanded right under 餐饮 -->
           <div class="subzone">
@@ -406,29 +554,34 @@
               <div class="scat"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">外卖</span></div>
               <div class="scat"><span class="ci"><i class="fa fa-coffee"></i></span><span class="cn">咖啡</span></div>
               <div class="scat"><span class="ci"><i class="fa fa-users"></i></span><span class="cn">聚餐</span></div>
-              <div class="scat add"><span class="ci"><i class="fa fa-plus"></i></span><span class="cn">添加</span></div>
+              <div class="scat add"><span class="ci"><i class="fa fa-plus"></i></span><span class="cn">添加子类</span></div>
             </div>
           </div>
           <div class="catrow">
-            <div class="cat"><span class="ci"><i class="fa fa-home"></i></span><span class="cn">日用</span></div>
-            <div class="cat"><span class="badge">⋯</span><span class="ci"><i class="fa fa-building"></i></span><span class="cn">住房</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-medkit"></i></span><span class="cn">医疗</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-envelope"></i></span><span class="cn">发红包</span></div>
-            <div class="cat"><span class="badge">⋯</span><span class="ci"><i class="fa fa-car"></i></span><span class="cn">汽车/加油</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-jug"/></svg></span><span class="cn">日用</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-house"/></svg></span><span class="cn">住房</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-medkit"/></svg></span><span class="cn">医疗</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-redpacket"/></svg></span><span class="cn">发红包</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-fuel"/></svg></span><span class="cn">汽车/加油</span></div>
           </div>
           <div class="catrow">
-            <div class="cat"><span class="ci"><i class="fa fa-gamepad"></i></span><span class="cn">娱乐</span></div>
-            <div class="cat"><span class="badge">⋯</span><span class="ci"><i class="fa fa-gift"></i></span><span class="cn">请客送礼</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-camera"></i></span><span class="cn">电器数码</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-futbol-o"></i></span><span class="cn">运动</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-scissors"></i></span><span class="cn">理发</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-gamepad"/></svg></span><span class="cn">娱乐</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-gift"/></svg></span><span class="cn">请客送礼</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-camera"/></svg></span><span class="cn">电器数码</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-dumbbell"/></svg></span><span class="cn">运动</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-scissors"/></svg></span><span class="cn">理发</span></div>
           </div>
           <div class="catrow">
-            <div class="cat"><span class="ci"><i class="fa fa-diamond"></i></span><span class="cn">付费会员</span></div>
-            <div class="cat"><span class="badge">⋯</span><span class="ci"><i class="fa fa-money"></i></span><span class="cn">还钱</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-briefcase"></i></span><span class="cn">工作</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">购物</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-suitcase"></i></span><span class="cn">旅行</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-gem"/></svg></span><span class="cn">付费会员</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-coins"/></svg></span><span class="cn">还钱</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-briefcase"/></svg></span><span class="cn">工作</span></div>
+            <div class="cat"><span class="badge">⋯</span><span class="ci"><svg class="svgic"><use href="#ic-bag"/></svg></span><span class="cn">购物</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-suitcase"/></svg></span><span class="cn">旅行</span></div>
+          </div>
+          <div class="catrow">
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-handshake"/></svg></span><span class="cn">人情/借钱</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-carrot"/></svg></span><span class="cn">买菜</span></div>
+            <div class="cat"><span class="ci mgr"><i class="fa fa-cog"></i></span><span class="cn">管理分类</span></div>
           </div>
         </div>
         <div class="botbar">
@@ -465,16 +618,16 @@
           <div class="catrow">
             <div class="cat sel"><span class="ci"><i class="fa fa-tag"></i></span><span class="cn">工资</span></div>
             <div class="cat"><span class="ci"><i class="fa fa-tag"></i></span><span class="cn">兼职</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-cutlery"></i></span><span class="cn">餐饮</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">衣服</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-bus"></i></span><span class="cn">交通</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-food"/></svg></span><span class="cn">餐饮</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-tshirt"/></svg></span><span class="cn">衣服</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">交通</span></div>
           </div>
           <div class="catrow">
-            <div class="cat"><span class="ci"><i class="fa fa-mobile"></i></span><span class="cn">网费话费</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-book"></i></span><span class="cn">学习</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-home"></i></span><span class="cn">日用</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-building"></i></span><span class="cn">住房</span></div>
-            <div class="cat"><span class="ci"><i class="fa fa-gift"></i></span><span class="cn">请客送礼</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-phone"/></svg></span><span class="cn">网费话费</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-book"/></svg></span><span class="cn">学习</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-jug"/></svg></span><span class="cn">日用</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-house"/></svg></span><span class="cn">住房</span></div>
+            <div class="cat"><span class="ci"><svg class="svgic"><use href="#ic-gift"/></svg></span><span class="cn">请客送礼</span></div>
           </div>
         </div>
         <div class="botbar">
@@ -568,8 +721,23 @@
         <div class="scroll" style="background:#fff;">
           <div class="be-h">您还未创建预算</div>
           <div class="budg-empty">
-            <div class="donut2"></div>
-            <div class="be-leg"><span>🍑 日常开销 55%</span><span>💰 消费升级 30%</span><span>📖 学习基金 15%</span></div>
+            <svg width="250" height="150" viewBox="0 0 250 150" style="display:block;margin:0 auto">
+              <g transform="rotate(-90 125 72)" fill="none" stroke-width="15">
+                <circle cx="125" cy="72" r="40" stroke="#6FD9B5" stroke-dasharray="138.2 113.1"/>
+                <circle cx="125" cy="72" r="40" stroke="#A9E7D0" stroke-dasharray="75.4 175.9" stroke-dashoffset="-138.2"/>
+                <circle cx="125" cy="72" r="40" stroke="#D6F2E9" stroke-dasharray="37.7 213.6" stroke-dashoffset="-213.6"/>
+              </g>
+              <g stroke="#B0B0B0" stroke-width="1" fill="none">
+                <path d="M152 46 L172 38"/>
+                <path d="M156 96 L176 104"/>
+                <path d="M86 74 L64 82"/>
+              </g>
+              <g fill="#666" font-size="10" font-family="-apple-system,PingFang SC,sans-serif">
+                <text x="176" y="36">📖 学习基金</text><text x="176" y="49" font-weight="700">15%</text>
+                <text x="180" y="104">💰 消费升级</text><text x="180" y="117" font-weight="700">30%</text>
+                <text x="60" y="80" text-anchor="end">🍑 日常开销</text><text x="60" y="93" text-anchor="end" font-weight="700">55%</text>
+              </g>
+            </svg>
             <div class="be-tag">有预算才能无负担的花钱</div>
             <div class="be-create">+ 创建预算</div>
           </div>
@@ -671,20 +839,244 @@
       <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
       <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#fff;">
         <div class="add-head"><span class="back"><i class="fa fa-chevron-left"></i></span><span style="margin-left:14px; font-size:16px; font-weight:600; color:var(--ink)">自定义</span></div>
-        <div class="body" style="overflow:hidden;">
-          <div class="crow"><span class="exp"><i class="fa fa-caret-down"></i></span><span class="ci"><i class="fa fa-cutlery"></i></span><span class="cn">餐饮</span><span class="menu">⋯</span></div>
+        <div class="body">
+          <div class="crow"><span class="exp"><i class="fa fa-caret-down"></i></span><span class="ci"><svg class="svgic"><use href="#ic-food"/></svg></span><span class="cn">餐饮</span><span class="menu">⋯</span></div>
           <div class="subrow">早餐</div>
           <div class="subrow">午餐</div>
           <div class="subrow">晚餐</div>
-          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">衣服</span><span class="menu">⋯</span></div>
-          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-bus"></i></span><span class="cn">交通</span><span class="menu">⋯</span></div>
-          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-medkit"></i></span><span class="cn">医疗</span><span class="menu">⋯</span></div>
-          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-gamepad"></i></span><span class="cn">娱乐</span><span class="menu">⋯</span></div>
+          <div class="subrow">外卖</div>
+          <div class="subrow">咖啡</div>
+          <div class="subrow">聚餐</div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-tshirt"/></svg></span><span class="cn">衣服</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">交通</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-phone"/></svg></span><span class="cn">网费话费</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-book"/></svg></span><span class="cn">学习</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-jug"/></svg></span><span class="cn">日用</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-house"/></svg></span><span class="cn">住房</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-medkit"/></svg></span><span class="cn">医疗</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-redpacket"/></svg></span><span class="cn">发红包</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-fuel"/></svg></span><span class="cn">汽车/加油</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-gamepad"/></svg></span><span class="cn">娱乐</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-gift"/></svg></span><span class="cn">请客送礼</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-camera"/></svg></span><span class="cn">电器数码</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-dumbbell"/></svg></span><span class="cn">运动</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-scissors"/></svg></span><span class="cn">理发</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-gem"/></svg></span><span class="cn">付费会员</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-coins"/></svg></span><span class="cn">还钱</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-briefcase"/></svg></span><span class="cn">工作</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-bag"/></svg></span><span class="cn">购物</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><svg class="svgic"><use href="#ic-suitcase"/></svg></span><span class="cn">旅行</span><span class="menu">⋯</span></div>
         </div>
         <div class="addbtn">+ 添加自定义</div>
       </div>
     </div></div>
     <div class="caption"><div class="t">5 · 自定义 Categories</div><div class="d">Expandable list, subcategories, add button</div></div>
+  </div>
+
+  <!-- 5b. ICON PICKER (添加自定义类目) -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#fff;">
+        <div class="add-head">
+          <span class="back"><i class="fa fa-chevron-left"></i></span>
+          <span style="flex:1; text-align:center; font-size:16px; font-weight:600; color:var(--ink)">添加自定义类目</span>
+          <span class="pk-done">完成</span>
+        </div>
+        <div class="pk-input">请输入类目名称（不超过6个字符）</div>
+        <div class="body">
+          <div class="pk-sec"><div class="pk-sec-t">默认</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-food"/></svg></span><span class="cn">餐饮</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-snack"/></svg></span><span class="cn">零食</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-tshirt"/></svg></span><span class="cn">衣服</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">交通</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-suitcase"/></svg></span><span class="cn">旅行</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-baby"/></svg></span><span class="cn">孩子</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-paw"/></svg></span><span class="cn">宠物</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-phone"/></svg></span><span class="cn">网费话费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-wine"/></svg></span><span class="cn">烟酒</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-book"/></svg></span><span class="cn">学习</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-jug"/></svg></span><span class="cn">日用</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-house"/></svg></span><span class="cn">住房</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-lipstick"/></svg></span><span class="cn">美妆</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-medkit"/></svg></span><span class="cn">医疗</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-redpacket"/></svg></span><span class="cn">发红包</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-fuel"/></svg></span><span class="cn">汽车/加油</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-gamepad"/></svg></span><span class="cn">娱乐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-gift"/></svg></span><span class="cn">请客送礼</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-camera"/></svg></span><span class="cn">电器数码</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-dumbbell"/></svg></span><span class="cn">运动</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-drop"/></svg></span><span class="cn">水电煤</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-grid"/></svg></span><span class="cn">其他</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">餐饮零食</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bread"/></svg></span><span class="cn">早餐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-noodles"/></svg></span><span class="cn">午餐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-drumstick"/></svg></span><span class="cn">晚餐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bowl"/></svg></span><span class="cn">三餐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-pizza"/></svg></span><span class="cn">宵夜</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-apple"/></svg></span><span class="cn">水果</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-drink"/></svg></span><span class="cn">饮料</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-coffee"/></svg></span><span class="cn">咖啡</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-carrot"/></svg></span><span class="cn">买菜</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-burger"/></svg></span><span class="cn">外卖</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">日常家用</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bottles"/></svg></span><span class="cn">柴米油盐</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-broom"/></svg></span><span class="cn">清洁</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-scissors"/></svg></span><span class="cn">理发</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bathtub"/></svg></span><span class="cn">洗澡</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-box"/></svg></span><span class="cn">快递</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">购物相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bag"/></svg></span><span class="cn">购物</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-necklace"/></svg></span><span class="cn">饰品</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-shoe"/></svg></span><span class="cn">鞋子</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-laptop"/></svg></span><span class="cn">电子产品</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-washer"/></svg></span><span class="cn">电器</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-sofa"/></svg></span><span class="cn">家具</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">电子产品</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-phone"/></svg></span><span class="cn">手机</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-cable"/></svg></span><span class="cn">3c配件</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-appstore"/></svg></span><span class="cn">购买app</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-gem"/></svg></span><span class="cn">付费会员</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-camera"/></svg></span><span class="cn">相机</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">娱乐</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-gamepad"/></svg></span><span class="cn">游戏</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-party"/></svg></span><span class="cn">聚会</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-film"/></svg></span><span class="cn">电影</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-mic"/></svg></span><span class="cn">k歌</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-handheart"/></svg></span><span class="cn">打赏</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-dumbbell"/></svg></span><span class="cn">运动</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-suitcase"/></svg></span><span class="cn">旅行</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-ticket"/></svg></span><span class="cn">景区门票</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">家庭相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-family"/></svg></span><span class="cn">家人</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-parent"/></svg></span><span class="cn">父母</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-love"/></svg></span><span class="cn">恋爱</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-baby"/></svg></span><span class="cn">孩子</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-paw"/></svg></span><span class="cn">宠物</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">育儿相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-baby"/></svg></span><span class="cn">育儿</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-milkcan"/></svg></span><span class="cn">奶粉</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-babybottle"/></svg></span><span class="cn">奶瓶</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-babyfood"/></svg></span><span class="cn">辅食</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-diaper"/></svg></span><span class="cn">纸尿裤</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-pinwheel"/></svg></span><span class="cn">玩具</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bulb"/></svg></span><span class="cn">早教</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-parentchild"/></svg></span><span class="cn">亲子游</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-syringe"/></svg></span><span class="cn">疫苗看病</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">汽车维修</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-car"/></svg></span><span class="cn">汽车</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-parkpin"/></svg></span><span class="cn">停车费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-carwash"/></svg></span><span class="cn">洗车</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-toll"/></svg></span><span class="cn">过路费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-minuscircle"/></svg></span><span class="cn">汽车罚款</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-wrench"/></svg></span><span class="cn">维修保养</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-caryen"/></svg></span><span class="cn">车贷</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-steering"/></svg></span><span class="cn">配件</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-carshield"/></svg></span><span class="cn">车险</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-carsearch"/></svg></span><span class="cn">车检</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">人情往来</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-handshake"/></svg></span><span class="cn">人情</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-gift"/></svg></span><span class="cn">请客送礼</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-redpacket"/></svg></span><span class="cn">发红包</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-envmoney"/></svg></span><span class="cn">礼金</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">交通</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">公交</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-plane"/></svg></span><span class="cn">飞机</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-train"/></svg></span><span class="cn">火车</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-metro"/></svg></span><span class="cn">地铁</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-taxi"/></svg></span><span class="cn">打车</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bike"/></svg></span><span class="cn">自行车</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-ship"/></svg></span><span class="cn">轮船</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">住房</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-hotel"/></svg></span><span class="cn">酒店</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-houseyen"/></svg></span><span class="cn">房租</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-houseloan"/></svg></span><span class="cn">房贷</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">医疗相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-regbox"/></svg></span><span class="cn">挂号费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-clipplus"/></svg></span><span class="cn">就诊</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-pill"/></svg></span><span class="cn">药品</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-hospbed"/></svg></span><span class="cn">住院</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-heartpulse"/></svg></span><span class="cn">保健品</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">学习提升</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-book"/></svg></span><span class="cn">书籍</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-exam"/></svg></span><span class="cn">考试</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-ruler"/></svg></span><span class="cn">文具</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-grad"/></svg></span><span class="cn">培训</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">出差</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="cn">交通</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-hotel"/></svg></span><span class="cn">酒店住宿</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-bell"/></svg></span><span class="cn">宴请招待</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-ticketyen"/></svg></span><span class="cn">差旅费</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">办公相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-wallet"/></svg></span><span class="cn">员工工资</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-drop"/></svg></span><span class="cn">水电杂费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-signal"/></svg></span><span class="cn">网络通讯</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-printer"/></svg></span><span class="cn">办公用品</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-buildingyen"/></svg></span><span class="cn">场地租金</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-cartbox"/></svg></span><span class="cn">进货费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-wrench"/></svg></span><span class="cn">维修费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-broom"/></svg></span><span class="cn">清洁费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-boxstack"/></svg></span><span class="cn">材料费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-truck"/></svg></span><span class="cn">物流费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-trophyyen"/></svg></span><span class="cn">员工奖金</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-flag"/></svg></span><span class="cn">员工团建</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">其他分类</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-briefcase"/></svg></span><span class="cn">工作</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-umbrella"/></svg></span><span class="cn">保险</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-handheart"/></svg></span><span class="cn">捐赠</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-coins"/></svg></span><span class="cn">利息</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-grid"/></svg></span><span class="cn">其他</span></div>
+          </div>
+          <div class="pk-sec"><div class="pk-sec-t">收入相关</div><div class="pk-dash"></div></div>
+          <div class="pk-grid">
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-wallet"/></svg></span><span class="cn">工资薪水</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-moneybag"/></svg></span><span class="cn">生活费</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-redpacket"/></svg></span><span class="cn">收红包</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-clockyen"/></svg></span><span class="cn">兼职外快</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-envmoney"/></svg></span><span class="cn">奖金</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-chart"/></svg></span><span class="cn">投资理财</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-ticketyen"/></svg></span><span class="cn">报销</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-refund"/></svg></span><span class="cn">退款返款</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-umbrella"/></svg></span><span class="cn">保险</span></div>
+            <div class="pk-item"><span class="ci"><svg class="svgic"><use href="#ic-piggy"/></svg></span><span class="cn">其他收益</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">5b · 添加自定义类目 Icon picker <span class="flag">faithful to original</span></div><div class="d">Name input + sectioned icon grid (默认 / 餐饮零食 / …), each section title with a dashed divider. Icons are FontAwesome approximations — see note.</div></div>
   </div>
 
   <!-- 6. ACCOUNT TRANSFER (账户转账) — faithful to original IMG_3432 -->
@@ -724,20 +1116,26 @@
   <div class="frame-wrap">
     <div class="phone"><div class="notch"></div><div class="screen">
       <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
-      <div style="flex:1; min-height:0; display:flex; flex-direction:column; background:#fff;">
-        <div class="add-head"><span class="back"><i class="fa fa-chevron-left"></i></span><span style="margin-left:14px; font-size:16px; font-weight:600; color:var(--ink)">交易详情</span></div>
-        <div class="amount" style="text-align:center; padding:28px 0 20px;">- ¥58.00</div>
-        <div class="body">
-          <div class="field"><span class="fl">类型</span><span class="fv">支出</span></div>
-          <div class="field"><span class="fl">分类</span><span class="fv">餐饮</span></div>
-          <div class="field"><span class="fl">账户</span><span class="fv">现金</span></div>
-          <div class="field"><span class="fl">日期</span><span class="fv">2026-06-22</span></div>
-          <div class="field"><span class="fl">备注</span><span class="fv">午餐 + 咖啡</span></div>
+      <div class="dt-page">
+        <div class="dt-head"><span class="back"><i class="fa fa-chevron-left"></i></span><span class="t">支出编辑</span></div>
+        <div class="dt-card">
+          <div class="dt-row">
+            <span class="dt-ic"><svg class="svgic"><use href="#ic-food"/></svg></span>
+            <div class="dt-info"><div class="dt-title">晚餐 实习intern</div><div class="dt-sub">餐饮</div></div>
+            <span class="dt-amt">¥ 13.11</span>
+            <i class="fa fa-chevron-right" style="color:var(--mut);font-size:13px"></i>
+          </div>
+          <div class="dt-div"></div>
+          <div class="dt-row">
+            <span class="dt-plan">所属预算/计划</span>
+            <i class="fa fa-chevron-right" style="color:var(--mut);font-size:13px"></i>
+          </div>
         </div>
-        <div class="delbtn"><i class="fa fa-trash-o"></i>&nbsp; 删除该笔支出</div>
+        <div style="flex:1"></div>
+        <div class="dt-del">删除该笔支出</div>
       </div>
     </div></div>
-    <div class="caption"><div class="t">7 · 交易详情 Edit / detail</div><div class="d">View, edit fields, delete</div></div>
+    <div class="caption"><div class="t">7 · 支出编辑 Detail <span class="flag">faithful to original</span></div><div class="d">Green bg, white card (icon + note/category + amount + chevron; 所属预算/计划 row), coral delete. Tap row → edit.</div></div>
   </div>
 
   <!-- 8. IMPORT/EXPORT -->
