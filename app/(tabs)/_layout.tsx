@@ -25,9 +25,9 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityRole="tab"
       >
         <FontAwesome
-          name="home"
+          name="calendar-check-o"
           size={26}
-          color={isHomeActive ? TEXT_PRIMARY : TEXT_MUTED}
+          color={isHomeActive ? PRIMARY_GREEN : TEXT_MUTED}
         />
         <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>
           首页
@@ -57,9 +57,9 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityRole="tab"
       >
         <FontAwesome
-          name="pie-chart"
+          name="clock-o"
           size={24}
-          color={isChartsActive ? TEXT_PRIMARY : TEXT_MUTED}
+          color={isChartsActive ? PRIMARY_GREEN : TEXT_MUTED}
         />
         <Text style={[styles.tabLabel, isChartsActive && styles.tabLabelActive]}>
           预算/计划

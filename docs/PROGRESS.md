@@ -8,6 +8,142 @@ The MVP core features work end-to-end. Current effort is a **pixel-fidelity pass
 the app match the original RICH 记账 app screen-by-screen, using a **mockup-first workflow**
 (see below) before porting each screen to real React Native code.
 
+## Current Status: Feature-complete MVP (design polish remaining)
+
+The MVP core features work end-to-end including budgets, transfers, and custom category icons.
+Current effort is **design-fidelity polish** and **responsive scaling** across device sizes.
+
+---
+
+## Session summary (2026-07-01 merge)
+
+Merged all three archive updates into this repo and completed the remaining feature chunks.
+
+### Verified
+- `npx tsc --noEmit` — passes
+- `npm test` — 22/22 passing
+- Manual walkthrough recommended: `npx expo start --clear`
+
+### Merged from archives
+- **111 category SVG icons** + `components/CategoryIcon.tsx` + `assets/icons/gallery.html`
+- **New screens**: `app/trends.tsx`, `app/transaction/transfer.tsx`, `app/transaction/edit/[id].tsx`, `app/categories/add.tsx`
+- **Budget page** rewrite (`app/(tabs)/charts.tsx`) — charts moved to trends sub-view
+- **Accounts** — 目标资产 persisted in `app_meta`, 账户转账 button
+- **Add transaction** — date picker, calculator numpad, 管理分类 tile, CategoryIcon grid
+- **Detail** — read-only card + edit route split
+- **DB migration v3** — `categories.icon` column
+- **Docs** — `docs/FLOWS.md`, updated `mockups.html`, icon catalog reference
+- Deleted dead `components/TabBar.tsx` (tab bar lives inline in `app/(tabs)/_layout.tsx`)
+
+### Built this session (beyond archives)
+- **Budget engine** (migration v4): `budgets` + `budget_categories` tables, `src/db/repo/budgets.ts`
+- **Budget editor** (`app/budget/edit.tsx`) — per-category monthly limits + optional total
+- **Budget page filled state** — progress bars, month navigation, 创建预算 / 设置分类预算
+- **Transaction detail 所属预算/计划** — shows `¥spent / ¥limit` or 未设置; taps through to editor
+- **Home day-tap filter** — tap a calendar day to filter list; "查看全部" pill to clear
+- **Cross-platform 添加子类** — Modal replaces iOS-only `Alert.prompt`
+- **`src/domain/categories.ts`** — shared `DEFAULT_CATEGORIES` constant
+
+### Remaining
+1. **Responsive design** — scale UI for all iPhone sizes (deferred; partial scaling on 15 Pro done)
+2. **Icon polish** — optional: review `assets/icons/gallery.html` and fix rough icons
+3. **Screen-fidelity pass** — compare each screen against `docs/mockups.html` on device
+4. **Tag release** — manual walkthrough, then `v0.1.0-alpha`
+
+---
+
+## 🔴 SESSION HANDOFF (archive notes — superseded by merge above)
+
+**Flow map**: `docs/FLOWS.md`. **Mockups**: `docs/mockups.html`.
+
+### ✅ DECISIONS LOCKED
+- **Budget model = category-based limits** — spent computed from transactions; no `transactions.budget_id`
+- **Navigation** — 2 tabs (首页, 预算/计划) + center FAB; tab bar inline in `_layout.tsx`
+- **Responsive** — deferred until design finalized
+
+### ⛔ OLD REMAINING (now done)
+- ~~Budget engine~~ ✅
+- ~~Home calendar day-tap filter~~ ✅
+- ~~添加子类 cross-platform~~ ✅
+
+### 📋 OLD IMPLEMENTATION PLAN (completed)
+
+**Existing helpers to REUSE (don't reinvent):** `getDb()` (`src/db/db.ts`), `newId('prefix')`
+(`src/utils/id.ts`), `getMeta/setMeta` (`src/db/repo/meta.ts`), `ensureCategory`
+(`src/db/repo/categories.ts`), `getExpenseCategoryTotalsForMonth` (`src/features/charts/aggregations.ts`),
+`currentMonth`/`addMonths`/`monthStartIso`/`nextMonth` (`src/utils/month.ts`), `centsToYuan`
+(`src/utils/money.ts`), `CategoryIcon` (`components/CategoryIcon.tsx`). DB access pattern:
+`const db = await getDb()` inside async fns (no context/hook). Timestamps: `new Date().toISOString()`.
+Money = integer cents. Colors in `constants/Colors.ts` (PRIMARY_GREEN `#3ECDA5`, TEXT_PRIMARY `#1A1A1A`,
+TEXT_SECONDARY `#666`, EXPENSE_RED `#FF6B6B`).
+
+**Chunk 1 — DB layer**
+- `src/db/migrations.ts`: append `{ version: 4, statements: [...] }`:
+  ```sql
+  CREATE TABLE budgets (id TEXT PRIMARY KEY, period TEXT NOT NULL UNIQUE,
+    total_cents INTEGER, created_at TEXT, updated_at TEXT);
+  CREATE TABLE budget_categories (id TEXT PRIMARY KEY,
+    budget_id TEXT NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+    category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    limit_cents INTEGER NOT NULL, created_at TEXT, updated_at TEXT);
+  CREATE UNIQUE INDEX idx_budget_categories ON budget_categories(budget_id, category_id);
+  ```
+- `src/domain/types.ts`: add `Budget {id, period, totalCents:number|null}`,
+  `BudgetCategory {id, budgetId, categoryId, limitCents}`,
+  `BudgetCategoryStatus {categoryId, categoryName, categoryIcon:string|null, limitCents, spentCents}`,
+  `BudgetSummary {budget, totalLimitCents, totalSpentCents, categories:BudgetCategoryStatus[]}`.
+- `src/db/repo/budgets.ts` (new): `getBudgetForPeriod`, `ensureBudgetForPeriod`, `setBudgetTotal`,
+  `listBudgetCategories`, `upsertBudgetCategory` (INSERT … ON CONFLICT(budget_id,category_id) DO UPDATE),
+  `deleteBudgetCategory`, `getBudgetSummary(db, period)` = merge limits (join `categories` for name/icon)
+  with `getExpenseCategoryTotalsForMonth` for `spentCents`; `totalLimitCents = budget.totalCents ?? Σlimits`;
+  returns null if no budget row.
+
+**Chunk 2 — Budget editor + route**
+- Extract `DEFAULT_CATEGORIES` from `app/transaction/new.tsx:46` → new `src/domain/categories.ts`
+  (`export const DEFAULT_CATEGORIES`); import it back in `new.tsx` (no behavior change).
+- `app/budget/edit.tsx` (new): param `period` (default `currentMonth()`); optional 本月总预算 input;
+  list = union(DEFAULT_CATEGORIES, DB categories) each with a limit input prefilled from existing limits.
+  保存: non-empty → `ensureCategory`→`upsertBudgetCategory`; empty → `deleteBudgetCategory`; then `router.back()`.
+- `app/_layout.tsx`: register `<Stack.Screen name="budget/edit" options={{ headerShown:false }} />`.
+
+**Chunk 3 — Budget page** (`app/(tabs)/charts.tsx`, rewrite body)
+- Keep green header + summary card (wire 计划清单 amount = month total budget). Add month-nav row
+  (prev/next via `addMonths`) driving `getBudgetSummary` in `useFocusEffect`.
+- Filled state (≥1 limit): 本月总预算 card (总spent/总limit + progress bar + 已用% + 剩余) + 分类预算 rows
+  (CategoryIcon, name, `¥spent / ¥limit`, bar color: green <80%, amber 80–100%, red >100%) +
+  设置分类预算 → `/budget/edit?period=…`. Empty state: keep existing donut/legend; 创建预算 → `/budget/edit?period=…`.
+
+**Chunk 4 — Detail 所属预算/计划** (`app/transaction/[id].tsx`)
+- Also capture `categoryId` + `date`; `period = date.slice(0,7)`. Look up that category's limit+spent.
+  Replace the `即将推出` alert: show `未设置` or `¥spent / ¥limit`; tap → `/budget/edit?period=…`. No schema change.
+
+**Chunk 5 — Home day-filter** (`app/(tabs)/index.tsx`)
+- Add `filterDate:string|null`. Day onPress: set `selectedDate` + toggle `filterDate` (tap same day clears).
+  `visibleGroups = filterDate ? groups.filter(g=>g.date===filterDate) : groups`; render those. Show a
+  `<date> · 查看全部` clear pill when active; per-day empty message when that day has no txns.
+
+**Chunk 6 — Cross-platform 添加子类** (`app/transaction/new.tsx`)
+- Replace `Alert.prompt` in `onAddSubcategory` with a `Modal`+`TextInput` mirroring the goal editor in
+  `app/accounts.tsx` (overlay + white sheet + 取消/标题/保存). Add `showSubModal`/`subInput` state; the
+  添加 tile opens it on ALL platforms; 保存 keeps existing `ensureCategory`→`ensureSubcategory` logic.
+
+**Chunk 7 — Verify** (loop until clean)
+- `npx tsc --noEmit` (primary gate) → fix all errors. `npm test` (tsx suite) stays green.
+- Best-effort `npx expo export --platform ios` to catch import/bundling errors tsc misses.
+- Manual walkthrough (you, on device): Home day-tap filter → +(add) → 添加子类 (Android too) →
+  预算/计划 → 创建预算 → set limits → bars → transaction detail 所属预算/计划.
+- Update this file (move done items); do NOT commit unless asked.
+
+### Notes / gotchas for next session
+- `app/categories.tsx` (route `/categories`) coexists with `app/categories/add.tsx`
+  (`/categories/add`) — verify Expo Router doesn't warn about the file+folder combo; if it does,
+  move `categories.tsx` → `categories/index.tsx`.
+- `app/(tabs)/transactions.tsx` is a working list with **no UI entry point** (see FLOWS.md).
+- To regenerate icon files after editing `icon-sprite.txt`: the node scripts used are in this
+  session's history (parse `<symbol>` → write `assets/icons/categories/*.svg` + `gallery.html`;
+  and `components/CategoryIcon.tsx` is generated from those svg files). (Icons = skip this round.)
+- Nothing is committed. `git status` shows all the modified/new files.
+
 ## Completed
 
 ### Documentation
@@ -103,6 +239,26 @@ We design each screen **as a static mockup first, then code it**. This keeps ite
   the default Expo Router tab bar.
 - **Add Transaction** (`app/transaction/new.tsx`) — amount-first flow with custom numeric
   keypad and inline subcategory selector. Subcategory zone expands under selected category.
+  Now also: full **20-category grid** (original order/icons), **dashed rule** under the amount,
+  and **"…" subcategory badges** on categories that have subcategories.
+- **Accounts / 资产管理** (`app/accounts.tsx`) — re-added the **目标资产 goal hero** (dark
+  monument + 100% badge + editable target, local-only for now), **white card containers** with
+  header dividers, removed the "暂无账户" placeholder, and added the **账户转账 button**.
+- **预算/计划 tab** (`app/(tabs)/charts.tsx`) — converted from a charts screen into the
+  **budget page**: 2-cell summary card (计划清单 | 结余 / 趋势图 with mini donut) + budget
+  empty-state (您还未创建预算 + donut + 创建预算). The pie/trend/drill-down charts moved to a
+  new **趋势图 sub-view** (`app/trends.tsx`), opened from the summary card's 趋势图 row.
+- **Transaction Detail** (`app/transaction/[id].tsx`) — rebuilt as a read-only **detail card**
+  (icon + note/category + black amount + chevron, 所属预算/计划 row, green background,
+  full-width coral delete). The previous edit form was preserved and moved to a separate
+  **edit route** (`app/transaction/edit/[id].tsx`), reached by tapping the card row.
+- **Routing** (`app/_layout.tsx`) — registered `trends`, `transaction/[id]` (own header), and
+  `transaction/edit/[id]`.
+
+### Placeholders (UI present, feature not yet built)
+
+- **创建预算**, **账户转账**, and **所属预算/计划** currently show a "coming soon" alert.
+- **目标资产** goal is **local-only** (resets on reload) — needs persistence (e.g. `meta` table).
 
 ## Goals
 
@@ -116,15 +272,18 @@ We design each screen **as a static mockup first, then code it**. This keeps ite
 
 ### Immediate (Design Fidelity)
 
-- [ ] Port **Add Transaction** screen details (inline subcategory expansion styling, note input)
-- [ ] Port **Charts/预算** screen to match mockup layout (summary card, empty budget state)
-- [ ] Port **Accounts** and **Categories** management screens
+- [x] Port **Add Transaction** details (20-category grid, dashed amount rule, "…" badges)
+- [x] Port **Charts/预算** screen (budget page + 趋势图 sub-view)
+- [x] Port **Accounts** screen (goal hero, white cards, transfer button)
+- [x] Port **Transaction Detail** (detail card + separate edit route)
+- [ ] Verify on device: `npx tsc --noEmit` + `npm run start`, compare each screen to `docs/mockups.html`
+- [ ] Port **Categories** management screen (no original screenshot yet)
 - [ ] Add month navigation on home calendar (currently shows current month only)
 
 ### Core Features
 
-- [ ] **账户转账** (account transfer) — third transaction type
-- [ ] **目标资产** (savings goal) — gamified target on asset management
+- [ ] **账户转账** (account transfer) — third transaction type (button wired, screen not built)
+- [ ] **目标资产** (savings goal) — persist the target (currently local-only)
 - [ ] **预算/计划** (budgets) — budget creation and 所属预算/计划 transaction link
 
 ### Polish (Deferred)

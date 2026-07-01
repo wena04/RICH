@@ -39,6 +39,8 @@ export async function seedDemoData(db: AppDb): Promise<void> {
     { id: newId("cat"), name: "娱乐" },
     { id: newId("cat"), name: "日用" },
     { id: newId("cat"), name: "医疗" },
+    { id: newId("cat"), name: "人情/借钱" },
+    { id: newId("cat"), name: "买菜" },
     { id: newId("cat"), name: "工资" },
     { id: newId("cat"), name: "兼职" },
   ];

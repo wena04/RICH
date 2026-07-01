@@ -7,8 +7,9 @@ import {
   StatusBar,
   View,
   Text,
+  Modal,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
@@ -19,6 +20,7 @@ import {
   TransactionListItem,
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 // ---- Design tokens (matched to mockup) ----
 const ENTRY_GREEN = "#B5EAD7"; // light highlight for days with entries
@@ -32,18 +34,6 @@ const MONTH_NAMES_CN = [
   "7月", "8月", "9月", "10月", "11月", "12月",
 ];
 
-// Category -> FontAwesome icon (matches add-transaction grid)
-const CATEGORY_ICONS: Record<string, string> = {
-  餐饮: "cutlery", 衣服: "shopping-bag", 交通: "bus", 网费话费: "mobile",
-  学习: "book", 日用: "home", 住房: "building", 医疗: "medkit",
-  娱乐: "gamepad", "汽车/加油": "car", 请客送礼: "gift", 运动: "futbol-o",
-  发红包: "envelope", 电器数码: "camera", 理发: "scissors", 付费会员: "diamond",
-  还钱: "money", 工作: "briefcase", 购物: "shopping-bag", 旅行: "suitcase",
-  买菜: "shopping-basket", 咖啡: "coffee", 工资: "money", 兼职: "money",
-};
-function getCategoryIcon(name?: string | null): any {
-  return (name && CATEGORY_ICONS[name]) || "tag";
-}
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
@@ -75,12 +65,23 @@ function DashedLine() {
 export default function HomeScreen() {
   const router = useRouter();
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+
+  const goPrevMonth = () => {
+    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
+    else setMonth((m) => m - 1);
+  };
+  const goNextMonth = () => {
+    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
+    else setMonth((m) => m + 1);
+  };
 
   const [selectedDate, setSelectedDate] = useState(
-    fmt(year, month, today.getDate()),
+    fmt(today.getFullYear(), today.getMonth(), today.getDate()),
   );
+  const [sheetDate, setSheetDate] = useState<string | null>(null);
+  const [showDaySheet, setShowDaySheet] = useState(false);
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
 
   const loadTransactions = useCallback(async () => {
@@ -190,7 +191,11 @@ export default function HomeScreen() {
       <Pressable
         key={day}
         style={styles.dayCell}
-        onPress={() => setSelectedDate(dateStr)}
+        onPress={() => {
+          setSelectedDate(dateStr);
+          setSheetDate(dateStr);
+          setShowDaySheet(true);
+        }}
       >
         <View style={inner}>
           <Text style={styles.dayText}>{day}</Text>
@@ -228,10 +233,17 @@ export default function HomeScreen() {
         {/* Calendar card */}
         <View style={styles.calCard}>
           <View style={styles.calTop}>
+            <Pressable onPress={goPrevMonth} style={styles.monthNav} hitSlop={8}>
+              <FontAwesome name="chevron-left" size={12} color={TEXT_SECONDARY} />
+            </Pressable>
             <Pressable style={styles.monthPill}>
               <Text style={styles.monthPillText}>
+                {year === today.getFullYear() ? "" : `${year}年`}
                 {MONTH_NAMES_CN[month]} ▼
               </Text>
+            </Pressable>
+            <Pressable onPress={goNextMonth} style={styles.monthNav} hitSlop={8}>
+              <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
             </Pressable>
             <View style={styles.totals}>
               <View style={styles.totItem}>
@@ -273,7 +285,9 @@ export default function HomeScreen() {
         <View style={styles.listArea}>
           {groups.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>本月还没有记录</Text>
+              <Text style={styles.emptyText}>
+                本月还没有记录
+              </Text>
             </View>
           ) : (
             groups.map((g, gi) => (
@@ -296,11 +310,7 @@ export default function HomeScreen() {
                     onPress={() => router.push(`/transaction/${t.id}`)}
                   >
                     <View style={styles.txIcon}>
-                      <FontAwesome
-                        name={getCategoryIcon(t.category?.name)}
-                        size={13}
-                        color={TEXT_SECONDARY}
-                      />
+                      <CategoryIcon name={t.category?.name} size={16} />
                     </View>
                     <View style={styles.txInfo}>
                       <Text style={styles.txTitle} numberOfLines={1}>
@@ -324,6 +334,94 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <Modal visible={showDaySheet} animationType="slide" transparent>
+        <View style={styles.sheetOverlay}>
+          <Pressable
+            style={styles.sheetBackdrop}
+            onPress={() => setShowDaySheet(false)}
+          />
+          <View style={styles.sheet}>
+            <View style={styles.sheetTop}>
+              <Pressable
+                style={styles.sheetClose}
+                onPress={() => setShowDaySheet(false)}
+              >
+                <FontAwesome name="close" size={16} color={TEXT_PRIMARY} />
+              </Pressable>
+              <Text style={styles.sheetTitle}>
+                {sheetDate ? dateHeaderCN(sheetDate) : ""}
+              </Text>
+              <View style={{ width: 36 }} />
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {(() => {
+                const g = sheetDate ? groups.find((x) => x.date === sheetDate) : undefined;
+                if (!g) {
+                  return (
+                    <View style={styles.sheetEmpty}>
+                      <Text style={styles.emptyText}>该日还没有记录</Text>
+                    </View>
+                  );
+                }
+                return (
+                  <View style={{ paddingBottom: 20 }}>
+                    <View style={styles.dateHeader}>
+                      <Text style={styles.dateLabel}>{dateHeaderCN(g.date)}</Text>
+                      <View style={styles.dayTotals}>
+                        <Text style={styles.dayExpense}>-¥{centsToYuan(g.exp)}</Text>
+                        <Text style={styles.dayIncome}>+¥{centsToYuan(g.inc)}</Text>
+                      </View>
+                    </View>
+                    <DashedLine />
+                    {g.txs.map((t) => (
+                      <Pressable
+                        key={t.id}
+                        style={styles.txRow}
+                        onPress={() => {
+                          setShowDaySheet(false);
+                          router.push((`/transaction/${t.id}` as unknown) as Href);
+                        }}
+                      >
+                        <View style={styles.txIcon}>
+                          <CategoryIcon name={t.category?.name} size={16} />
+                        </View>
+                        <View style={styles.txInfo}>
+                          <Text style={styles.txTitle} numberOfLines={1}>
+                            {t.note || t.category?.name || "记录"}
+                          </Text>
+                          <Text style={styles.txSub}>{t.category?.name ?? ""}</Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.txAmt,
+                            t.type === "income" && { color: INCOME_GREEN },
+                          ]}
+                        >
+                          {t.type === "income" ? "+" : "-"}
+                          {centsToYuan(t.amountCents)}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                );
+              })()}
+            </ScrollView>
+
+            <Pressable
+              style={styles.sheetAddBtn}
+              onPress={() => {
+                const d = sheetDate ?? fmt(year, month, today.getDate());
+                setShowDaySheet(false);
+                router.push((`/transaction/new?date=${d}` as unknown) as Href);
+              }}
+            >
+              <Text style={styles.sheetAddText}>添加一笔支出/收入</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -378,6 +476,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   calTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  monthNav: { paddingHorizontal: 4, paddingVertical: 4 },
   monthPill: {
     backgroundColor: "#F0F0F0",
     borderRadius: 16,
@@ -512,4 +611,47 @@ const styles = StyleSheet.create({
   txTitle: { fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY },
   txSub: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 3 },
   txAmt: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
+
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  sheetBackdrop: { flex: 1 },
+  sheet: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 12,
+    maxHeight: "85%",
+  },
+  sheetTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
+  },
+  sheetClose: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F3F3F3",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetTitle: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
+  sheetEmpty: { paddingVertical: 40, alignItems: "center" },
+  sheetAddBtn: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 12,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  sheetAddText: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
 });

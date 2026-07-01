@@ -73,6 +73,13 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="trends" options={{ headerShown: false }} />
+        <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="transaction/edit/[id]" options={{ title: '编辑' }} />
+        <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
+        <Stack.Screen name="categories" options={{ headerShown: false }} />
+        <Stack.Screen name="categories/add" options={{ headerShown: false }} />
+        <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
         <Stack.Screen
           name="transaction/new"
           options={{ presentation: 'modal', title: 'Add transaction' }}

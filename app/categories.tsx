@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { 
   Alert, 
@@ -13,6 +13,7 @@ import {
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View } from '@/components/Themed';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { 
   PRIMARY_GREEN, 
   TEXT_PRIMARY, 
@@ -34,28 +35,6 @@ import {
 } from '@/src/db/repo/categories';
 import type { Category, Subcategory } from '@/src/domain/types';
 
-// Category icons (matching the original RICH app)
-const CATEGORY_ICONS: Record<string, string> = {
-  '餐饮': 'cutlery',
-  '衣服': 'shopping-bag',
-  '交通': 'bus',
-  '网费话费': 'mobile',
-  '学习': 'book',
-  '日用': 'home',
-  '住房': 'building',
-  '医疗': 'medkit',
-  '发红包': 'gift',
-  '汽车/加油': 'car',
-  '娱乐': 'gamepad',
-  '请客送礼': 'gift',
-  '电器数码': 'laptop',
-  '运动': 'futbol-o',
-  '理发': 'scissors',
-};
-
-function getCategoryIcon(name: string): string {
-  return CATEGORY_ICONS[name] ?? 'tag';
-}
 
 export default function CategoriesScreen() {
   const router = useRouter();
@@ -244,11 +223,7 @@ export default function CategoriesScreen() {
               </Pressable>
               
               <View style={styles.categoryIcon}>
-                <FontAwesome 
-                  name={getCategoryIcon(category.name) as any} 
-                  size={18} 
-                  color={PRIMARY_GREEN} 
-                />
+                <CategoryIcon name={category.name} size={20} />
               </View>
               
               <Text style={styles.categoryName}>{category.name}</Text>
@@ -300,8 +275,8 @@ export default function CategoriesScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Add Category Button */}
-      <Pressable style={styles.addButton} onPress={() => setShowAddModal(true)}>
+      {/* Add Category Button — opens the full icon picker */}
+      <Pressable style={styles.addButton} onPress={() => router.push('/categories/add' as Href)}>
         <Text style={styles.addButtonText}>+ 添加自定义</Text>
       </Pressable>
 

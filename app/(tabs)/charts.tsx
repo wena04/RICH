@@ -1,505 +1,325 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { Text, View } from '@/components/Themed';
-import { 
-  PRIMARY_GREEN, 
-  TEXT_PRIMARY, 
-  TEXT_SECONDARY,
-  EXPENSE_RED,
-  INCOME_GREEN,
-} from '@/constants/Colors';
+import { CategoryIcon } from '@/components/CategoryIcon';
+import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
-import {
-  getExpenseCategoryTotalsForMonth,
-  getExpenseSubcategoryTotalsForMonth,
-  getMonthlyTotals,
-  type CategoryTotal,
-  type SubcategoryTotal,
-} from '@/src/features/charts/aggregations';
-import { LineChart } from '@/src/features/charts/LineChart';
+import { getBudgetSummary } from '@/src/db/repo/budgets';
+import { getMonthlyTotals } from '@/src/features/charts/aggregations';
 import { PieChart } from '@/src/features/charts/PieChart';
+import type { BudgetSummary } from '@/src/domain/types';
 import { centsToYuan } from '@/src/utils/money';
 import { addMonths, currentMonth } from '@/src/utils/month';
 
-const MONTH_NAMES_CN = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+const BUDGET_DONUT = [
+  { value: 55, color: '#7ED9BE' },
+  { value: 30, color: '#B7E9D8' },
+  { value: 15, color: '#DFF2EA' },
+];
+const TREND_DONUT = [
+  { value: 35, color: '#9B8CFF' },
+  { value: 27, color: '#6FA8FF' },
+  { value: 38, color: '#7FE0B0' },
+];
 
-function formatMonthCN(monthStr: string): string {
-  const month = parseInt(monthStr.split('-')[1]);
-  return MONTH_NAMES_CN[month - 1] ?? monthStr;
+const MONTH_NAMES_CN = [
+  '1月', '2月', '3月', '4月', '5月', '6月',
+  '7月', '8月', '9月', '10月', '11月', '12月',
+];
+
+function formatMonthCN(period: string): string {
+  const [, m] = period.split('-');
+  return MONTH_NAMES_CN[parseInt(m, 10) - 1] ?? period;
 }
 
-export default function ChartsScreen() {
+function barColor(spent: number, limit: number): string {
+  if (limit <= 0) return '#3ECDA5';
+  const pct = spent / limit;
+  if (pct > 1) return '#FF6B6B';
+  if (pct >= 0.8) return '#FFB347';
+  return '#3ECDA5';
+}
+
+export default function BudgetScreen() {
+  const router = useRouter();
   const [month, setMonth] = useState(currentMonth());
-  const [categories, setCategories] = useState<CategoryTotal[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [subcategories, setSubcategories] = useState<SubcategoryTotal[]>([]);
-  const [monthly, setMonthly] = useState<Array<{ month: string; expenseCents: number; incomeCents: number }>>([]);
+  const [balance, setBalance] = useState(0);
+  const [summary, setSummary] = useState<BudgetSummary | null>(null);
 
   const refresh = useCallback(async () => {
     const db = await getDb();
-    const cats = await getExpenseCategoryTotalsForMonth(db, month);
-    setCategories(cats);
-
-    const m = await getMonthlyTotals(db, { monthsBack: 6, endMonthInclusive: month });
-    setMonthly(m);
-
-    if (selectedCategoryId) {
-      const subs = await getExpenseSubcategoryTotalsForMonth(db, month, selectedCategoryId);
-      setSubcategories(subs);
-    } else {
-      setSubcategories([]);
-    }
-  }, [month, selectedCategoryId]);
+    const m = await getMonthlyTotals(db, { monthsBack: 1, endMonthInclusive: month });
+    const cur = m[m.length - 1];
+    setBalance((cur?.incomeCents ?? 0) - (cur?.expenseCents ?? 0));
+    setSummary(await getBudgetSummary(db, month));
+  }, [month]);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+    }, [refresh]),
   );
 
-  const totalExpense = useMemo(
-    () => categories.reduce((acc, c) => acc + c.totalCents, 0),
-    [categories]
-  );
-
-  const subTotal = useMemo(
-    () => subcategories.reduce((acc, s) => acc + s.totalCents, 0),
-    [subcategories]
-  );
-
-  const totalIncome = useMemo(
-    () => monthly.find(m => m.month === month)?.incomeCents ?? 0,
-    [monthly, month]
-  );
-
-  const balance = totalIncome - totalExpense;
-
-  const palette = [
-    '#FF6B6B', // red
-    '#4ECDC4', // teal
-    '#FFE66D', // yellow
-    '#95E1D3', // mint
-    '#F38181', // coral
-    '#AA96DA', // purple
-    '#FCBAD3', // pink
-    '#A8D8EA', // light blue
-    '#FFB347', // orange
-    '#98D8C8', // green
-  ];
-
-  const pieData = useMemo(
-    () =>
-      categories.map((c, idx) => ({
-        value: c.totalCents,
-        color: palette[idx % palette.length],
-      })),
-    [categories]
-  );
-
-  const selectedCategoryName = useMemo(
-    () => categories.find((c) => c.categoryId === selectedCategoryId)?.categoryName ?? null,
-    [categories, selectedCategoryId]
-  );
+  const hasBudget = summary != null && summary.categories.length > 0;
+  const usedPct =
+    summary && summary.totalLimitCents > 0
+      ? Math.round((summary.totalSpentCents / summary.totalLimitCents) * 100)
+      : 0;
+  const remaining = summary ? summary.totalLimitCents - summary.totalSpentCents : 0;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
-      
-      {/* Green Header */}
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>预算/计划</Text>
       </View>
 
-      {/* Summary Cards */}
-      <View style={styles.summaryCards}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>计划清单</Text>
-          <Text style={styles.summaryValue}>¥ 0.00</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>结余</Text>
-          <Text style={[styles.summaryValue, balance >= 0 ? styles.positiveValue : styles.negativeValue]}>
-            ¥ {centsToYuan(Math.abs(balance))}
+      <View style={styles.monthRow}>
+        <Pressable onPress={() => setMonth((m) => addMonths(m, -1))} hitSlop={8}>
+          <FontAwesome name="chevron-left" size={12} color={TEXT_SECONDARY} />
+        </Pressable>
+        <Text style={styles.monthLabel}>{formatMonthCN(month)}</Text>
+        <Pressable onPress={() => setMonth((m) => addMonths(m, 1))} hitSlop={8}>
+          <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+        </Pressable>
+      </View>
+
+      <View style={styles.bsum}>
+        <View style={styles.bsumLeft}>
+          <Text style={styles.planLabel}>计划清单</Text>
+          <Text style={styles.planAmt}>
+            ¥ {hasBudget ? centsToYuan(summary!.totalLimitCents) : '0.00'}
           </Text>
         </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>趋势图</Text>
-          <FontAwesome name="line-chart" size={20} color={PRIMARY_GREEN} />
+        <View style={styles.bsumRight}>
+          <View style={styles.brRow}>
+            <Text style={styles.brKey}>结余</Text>
+            <Text style={styles.brVal}>¥ {centsToYuan(balance)}</Text>
+          </View>
+          <Pressable
+            style={[styles.brRow, styles.brRowDivider]}
+            onPress={() => router.push('/trends' as Href)}
+          >
+            <Text style={styles.brKey}>趋势图</Text>
+            <PieChart size={30} innerRadius={9} data={TREND_DONUT} />
+          </Pressable>
         </View>
       </View>
 
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Month Selector */}
-        <View style={styles.monthRow}>
-          <Pressable onPress={() => setMonth((m) => addMonths(m, -1))} style={styles.monthBtn}>
-            <FontAwesome name="chevron-left" size={14} color={TEXT_SECONDARY} />
-          </Pressable>
-          <Text style={styles.monthLabel}>{formatMonthCN(month)}</Text>
-          <Pressable onPress={() => setMonth((m) => addMonths(m, 1))} style={styles.monthBtn}>
-            <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
-          </Pressable>
-        </View>
-
-        {/* Category Pie Chart */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>支出分类</Text>
-          <Text style={styles.cardSubtitle}>
-            本月支出: ¥{centsToYuan(totalExpense)}
-          </Text>
-          
-          {categories.length === 0 ? (
-            <View style={styles.emptyState}>
-              <FontAwesome name="pie-chart" size={48} color={TEXT_SECONDARY} style={{ opacity: 0.3 }} />
-              <Text style={styles.emptyText}>本月暂无支出记录</Text>
-            </View>
-          ) : (
-            <View style={styles.pieRow}>
-              <PieChart size={160} innerRadius={50} data={pieData} />
-              <View style={styles.pieLegend}>
-                {categories.slice(0, 5).map((c, idx) => {
-                  const pct = totalExpense > 0 ? Math.round((c.totalCents / totalExpense) * 100) : 0;
-                  const selected = c.categoryId === selectedCategoryId;
-                  return (
-                    <Pressable
-                      key={c.categoryId}
-                      onPress={() => setSelectedCategoryId(c.categoryId)}
-                      style={[styles.legendRow, selected && styles.legendRowActive]}>
-                      <View style={[styles.swatch, { backgroundColor: palette[idx % palette.length] }]} />
-                      <View style={styles.legendText}>
-                        <Text style={styles.legendName}>{c.categoryName}</Text>
-                        <Text style={styles.legendMeta}>{pct}%</Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
+        {hasBudget ? (
+          <>
+            <View style={styles.totalCard}>
+              <Text style={styles.totalTitle}>本月总预算</Text>
+              <Text style={styles.totalAmount}>
+                ¥{centsToYuan(summary!.totalSpentCents)} / ¥{centsToYuan(summary!.totalLimitCents)}
+              </Text>
+              <View style={styles.totalBarBg}>
+                <View
+                  style={[
+                    styles.totalBarFill,
+                    {
+                      width: `${Math.min(usedPct, 100)}%`,
+                      backgroundColor: barColor(summary!.totalSpentCents, summary!.totalLimitCents),
+                    },
+                  ]}
+                />
+              </View>
+              <View style={styles.totalMeta}>
+                <Text style={styles.metaText}>已用 {usedPct}%</Text>
+                <Text style={styles.metaText}>剩余 ¥{centsToYuan(Math.max(remaining, 0))}</Text>
               </View>
             </View>
-          )}
-          {categories.length > 0 && (
-            <Text style={styles.tapHint}>点击分类查看子分类明细 ›</Text>
-          )}
-        </View>
 
-        {/* Monthly Trends */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>月度趋势</Text>
-          <Text style={styles.cardSubtitle}>支出 vs 收入 (近6个月)</Text>
-          
-          {monthly.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>暂无数据</Text>
-            </View>
-          ) : (
-            <>
-              <LineChart
-                width={320}
-                height={120}
-                series={[
-                  { values: monthly.map((m) => m.expenseCents), color: EXPENSE_RED },
-                  { values: monthly.map((m) => m.incomeCents), color: INCOME_GREEN },
-                ]}
-              />
-              <View style={styles.monthLabels}>
-                {monthly.map((m) => (
-                  <Text key={m.month} style={styles.monthTick}>
-                    {formatMonthCN(m.month)}
-                  </Text>
-                ))}
-              </View>
-              <View style={styles.legendIndicators}>
-                <View style={styles.legendIndicator}>
-                  <View style={[styles.legendDot, { backgroundColor: EXPENSE_RED }]} />
-                  <Text style={styles.legendIndicatorText}>支出</Text>
-                </View>
-                <View style={styles.legendIndicator}>
-                  <View style={[styles.legendDot, { backgroundColor: INCOME_GREEN }]} />
-                  <Text style={styles.legendIndicatorText}>收入</Text>
-                </View>
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Subcategory Drill-down */}
-        {selectedCategoryId && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>子分类明细</Text>
-            <Text style={styles.cardSubtitle}>
-              {selectedCategoryName} · ¥{centsToYuan(subTotal)}
-            </Text>
-            {subcategories.length === 0 ? (
-              <Text style={styles.emptyText}>该分类暂无子分类记录</Text>
-            ) : (
-              <View style={styles.subList}>
-                {subcategories.map((s, idx) => {
-                  const pct =
-                    subTotal > 0
-                      ? Math.round((s.totalCents / subTotal) * 100)
-                      : 0;
-                  return (
-                    <View
-                      key={s.subcategoryId ?? 'none'}
-                      style={styles.subBarRow}
-                    >
-                      <View style={styles.subBarHeader}>
-                        <Text style={styles.subName}>
-                          {s.subcategoryName ?? '(未分类)'}
-                        </Text>
-                        <Text style={styles.subAmount}>
-                          ¥{centsToYuan(s.totalCents)} · {pct}%
-                        </Text>
-                      </View>
-                      <View style={styles.subBarTrack}>
-                        <View
-                          style={[
-                            styles.subBarFill,
-                            {
-                              width: `${pct}%`,
-                              backgroundColor: palette[idx % palette.length],
-                            },
-                          ]}
-                        />
-                      </View>
+            {summary!.categories.map((cat) => {
+              const pct =
+                cat.limitCents > 0 ? Math.min((cat.spentCents / cat.limitCents) * 100, 100) : 0;
+              return (
+                <View key={cat.categoryId} style={styles.catRow}>
+                  <View style={styles.catIcon}>
+                    <CategoryIcon id={cat.categoryIcon ?? undefined} name={cat.categoryName} size={20} />
+                  </View>
+                  <View style={styles.catInfo}>
+                    <View style={styles.catTop}>
+                      <Text style={styles.catName}>{cat.categoryName}</Text>
+                      <Text style={styles.catAmt}>
+                        ¥{centsToYuan(cat.spentCents)} / ¥{centsToYuan(cat.limitCents)}
+                      </Text>
                     </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        )}
+                    <View style={styles.catBarBg}>
+                      <View
+                        style={[
+                          styles.catBarFill,
+                          {
+                            width: `${pct}%`,
+                            backgroundColor: barColor(cat.spentCents, cat.limitCents),
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
 
-        <View style={{ height: 100 }} />
+            <Pressable
+              style={styles.editBtn}
+              onPress={() => router.push(`/budget/edit?period=${month}` as Href)}
+            >
+              <Text style={styles.editBtnText}>设置分类预算</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.emptyHeadline}>您还未创建预算</Text>
+            <View style={styles.emptyPanel}>
+              <PieChart size={128} innerRadius={40} data={BUDGET_DONUT} />
+              <View style={styles.legend}>
+                <Text style={styles.legendItem}>🍑 日常开销 55%</Text>
+                <Text style={styles.legendItem}>💰 消费升级 30%</Text>
+                <Text style={styles.legendItem}>📖 学习基金 15%</Text>
+              </View>
+              <Text style={styles.tagline}>有预算才能无负担的花钱</Text>
+              <Pressable
+                style={styles.createButton}
+                onPress={() => router.push(`/budget/edit?period=${month}` as Href)}
+              >
+                <Text style={styles.createButtonText}>+ 创建预算</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PRIMARY_GREEN,
-  },
-  header: {
-    backgroundColor: PRIMARY_GREEN,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  container: { flex: 1, backgroundColor: PRIMARY_GREEN },
+  header: { backgroundColor: PRIMARY_GREEN, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
+  monthRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingBottom: 10,
+    backgroundColor: PRIMARY_GREEN,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
-  summaryCards: {
+  monthLabel: { fontSize: 15, fontWeight: '600', color: TEXT_PRIMARY },
+  bsum: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
-  summaryCard: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: TEXT_SECONDARY,
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
-  positiveValue: {
-    color: INCOME_GREEN,
-  },
-  negativeValue: {
-    color: EXPENSE_RED,
-  },
-  scrollContent: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 16,
-  },
-  monthRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 24,
-    marginBottom: 16,
-  },
-  monthBtn: {
-    padding: 8,
-  },
-  monthLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
+  bsumLeft: {
+    width: '46%',
     padding: 16,
-    gap: 8,
+    borderRightWidth: 1,
+    borderRightColor: '#E5E5E5',
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: TEXT_SECONDARY,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    gap: 12,
-    backgroundColor: 'transparent',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: TEXT_SECONDARY,
-  },
-  pieRow: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    backgroundColor: 'transparent',
-  },
-  pieLegend: {
+  planLabel: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  planAmt: { fontSize: 13, fontWeight: '700', color: TEXT_PRIMARY, textAlign: 'right', marginTop: 'auto' },
+  bsumRight: { flex: 1 },
+  brRow: {
     flex: 1,
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-  },
-  legendRowActive: {
-    backgroundColor: `${PRIMARY_GREEN}20`,
-    borderWidth: 1,
-    borderColor: PRIMARY_GREEN,
-  },
-  swatch: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendText: {
-    flex: 1,
+    minHeight: 46,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: 'transparent',
-  },
-  legendName: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: TEXT_PRIMARY,
-  },
-  legendMeta: {
-    fontSize: 13,
-    color: TEXT_SECONDARY,
-  },
-  monthLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    backgroundColor: 'transparent',
-  },
-  monthTick: {
-    fontSize: 10,
-    color: TEXT_SECONDARY,
-  },
-  legendIndicators: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
-    marginTop: 12,
-    backgroundColor: 'transparent',
-  },
-  legendIndicator: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'transparent',
+    paddingHorizontal: 14,
   },
-  legendDot: {
-    width: 8,
-    height: 8,
+  brRowDivider: { borderTopWidth: 1, borderTopColor: '#E5E5E5' },
+  brKey: { fontSize: 12.5, color: '#555555' },
+  brVal: { fontSize: 12.5, fontWeight: '600', color: TEXT_PRIMARY },
+  scrollContent: { flex: 1, backgroundColor: '#FFFFFF' },
+  emptyHeadline: {
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    paddingTop: 24,
+    paddingBottom: 4,
+  },
+  emptyPanel: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    backgroundColor: '#F5F6F7',
     borderRadius: 4,
+    padding: 22,
+    alignItems: 'center',
   },
-  legendIndicatorText: {
-    fontSize: 12,
-    color: TEXT_SECONDARY,
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14, marginTop: 14 },
+  legendItem: { fontSize: 12, color: TEXT_SECONDARY },
+  tagline: { fontSize: 13, color: TEXT_SECONDARY, marginVertical: 16 },
+  createButton: {
+    alignSelf: 'stretch',
+    backgroundColor: '#111111',
+    borderRadius: 6,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
-  subList: {
-    gap: 8,
+  createButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  totalCard: {
+    marginHorizontal: 16,
     marginTop: 8,
-    backgroundColor: 'transparent',
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
   },
-  subRow: {
+  totalTitle: { fontSize: 14, color: TEXT_SECONDARY, marginBottom: 6 },
+  totalAmount: { fontSize: 20, fontWeight: '700', color: TEXT_PRIMARY, marginBottom: 12 },
+  totalBarBg: { height: 8, backgroundColor: '#E8E8E8', borderRadius: 4, overflow: 'hidden' },
+  totalBarFill: { height: '100%', borderRadius: 4 },
+  totalMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    marginTop: 8,
+  },
+  metaText: { fontSize: 12, color: TEXT_SECONDARY },
+  catRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
-    backgroundColor: 'transparent',
   },
-  subName: {
-    fontSize: 14,
-    color: TEXT_PRIMARY,
+  catIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  subAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-    fontVariant: ['tabular-nums'],
+  catInfo: { flex: 1 },
+  catTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  catName: { fontSize: 14, fontWeight: '500', color: TEXT_PRIMARY },
+  catAmt: { fontSize: 13, color: TEXT_SECONDARY },
+  catBarBg: { height: 6, backgroundColor: '#E8E8E8', borderRadius: 3, overflow: 'hidden' },
+  catBarFill: { height: '100%', borderRadius: 3 },
+  editBtn: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#111111',
+    borderRadius: 6,
   },
-  subBarRow: {
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  subBarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    backgroundColor: 'transparent',
-  },
-  subBarTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F0F0F0',
-    overflow: 'hidden',
-  },
-  subBarFill: {
-    height: 8,
-    borderRadius: 4,
-  },
-  tapHint: {
-    fontSize: 11,
-    color: PRIMARY_GREEN,
-    marginTop: 10,
-  },
+  editBtnText: { fontSize: 15, fontWeight: '600', color: TEXT_PRIMARY },
 });

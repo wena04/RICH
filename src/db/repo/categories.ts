@@ -4,10 +4,10 @@ import { newId } from '@/src/utils/id';
 import type { AppDb } from '../db';
 
 export async function listCategories(db: AppDb): Promise<Category[]> {
-  const rows = await db.getAllAsync<{ id: string; name: string }>(
-    'SELECT id, name FROM categories ORDER BY name ASC'
+  const rows = await db.getAllAsync<{ id: string; name: string; icon: string | null }>(
+    'SELECT id, name, icon FROM categories ORDER BY name ASC'
   );
-  return rows.map((r) => ({ id: r.id, name: r.name }));
+  return rows.map((r) => ({ id: r.id, name: r.name, icon: r.icon }));
 }
 
 export async function listCategoriesWithSubcategoryCounts(
@@ -26,25 +26,25 @@ export async function listCategoriesWithSubcategoryCounts(
 }
 
 export async function getCategoryByName(db: AppDb, name: string): Promise<Category | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string }>(
-    'SELECT id, name FROM categories WHERE name = ?',
+  const row = await db.getFirstAsync<{ id: string; name: string; icon: string | null }>(
+    'SELECT id, name, icon FROM categories WHERE name = ?',
     [name.trim()]
   );
-  return row ? { id: row.id, name: row.name } : null;
+  return row ? { id: row.id, name: row.name, icon: row.icon } : null;
 }
 
-export async function createCategory(db: AppDb, name: string): Promise<Category> {
+export async function createCategory(db: AppDb, name: string, icon?: string | null): Promise<Category> {
   const n = name.trim();
   const now = new Date().toISOString();
   const id = newId('cat');
   await db.runAsync(
     `
-    INSERT INTO categories (id, name, created_at, updated_at)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO categories (id, name, icon, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?)
     `,
-    [id, n, now, now]
+    [id, n, icon ?? null, now, now]
   );
-  return { id, name: n };
+  return { id, name: n, icon: icon ?? null };
 }
 
 export async function updateCategory(db: AppDb, input: { id: string; name: string }): Promise<void> {
@@ -79,17 +79,17 @@ export async function deleteCategory(db: AppDb, id: string): Promise<void> {
 }
 
 export async function getCategoryById(db: AppDb, id: string): Promise<Category | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string }>(
-    'SELECT id, name FROM categories WHERE id = ?',
+  const row = await db.getFirstAsync<{ id: string; name: string; icon: string | null }>(
+    'SELECT id, name, icon FROM categories WHERE id = ?',
     [id]
   );
-  return row ? { id: row.id, name: row.name } : null;
+  return row ? { id: row.id, name: row.name, icon: row.icon } : null;
 }
 
-export async function ensureCategory(db: AppDb, name: string): Promise<Category> {
+export async function ensureCategory(db: AppDb, name: string, icon?: string | null): Promise<Category> {
   const existing = await getCategoryByName(db, name);
   if (existing) return existing;
-  return await createCategory(db, name);
+  return await createCategory(db, name, icon);
 }
 
 export async function listSubcategories(db: AppDb, categoryId: string): Promise<Subcategory[]> {

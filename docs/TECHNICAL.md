@@ -64,8 +64,32 @@ On app startup:
 | ---------- | ------- | ----------------------- |
 | id         | TEXT PK | UUID with `cat_` prefix |
 | name       | TEXT    | Required, unique        |
+| icon       | TEXT    | Optional icon id (migration v3) |
 | created_at | TEXT    | ISO timestamp           |
 | updated_at | TEXT    | ISO timestamp           |
+
+#### `budgets` (migration v4)
+
+| Field       | Type    | Notes                          |
+| ----------- | ------- | ------------------------------ |
+| id          | TEXT PK | UUID with `budget_` prefix     |
+| period      | TEXT    | `YYYY-MM`, unique per month    |
+| total_cents | INTEGER | Optional overall monthly cap   |
+| created_at  | TEXT    | ISO timestamp                  |
+| updated_at  | TEXT    | ISO timestamp                  |
+
+#### `budget_categories` (migration v4)
+
+| Field        | Type    | Notes                              |
+| ------------ | ------- | ---------------------------------- |
+| id           | TEXT PK | UUID with `bc_` prefix             |
+| budget_id    | TEXT FK | References budgets (CASCADE)       |
+| category_id  | TEXT FK | References categories                |
+| limit_cents  | INTEGER | Monthly limit for this category    |
+| created_at   | TEXT    | ISO timestamp                      |
+| updated_at   | TEXT    | ISO timestamp                      |
+
+Constraint: `(budget_id, category_id)` unique. Spent amounts are computed at query time from `transactions` — no `budget_id` on transactions.
 
 #### `subcategories`
 
@@ -151,28 +175,41 @@ Full SQLite file export for:
 ```
 app/
 ├── (tabs)/
-│   ├── _layout.tsx      # 3-tab navigation
-│   ├── index.tsx        # Home (calendar)
-│   ├── charts.tsx       # Charts/budget
-│   └── more.tsx         # Settings (hidden tab)
+│   ├── _layout.tsx      # Custom tab bar (首页, FAB, 预算/计划)
+│   ├── index.tsx        # Home (calendar + day filter)
+│   └── charts.tsx       # Budget page
+├── budget/
+│   └── edit.tsx         # Budget editor (per-category limits)
+├── trends.tsx           # Charts sub-view (pie, trends)
 ├── transaction/
-│   ├── new.tsx          # Add transaction
-│   └── [id].tsx         # Edit transaction
+│   ├── new.tsx          # Add transaction (numpad)
+│   ├── [id].tsx         # Transaction detail
+│   ├── edit/[id].tsx    # Transaction edit form
+│   ├── transfer.tsx     # Account transfer
+│   └── adjust.tsx       # Balance adjustment
+├── categories/
+│   └── add.tsx          # Icon picker for custom categories
 ├── accounts.tsx
 ├── categories.tsx
 └── import-export.tsx
 
+components/
+├── CategoryIcon.tsx     # 111 SVG category icons
+└── DatePickerModal.tsx  # Date picker for add screen
+
+assets/icons/categories/ # Source SVG files (111)
+
 src/
 ├── db/
-│   ├── db.ts            # Database connection
-│   ├── migrations.ts    # Schema definitions
-│   ├── migrate.ts       # Migration runner
+│   ├── migrations.ts    # Schema (v1–v4)
 │   ├── seed.ts          # Demo data (37 transactions)
-│   └── repo/            # Data access
+│   └── repo/
+│       ├── budgets.ts   # Budget CRUD + summary
+│       └── ...
 ├── domain/
-│   └── types.ts         # TypeScript types
-├── features/
-│   ├── charts/          # Chart components
-│   └── importExport/    # CSV/DB handlers
-└── utils/               # Helpers
+│   ├── types.ts
+│   └── categories.ts  # DEFAULT_CATEGORIES constant
+└── features/
+    ├── charts/
+    └── importExport/
 ```

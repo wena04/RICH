@@ -1,10 +1,10 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { 
-  Alert, 
-  Pressable, 
-  StyleSheet, 
-  TextInput, 
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  TextInput,
   ScrollView,
   SafeAreaView,
   StatusBar,
@@ -29,6 +29,7 @@ import {
   type AccountWithBalance,
 } from '@/src/db/repo/accounts';
 import type { Account, AccountType } from '@/src/domain/types';
+import { getMeta, setMeta } from '@/src/db/repo/meta';
 import { centsToYuan } from '@/src/utils/money';
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
@@ -76,6 +77,11 @@ export default function AccountsScreen() {
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<AccountType>('cash');
 
+  // Savings goal (目标资产), persisted in app_meta.
+  const [goalCents, setGoalCents] = useState(1000000);
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
+
   // Group accounts by category
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, AccountWithBalance[]> = {
@@ -106,10 +112,35 @@ export default function AccountsScreen() {
     return accounts.reduce((sum, a) => sum + a.balanceCents, 0);
   }, [accounts]);
 
+  const goalPct =
+    goalCents > 0 ? Math.min(100, Math.round((totalAssets / goalCents) * 100)) : 0;
+
+  function onEditGoal() {
+    setGoalInput(String(Math.round(goalCents / 100)));
+    setShowGoalModal(true);
+  }
+
+  async function onSaveGoal() {
+    const yuan = parseFloat(goalInput.trim());
+    if (!isNaN(yuan) && yuan >= 0) {
+      const cents = Math.round(yuan * 100);
+      setGoalCents(cents);
+      const db = await getDb();
+      await setMeta(db, 'asset_goal_cents', String(cents));
+    }
+    setShowGoalModal(false);
+  }
+
+  function onTransfer() {
+    router.push('/transaction/transfer' as Href);
+  }
+
   const refresh = useCallback(async () => {
     const db = await getDb();
     const rows = await listAccountsWithBalances(db);
     setAccounts(rows);
+    const g = await getMeta(db, 'asset_goal_cents');
+    if (g != null) setGoalCents(parseInt(g, 10) || 0);
   }, []);
 
   useFocusEffect(
@@ -184,12 +215,19 @@ export default function AccountsScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Asset Summary */}
+      {/* Asset Summary + savings goal */}
       <View style={styles.assetSummary}>
         <View style={styles.assetIllustration}>
-          <FontAwesome name="building" size={40} color="#FFFFFF" />
+          <FontAwesome name="university" size={34} color="#E8D9A0" />
+          <View style={styles.pctBadge}>
+            <Text style={styles.pctBadgeText}>{goalPct}%</Text>
+          </View>
         </View>
         <View style={styles.assetInfo}>
+          <Pressable style={styles.goalRow} onPress={onEditGoal}>
+            <Text style={styles.goalLabel}>🚩 目标资产 ¥{centsToYuan(goalCents)}</Text>
+            <FontAwesome name="pencil" size={11} color={TEXT_PRIMARY} />
+          </Pressable>
           <Text style={styles.totalLabel}>已有总资产</Text>
           <Text style={styles.totalValue}>¥{centsToYuan(totalAssets)}</Text>
         </View>
@@ -216,32 +254,32 @@ export default function AccountsScreen() {
               </Pressable>
             </View>
             
-            {groupAccounts.length === 0 ? (
-              <Text style={styles.emptyGroup}>暂无账户</Text>
-            ) : (
-              groupAccounts.map(account => (
-                <Pressable
-                  key={account.id}
-                  style={styles.accountRow}
-                  onPress={() => openEdit(account)}
-                >
-                  <View style={[styles.accountIcon, { backgroundColor: `${ICON_COLORS[account.type]}20` }]}>
-                    <FontAwesome 
-                      name={ACCOUNT_ICONS[account.type] as any} 
-                      size={18} 
-                      color={ICON_COLORS[account.type]} 
-                    />
-                  </View>
-                  <Text style={styles.accountName}>{account.name}</Text>
-                  <Text style={styles.accountBalance}>{centsToYuan(account.balanceCents)}</Text>
-                  <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
-                </Pressable>
-              ))
-            )}
+            {groupAccounts.map(account => (
+              <Pressable
+                key={account.id}
+                style={styles.accountRow}
+                onPress={() => openEdit(account)}
+              >
+                <View style={[styles.accountIcon, { backgroundColor: `${ICON_COLORS[account.type]}20` }]}>
+                  <FontAwesome
+                    name={ACCOUNT_ICONS[account.type] as any}
+                    size={16}
+                    color={ICON_COLORS[account.type]}
+                  />
+                </View>
+                <Text style={styles.accountName}>{account.name}</Text>
+                <Text style={styles.accountBalance}>{centsToYuan(account.balanceCents)}</Text>
+                <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+              </Pressable>
+            ))}
           </View>
         ))}
 
-        <View style={{ height: 100 }} />
+        <Pressable style={styles.xferButton} onPress={onTransfer}>
+          <Text style={styles.xferButtonText}>账户转账</Text>
+        </Pressable>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* Add Account Modal */}
@@ -364,6 +402,36 @@ export default function AccountsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Goal Modal */}
+      <Modal visible={showGoalModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowGoalModal(false)}>
+                <Text style={styles.modalCancel}>取消</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>目标资产</Text>
+              <Pressable onPress={onSaveGoal}>
+                <Text style={styles.modalSave}>保存</Text>
+              </Pressable>
+            </View>
+            <View style={styles.modalBody}>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>目标金额 (元)</Text>
+                <TextInput
+                  value={goalInput}
+                  onChangeText={setGoalInput}
+                  keyboardType="decimal-pad"
+                  placeholder="如：10000"
+                  style={styles.input}
+                  placeholderTextColor={TEXT_SECONDARY}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -399,19 +467,28 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY_GREEN,
   },
   assetIllustration: {
-    width: 100,
-    height: 120,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 12,
+    width: 76,
+    height: 76,
+    backgroundColor: '#1b242f',
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
+    position: 'relative',
   },
-  assetPercent: {
+  pctBadge: {
+    position: 'absolute',
+    right: 5,
+    bottom: 6,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  pctBadgeText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 9,
     fontWeight: '600',
-    marginTop: 8,
   },
   assetInfo: {
     flex: 1,
@@ -421,8 +498,8 @@ const styles = StyleSheet.create({
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
+    marginBottom: 8,
     backgroundColor: 'transparent',
   },
   goalLabel: {
@@ -446,20 +523,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 16,
+    backgroundColor: 'transparent',
+    paddingTop: 6,
   },
   accountGroup: {
-    marginBottom: 24,
-    backgroundColor: 'transparent',
+    marginHorizontal: 16,
+    marginBottom: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
     backgroundColor: 'transparent',
   },
   groupName: {
@@ -492,30 +572,42 @@ const styles = StyleSheet.create({
   accountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
   },
   accountIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 11,
   },
   accountName: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
     color: TEXT_PRIMARY,
   },
   accountBalance: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
     color: TEXT_PRIMARY,
     marginRight: 8,
+  },
+  xferButton: {
+    marginHorizontal: 16,
+    marginTop: 2,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  xferButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
