@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { 
@@ -24,7 +25,6 @@ import { getDb } from '@/src/db/db';
 import {
   canDeleteCategory,
   canDeleteSubcategory,
-  createCategory,
   createSubcategory,
   deleteCategory,
   deleteSubcategory,
@@ -34,6 +34,7 @@ import {
   updateSubcategory,
 } from '@/src/db/repo/categories';
 import type { Category, Subcategory } from '@/src/domain/types';
+import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/src/domain/categories';
 
 
 export default function CategoriesScreen() {
@@ -42,11 +43,9 @@ export default function CategoriesScreen() {
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSubEditModal, setShowSubEditModal] = useState(false);
   
-  const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   
@@ -57,7 +56,19 @@ export default function CategoriesScreen() {
   const refresh = useCallback(async () => {
     const db = await getDb();
     const cats = await listCategoriesWithSubcategoryCounts(db);
-    setCategories(cats);
+    const order = new Map(
+      [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].map((category, index) => [
+        category.name,
+        index,
+      ]),
+    );
+    setCategories(
+      [...cats].sort((a, b) => {
+        const aOrder = order.get(a.name) ?? Number.MAX_SAFE_INTEGER;
+        const bOrder = order.get(b.name) ?? Number.MAX_SAFE_INTEGER;
+        return aOrder === bOrder ? a.name.localeCompare(b.name, 'zh-CN') : aOrder - bOrder;
+      }),
+    );
 
     if (expandedCategoryId) {
       const subs = await listSubcategories(db, expandedCategoryId);
@@ -95,16 +106,6 @@ export default function CategoriesScreen() {
     setEditingSubcategory(subcategory);
     setEditSubcategoryName(subcategory.name);
     setShowSubEditModal(true);
-  }
-
-  async function onCreateCategory() {
-    const name = newCategoryName.trim();
-    if (!name) return;
-    const db = await getDb();
-    await createCategory(db, name);
-    setNewCategoryName('');
-    setShowAddModal(false);
-    await refresh();
   }
 
   async function onSaveCategory() {
@@ -194,14 +195,7 @@ export default function CategoriesScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
-        </Pressable>
-        <Text style={styles.headerTitle}>自定义</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="自定义" onBack={() => router.back()} borderBottom />
 
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Category List */}
@@ -223,7 +217,11 @@ export default function CategoriesScreen() {
               </Pressable>
               
               <View style={styles.categoryIcon}>
-                <CategoryIcon name={category.name} size={20} />
+                <CategoryIcon
+                  id={category.icon ?? undefined}
+                  name={category.name}
+                  size={20}
+                />
               </View>
               
               <Text style={styles.categoryName}>{category.name}</Text>
@@ -276,40 +274,9 @@ export default function CategoriesScreen() {
       </ScrollView>
 
       {/* Add Category Button — opens the full icon picker */}
-      <Pressable style={styles.addButton} onPress={() => router.push('/categories/add' as Href)}>
+      <Pressable style={styles.addButton} onPress={() => router.push('/categories/add')}>
         <Text style={styles.addButtonText}>+ 添加自定义</Text>
       </Pressable>
-
-      {/* Add Category Modal */}
-      <Modal visible={showAddModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Pressable onPress={() => setShowAddModal(false)}>
-                <Text style={styles.modalCancel}>取消</Text>
-              </Pressable>
-              <Text style={styles.modalTitle}>添加自定义类目</Text>
-              <Pressable onPress={onCreateCategory}>
-                <Text style={styles.modalSave}>保存</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.modalBody}>
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>分类名称</Text>
-                <TextInput
-                  value={newCategoryName}
-                  onChangeText={setNewCategoryName}
-                  placeholder="不超过6个字符"
-                  style={styles.input}
-                  placeholderTextColor={TEXT_SECONDARY}
-                  maxLength={6}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Edit Category Modal */}
       <Modal visible={showEditModal} animationType="slide" transparent>
@@ -387,27 +354,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    backgroundColor: '#FFFFFF',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
   scrollContent: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -431,8 +377,8 @@ const styles = StyleSheet.create({
   categoryIcon: {
     width: 40,
     height: 40,
-    borderRadius: 8,
-    backgroundColor: `${PRIMARY_GREEN}15`,
+    borderRadius: 20,
+    backgroundColor: '#F7F7F7',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -482,12 +428,12 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
+    bottom: 32,
+    left: '15%',
+    right: '15%',
     backgroundColor: '#1A1A1A',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
   },
   addButtonText: {

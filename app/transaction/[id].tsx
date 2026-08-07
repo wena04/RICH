@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -13,8 +13,9 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, EXPENSE_RED } from '@/constants/Colors';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { ScreenHeader } from '@/components/rich';
 import { getDb } from '@/src/db/db';
-import { getCategoryBudgetStatus } from '@/src/db/repo/budgets';
+import { getBudgetSummary } from '@/src/db/repo/budgets';
 import { getCategoryById } from '@/src/db/repo/categories';
 import { deleteTransaction, getTransaction } from '@/src/db/repo/transactions';
 import type { TransactionType } from '@/src/domain/types';
@@ -38,14 +39,15 @@ export default function TransactionDetailScreen() {
   const [loaded, setLoaded] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
   const [amountCents, setAmountCents] = useState(0);
-  const [categoryName, setCategoryName] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [txDate, setTxDate] = useState('');
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryIcon, setCategoryIcon] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [budgetLabel, setBudgetLabel] = useState('未设置');
+  const [period, setPeriod] = useState('');
+  const [budgetStatus, setBudgetStatus] = useState('未设置');
 
-  useEffect(() => {
-    (async () => {
+  const load = useCallback(async () => {
+    setLoaded(false);
       const db = await getDb();
       const tx = await getTransaction(db, id);
       if (!tx) {
@@ -55,24 +57,37 @@ export default function TransactionDetailScreen() {
       setType(tx.type);
       setAmountCents(tx.amountCents);
       setNote(tx.note);
-      setTxDate(tx.date);
       setCategoryId(tx.categoryId);
+      const transactionPeriod = tx.date.slice(0, 7);
+      setPeriod(transactionPeriod);
       if (tx.categoryId) {
         const cat = await getCategoryById(db, tx.categoryId);
         setCategoryName(cat?.name ?? '');
-        const period = tx.date.slice(0, 7);
-        const status = await getCategoryBudgetStatus(db, period, tx.categoryId);
-        if (status) {
-          setBudgetLabel(`¥${centsToCurrencyString(status.spentCents)} / ¥${centsToCurrencyString(status.limitCents)}`);
+        setCategoryIcon(cat?.icon ?? null);
+        if (tx.type === 'expense') {
+          const summary = await getBudgetSummary(db, transactionPeriod);
+          const status = summary?.categories.find((item) => item.categoryId === tx.categoryId);
+          setBudgetStatus(
+            status
+              ? `¥${centsToCurrencyString(status.spentCents)} / ¥${centsToCurrencyString(status.limitCents)}`
+              : '未设置',
+          );
         } else {
-          setBudgetLabel('未设置');
+          setBudgetStatus('不适用');
         }
       } else {
-        setBudgetLabel('—');
+        setCategoryName('');
+        setCategoryIcon(null);
+        setBudgetStatus('不适用');
       }
       setLoaded(true);
-    })();
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function onDelete() {
     Alert.alert('删除该记录?', '此操作无法撤销。', [
@@ -95,14 +110,11 @@ export default function TransactionDetailScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{titleFor(type)}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader
+        title={titleFor(type)}
+        onBack={() => router.back()}
+        backgroundColor={PRIMARY_GREEN}
+      />
 
       {loaded && (
         <>
@@ -113,7 +125,7 @@ export default function TransactionDetailScreen() {
               onPress={() => router.push(`/transaction/edit/${id}`)}
             >
               <View style={styles.iconCircle}>
-                <CategoryIcon name={categoryName} size={22} />
+                <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={22} />
               </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
@@ -131,15 +143,17 @@ export default function TransactionDetailScreen() {
 
             <Pressable
               style={styles.row}
-              onPress={() => {
-                if (categoryId && txDate) {
-                  router.push(`/budget/edit?period=${txDate.slice(0, 7)}` as Href);
-                }
-              }}
+              disabled={type !== 'expense' || !categoryId || !period}
+              onPress={() =>
+                router.push({ pathname: '/budget/edit', params: { period } })
+              }
             >
               <Text style={styles.planLabel}>所属预算/计划</Text>
-              <Text style={styles.planValue}>{budgetLabel}</Text>
-              <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+              <View style={{ flex: 1 }} />
+              <Text style={styles.planValue}>{budgetStatus}</Text>
+              {type === 'expense' && categoryId ? (
+                <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+              ) : null}
             </Pressable>
           </View>
 
@@ -157,21 +171,11 @@ export default function TransactionDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
-
   card: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
+    marginHorizontal: 24,
     marginTop: 12,
-    borderRadius: 8,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   row: {
@@ -195,15 +199,15 @@ const styles = StyleSheet.create({
   amount: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
   cardDivider: { height: 1, backgroundColor: '#EFEFEF', marginHorizontal: 16 },
   planLabel: { fontSize: 14, color: TEXT_SECONDARY },
-  planValue: { fontSize: 14, color: TEXT_PRIMARY, marginRight: 8 },
+  planValue: { fontSize: 12, color: TEXT_SECONDARY, marginRight: 8 },
 
   deleteButton: {
     flexDirection: 'row',
     gap: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 24,
     marginBottom: 24,
     backgroundColor: EXPENSE_RED,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingVertical: 15,
     alignItems: 'center',
     justifyContent: 'center',

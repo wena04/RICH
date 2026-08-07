@@ -20,17 +20,6 @@ export type Subcategory = {
   name: string;
 };
 
-export type Transaction = {
-  id: string;
-  type: TransactionType;
-  amountCents: number;
-  date: string; // YYYY-MM-DD
-  accountId: string;
-  categoryId: string | null;
-  subcategoryId: string | null;
-  note: string | null;
-};
-
 export type Budget = {
   id: string;
   period: string; // YYYY-MM
@@ -59,3 +48,13 @@ export type BudgetSummary = {
   categories: BudgetCategoryStatus[];
 };
 
+export type Transaction = {
+  id: string;
+  type: TransactionType;
+  amountCents: number;
+  date: string; // YYYY-MM-DD
+  accountId: string;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  note: string | null;
+};

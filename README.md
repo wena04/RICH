@@ -109,6 +109,9 @@ The `.gitignore` protects against accidental commits:
 | [REQUIREMENTS.md](docs/REQUIREMENTS.md) | Goals, scope, acceptance criteria    |
 | [PRODUCT.md](docs/PRODUCT.md)           | UX design, screens, navigation       |
 | [TECHNICAL.md](docs/TECHNICAL.md)       | Architecture, data model, formats    |
+| [COMPONENTS.md](docs/COMPONENTS.md)     | Reusable visual/component contracts  |
+| [FEATURES.md](docs/FEATURES.md)         | Current feature and route inventory  |
+| [FLOWS.md](docs/FLOWS.md)               | End-to-end navigation and behavior   |
 | [PROGRESS.md](docs/PROGRESS.md)         | Implementation status & future plans |
 | [mockups.html](docs/mockups.html)       | Visual mockups (open in browser)     |
 

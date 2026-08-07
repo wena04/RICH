@@ -21,12 +21,12 @@ import {
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { DashedDivider, MonthStepper } from "@/components/rich";
 
 // ---- Design tokens (matched to mockup) ----
 const ENTRY_GREEN = "#B5EAD7"; // light highlight for days with entries
 const INCOME_GREEN = "#34C77B";
 const GAP_GRAY = "#ECECEC";
-const DASH = "#D8D8D8";
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const MONTH_NAMES_CN = [
@@ -51,38 +51,26 @@ function dateHeaderCN(date: string): string {
   return `${parseInt(m)}月${parseInt(d)}日`;
 }
 
-// RN can't reliably render a dashed bottom-border, so draw the dashes manually.
-function DashedLine() {
-  return (
-    <View style={styles.dashRow}>
-      {Array.from({ length: 60 }).map((_, i) => (
-        <View key={i} style={styles.dash} />
-      ))}
-    </View>
-  );
-}
-
 export default function HomeScreen() {
   const router = useRouter();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
-
-  const goPrevMonth = () => {
-    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
-    else setMonth((m) => m - 1);
-  };
-  const goNextMonth = () => {
-    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
-    else setMonth((m) => m + 1);
-  };
-
-  const [selectedDate, setSelectedDate] = useState(
+  const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(
     fmt(today.getFullYear(), today.getMonth(), today.getDate()),
   );
   const [sheetDate, setSheetDate] = useState<string | null>(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
+
+  function changeMonth(delta: number) {
+    const next = new Date(year, month + delta, 1);
+    setYear(next.getFullYear());
+    setMonth(next.getMonth());
+    setSelectedDate(null);
+    setFilterDate(null);
+  }
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -138,6 +126,11 @@ export default function HomeScreen() {
       });
   }, [transactions]);
 
+  const visibleGroups = useMemo(
+    () => (filterDate ? groups.filter((group) => group.date === filterDate) : groups),
+    [filterDate, groups],
+  );
+
   const daysInMonth = getDaysInMonth(year, month);
   const leadOffset = firstWeekdayMonFirst(year, month);
 
@@ -170,16 +163,18 @@ export default function HomeScreen() {
       inner = styles.daySelected;
     } else if (entry) {
       const wd = weekdayOf(day);
-      const leftJoin = wd !== 0 && day > 1 && has(day - 1);
-      const rightJoin = wd !== 6 && day < daysInMonth && has(day + 1);
-      if (leftJoin || rightJoin) {
+      const hasPrevious = day > 1 && has(day - 1);
+      const hasNext = day < daysInMonth && has(day + 1);
+      const leftJoin = wd !== 0 && hasPrevious;
+      const rightJoin = wd !== 6 && hasNext;
+      if (hasPrevious || hasNext) {
         inner = [
           styles.dayBand,
           {
-            borderTopLeftRadius: leftJoin ? 0 : 20,
-            borderBottomLeftRadius: leftJoin ? 0 : 20,
-            borderTopRightRadius: rightJoin ? 0 : 20,
-            borderBottomRightRadius: rightJoin ? 0 : 20,
+            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 20,
+            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 20,
+            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 20,
+            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 20,
           },
         ];
       } else {
@@ -192,9 +187,9 @@ export default function HomeScreen() {
         key={day}
         style={styles.dayCell}
         onPress={() => {
-          setSelectedDate(dateStr);
-          setSheetDate(dateStr);
-          setShowDaySheet(true);
+          const clearing = filterDate === dateStr;
+          setSelectedDate(clearing ? null : dateStr);
+          setFilterDate(clearing ? null : dateStr);
         }}
       >
         <View style={inner}>
@@ -233,18 +228,15 @@ export default function HomeScreen() {
         {/* Calendar card */}
         <View style={styles.calCard}>
           <View style={styles.calTop}>
-            <Pressable onPress={goPrevMonth} style={styles.monthNav} hitSlop={8}>
-              <FontAwesome name="chevron-left" size={12} color={TEXT_SECONDARY} />
-            </Pressable>
-            <Pressable style={styles.monthPill}>
-              <Text style={styles.monthPillText}>
-                {year === today.getFullYear() ? "" : `${year}年`}
-                {MONTH_NAMES_CN[month]} ▼
-              </Text>
-            </Pressable>
-            <Pressable onPress={goNextMonth} style={styles.monthNav} hitSlop={8}>
-              <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
-            </Pressable>
+            <MonthStepper
+              label={`${year === today.getFullYear() ? "" : `${year}年`}${MONTH_NAMES_CN[month]} ▼`}
+              onPrevious={() => changeMonth(-1)}
+              onNext={() => changeMonth(1)}
+              variant="pill"
+              buttonSize={24}
+              labelMinWidth={66}
+              labelStyle={styles.monthPillText}
+            />
             <View style={styles.totals}>
               <View style={styles.totItem}>
                 <Text style={styles.totLabel}>总支出</Text>
@@ -283,14 +275,28 @@ export default function HomeScreen() {
 
         {/* Grouped transaction list */}
         <View style={styles.listArea}>
-          {groups.length === 0 ? (
+          {filterDate ? (
+            <View style={styles.filterBar}>
+              <Text style={styles.filterLabel}>{dateHeaderCN(filterDate)}</Text>
+              <Pressable
+                style={styles.clearFilter}
+                onPress={() => {
+                  setFilterDate(null);
+                  setSelectedDate(null);
+                }}
+              >
+                <Text style={styles.clearFilterText}>查看全部</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {visibleGroups.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyText}>
-                本月还没有记录
+                {filterDate ? '这一天还没有记录' : '本月还没有记录'}
               </Text>
             </View>
           ) : (
-            groups.map((g, gi) => (
+            visibleGroups.map((g, gi) => (
               <View key={g.date}>
                 {gi > 0 && <View style={styles.gapBand} />}
                 <View style={styles.dateHeader}>
@@ -302,7 +308,7 @@ export default function HomeScreen() {
                     <Text style={styles.dayIncome}>+¥{centsToYuan(g.inc)}</Text>
                   </View>
                 </View>
-                <DashedLine />
+                <DashedDivider style={styles.dateDivider} />
                 {g.txs.map((t) => (
                   <Pressable
                     key={t.id}
@@ -310,7 +316,11 @@ export default function HomeScreen() {
                     onPress={() => router.push(`/transaction/${t.id}`)}
                   >
                     <View style={styles.txIcon}>
-                      <CategoryIcon name={t.category?.name} size={16} />
+                      <CategoryIcon
+                        id={t.category?.icon ?? undefined}
+                        name={t.category?.name}
+                        size={16}
+                      />
                     </View>
                     <View style={styles.txInfo}>
                       <Text style={styles.txTitle} numberOfLines={1}>
@@ -324,8 +334,8 @@ export default function HomeScreen() {
                         t.type === "income" && { color: INCOME_GREEN },
                       ]}
                     >
-                      {t.type === "income" ? "+" : "-"}
-                      {centsToYuan(t.amountCents)}
+                      {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
+                      {centsToYuan(Math.abs(t.amountCents))}
                     </Text>
                   </Pressable>
                 ))}
@@ -374,7 +384,7 @@ export default function HomeScreen() {
                         <Text style={styles.dayIncome}>+¥{centsToYuan(g.inc)}</Text>
                       </View>
                     </View>
-                    <DashedLine />
+                    <DashedDivider style={styles.dateDivider} />
                     {g.txs.map((t) => (
                       <Pressable
                         key={t.id}
@@ -399,8 +409,8 @@ export default function HomeScreen() {
                             t.type === "income" && { color: INCOME_GREEN },
                           ]}
                         >
-                          {t.type === "income" ? "+" : "-"}
-                          {centsToYuan(t.amountCents)}
+                          {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
+                          {centsToYuan(Math.abs(t.amountCents))}
                         </Text>
                       </Pressable>
                     ))}
@@ -467,21 +477,14 @@ const styles = StyleSheet.create({
   calCard: {
     backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 0,
+    paddingVertical: 16,
   },
-  calTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
-  monthNav: { paddingHorizontal: 4, paddingVertical: 4 },
-  monthPill: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  calTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    paddingHorizontal: 16,
   },
   monthPillText: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
   totals: { flexDirection: "row", marginLeft: "auto", alignItems: "center" },
@@ -567,6 +570,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
   },
+  filterBar: {
+    minHeight: 38,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  filterLabel: { fontSize: 12, color: TEXT_SECONDARY },
+  clearFilter: {
+    borderRadius: 12,
+    backgroundColor: "#EEEEEE",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  clearFilterText: { fontSize: 10.5, color: TEXT_PRIMARY },
   empty: { paddingVertical: 60, alignItems: "center" },
   emptyText: { fontSize: 15, color: TEXT_SECONDARY },
 
@@ -579,14 +598,10 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 10,
   },
-  dashRow: {
-    flexDirection: "row",
-    overflow: "hidden",
-    height: 1,
+  dateDivider: {
     marginHorizontal: 20,
     marginBottom: 6,
   },
-  dash: { width: 5, height: 1, backgroundColor: DASH, marginRight: 4 },
   dateLabel: { fontSize: 15, color: TEXT_SECONDARY },
   dayTotals: { alignItems: "flex-end" },
   dayExpense: { fontSize: 13, color: TEXT_SECONDARY },

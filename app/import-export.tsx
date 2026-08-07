@@ -1,11 +1,14 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet } from 'react-native';
 
+import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
+import { EXPENSE_RED, PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
 import { listAccounts } from '@/src/db/repo/accounts';
 import type { Account } from '@/src/domain/types';
@@ -14,6 +17,7 @@ import { exportCsvV2 } from '@/src/features/importExport/csvV2';
 import { exportDatabaseToFile, importDatabaseFromFileUri } from '@/src/features/importExport/dbFile';
 
 export default function ImportExportScreen() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [targetAccountId, setTargetAccountId] = useState<string>('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export default function ImportExportScreen() {
   async function ensureSharingAvailable() {
     const available = await Sharing.isAvailableAsync();
     if (!available) {
-      Alert.alert('Sharing not available', 'This device does not support the system share sheet.');
+      Alert.alert('无法分享', '当前设备不支持系统分享面板。');
       return false;
     }
     return true;
@@ -47,7 +51,7 @@ export default function ImportExportScreen() {
 
   async function onImportCsvV1() {
     if (!targetAccountId) {
-      Alert.alert('Select an account', 'CSV v1 has no account column; choose a target account first.');
+      Alert.alert('请选择账户', '旧版 CSV 不包含账户信息，请先选择导入目标账户。');
       return;
     }
 
@@ -58,14 +62,14 @@ export default function ImportExportScreen() {
     if (result.canceled) return;
 
     const file = result.assets[0];
-    setBusy('Importing CSV v1…');
+    setBusy('正在导入旧版 CSV…');
     try {
       const csv = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.UTF8 });
       const db = await getDb();
       const { importedCount } = await importCsvV1(db, csv, { targetAccountId });
-      Alert.alert('Import complete', `Imported ${importedCount} rows into account: ${targetAccountName || targetAccountId}`);
+      Alert.alert('导入完成', `已向“${targetAccountName || targetAccountId}”导入 ${importedCount} 条记录。`);
     } catch (e) {
-      Alert.alert('Import failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert('导入失败', e instanceof Error ? e.message : '未知错误');
     } finally {
       setBusy(null);
     }
@@ -81,28 +85,28 @@ export default function ImportExportScreen() {
   }
 
   async function onExportCsvV1() {
-    setBusy('Exporting CSV v1…');
+    setBusy('正在导出旧版 CSV…');
     try {
       const db = await getDb();
       const csv = await exportCsvV1(db);
       const ts = new Date().toISOString().slice(0, 10);
       await writeAndShare(`rich-export-v1-${ts}.csv`, csv);
     } catch (e) {
-      Alert.alert('Export failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert('导出失败', e instanceof Error ? e.message : '未知错误');
     } finally {
       setBusy(null);
     }
   }
 
   async function onExportCsvV2() {
-    setBusy('Exporting CSV v2…');
+    setBusy('正在导出完整 CSV…');
     try {
       const db = await getDb();
       const csv = await exportCsvV2(db);
       const ts = new Date().toISOString().slice(0, 10);
       await writeAndShare(`rich-export-v2-${ts}.csv`, csv);
     } catch (e) {
-      Alert.alert('Export failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert('导出失败', e instanceof Error ? e.message : '未知错误');
     } finally {
       setBusy(null);
     }
@@ -110,12 +114,12 @@ export default function ImportExportScreen() {
 
   async function onExportDb() {
     if (!(await ensureSharingAvailable())) return;
-    setBusy('Exporting database…');
+    setBusy('正在创建完整备份…');
     try {
       const path = await exportDatabaseToFile();
       await Sharing.shareAsync(path);
     } catch (e) {
-      Alert.alert('Export failed', e instanceof Error ? e.message : 'Unknown error');
+      Alert.alert('备份失败', e instanceof Error ? e.message : '未知错误');
     } finally {
       setBusy(null);
     }
@@ -130,21 +134,21 @@ export default function ImportExportScreen() {
     const file = result.assets[0];
 
     Alert.alert(
-      'Import database file?',
-      'This will overwrite your current local database on this device.',
+      '恢复此数据库备份？',
+      '这会覆盖当前设备上的全部本地数据，操作无法撤销。',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: '取消', style: 'cancel' },
         {
-          text: 'Import',
+          text: '覆盖并恢复',
           style: 'destructive',
           onPress: async () => {
-            setBusy('Importing database…');
+            setBusy('正在恢复数据库…');
             try {
               await importDatabaseFromFileUri(file.uri);
               await refreshAccounts();
-              Alert.alert('Import complete', 'Database imported. If anything looks off, fully restart the app.');
+              Alert.alert('恢复完成', '数据库已恢复。若页面数据未立即刷新，请完全关闭后重新打开应用。');
             } catch (e) {
-              Alert.alert('Import failed', e instanceof Error ? e.message : 'Unknown error');
+              Alert.alert('恢复失败', e instanceof Error ? e.message : '未知错误');
             } finally {
               setBusy(null);
             }
@@ -154,163 +158,147 @@ export default function ImportExportScreen() {
     );
   }
 
+  function ActionRow({
+    icon,
+    title,
+    detail,
+    onPress,
+    danger = false,
+    divider = false,
+  }: {
+    icon: string;
+    title: string;
+    detail: string;
+    onPress: () => void;
+    danger?: boolean;
+    divider?: boolean;
+  }) {
+    return (
+      <Pressable
+        disabled={Boolean(busy)}
+        onPress={onPress}
+        style={({ pressed }) => [styles.actionRow, divider && styles.divider, pressed && styles.pressed]}
+      >
+        <View style={styles.actionIcon}>
+          <FontAwesome name={icon as any} size={18} color={danger ? EXPENSE_RED : TEXT_PRIMARY} />
+        </View>
+        <View style={styles.actionCopy}>
+          <Text style={[styles.actionTitle, danger && styles.dangerText]}>{title}</Text>
+          <Text style={styles.actionDetail}>{detail}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+      </Pressable>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Import / Export</Text>
-      <Text style={styles.subtitle}>
-        CSV v1 (legacy) + optional CSV v2 + database file export/import (local-only).
-      </Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
+      <ScreenHeader title="数据管理" onBack={() => router.back()} backgroundColor={PRIMARY_GREEN} />
 
-      <View style={styles.warning}>
-        <Text style={styles.warningTitle}>Privacy warning</Text>
-        <Text>
-          Exported files may contain sensitive information. Store them securely. Never commit real exports to git.
-        </Text>
-      </View>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {busy ? <Text style={styles.busy}>{busy}</Text> : null}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>CSV v1 (legacy)</Text>
-        <Text style={styles.hint}>Import requires selecting a target account (v1 has no account column).</Text>
-        <View style={styles.chips}>
-          {accounts.map((a) => (
-            <Pressable
-              key={a.id}
-              onPress={() => setTargetAccountId(a.id)}
-              style={[styles.chip, a.id === targetAccountId && styles.chipActive]}>
-              <Text style={styles.chipText}>{a.name}</Text>
-            </Pressable>
-          ))}
+        <Text style={styles.sectionLabel}>备份与迁移</Text>
+        <View style={styles.section}>
+          <ActionRow
+            icon="database"
+            title="导出完整备份"
+            detail="保留账户、分类、子分类、预算和全部记录"
+            onPress={onExportDb}
+          />
+          <ActionRow
+            icon="refresh"
+            title="从备份恢复"
+            detail="选择数据库文件并覆盖当前设备数据"
+            onPress={onImportDb}
+            danger
+            divider
+          />
         </View>
-        <View style={styles.actions}>
-          <Pressable onPress={onImportCsvV1} style={styles.primary}>
-            <Text style={styles.primaryText}>Import CSV v1</Text>
-          </Pressable>
-          <Pressable onPress={onExportCsvV1} style={styles.secondary}>
-            <Text style={styles.secondaryText}>Export CSV v1</Text>
-          </Pressable>
+
+        <Text style={styles.sectionLabel}>表格导出</Text>
+        <View style={styles.section}>
+          <ActionRow
+            icon="file-text-o"
+            title="导出完整 CSV"
+            detail="包含账户、分类、子分类和稳定 ID"
+            onPress={onExportCsvV2}
+          />
+          <ActionRow
+            icon="file-o"
+            title="导出旧版 CSV"
+            detail="用于兼容早期 RICH 数据格式"
+            onPress={onExportCsvV1}
+            divider
+          />
         </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>CSV v2 (optional extended export)</Text>
-        <Text style={styles.hint}>Includes IDs + account + optional subcategory fields.</Text>
-        <Pressable onPress={onExportCsvV2} style={styles.secondary}>
-          <Text style={styles.secondaryText}>Export CSV v2</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Database file</Text>
-        <Text style={styles.hint}>Full-fidelity backup and migration.</Text>
-        <View style={styles.actions}>
-          <Pressable onPress={onExportDb} style={styles.secondary}>
-            <Text style={styles.secondaryText}>Export DB file</Text>
-          </Pressable>
-          <Pressable onPress={onImportDb} style={styles.danger}>
-            <Text style={styles.dangerText}>Import DB file</Text>
-          </Pressable>
+        <Text style={styles.sectionLabel}>导入旧版 CSV 到</Text>
+        <View style={styles.section}>
+          <View style={styles.accountArea}>
+            <View style={styles.chips}>
+              {accounts.map((account) => (
+                <Pressable
+                  key={account.id}
+                  onPress={() => setTargetAccountId(account.id)}
+                  style={[styles.chip, account.id === targetAccountId && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, account.id === targetAccountId && styles.chipTextActive]}>
+                    {account.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <ActionRow
+            icon="upload"
+            title="选择 CSV 并导入"
+            detail="旧版格式没有账户列，所有记录会进入上方账户"
+            onPress={onImportCsvV1}
+            divider
+          />
         </View>
-      </View>
 
-      {busy ? <Text style={styles.busy}>{busy}</Text> : null}
-    </View>
+        <Text style={styles.privacyNote}>导出文件可能包含敏感财务信息，请保存在可信位置。</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    gap: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  subtitle: {
-    opacity: 0.8,
-  },
-  warning: {
-    padding: 14,
-    borderRadius: 12,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(193, 18, 31, 0.25)',
-  },
-  warningTitle: {
-    fontWeight: '700',
-  },
-  card: {
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  cardTitle: {
-    fontWeight: '700',
-  },
-  hint: {
-    opacity: 0.75,
-    fontSize: 12,
-  },
+  container: { flex: 1, backgroundColor: '#F4F4F4' },
+  scroll: { flex: 1 },
+  content: { paddingTop: 18, paddingBottom: 40 },
+  sectionLabel: { marginHorizontal: 18, marginBottom: 8, fontSize: 12, color: TEXT_SECONDARY },
+  section: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#FFFFFF', borderRadius: 3 },
+  actionRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#DDDDDD' },
+  pressed: { backgroundColor: '#F7F7F7' },
+  actionIcon: { width: 34, alignItems: 'flex-start' },
+  actionCopy: { flex: 1, paddingRight: 12 },
+  actionTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
+  actionDetail: { marginTop: 4, fontSize: 10.5, lineHeight: 15, color: TEXT_SECONDARY },
+  dangerText: { color: EXPENSE_RED },
+  accountArea: { paddingHorizontal: 16, paddingVertical: 14 },
   chips: {
     flexDirection: 'row',
     gap: 8,
     flexWrap: 'wrap',
   },
   chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.3)',
+    borderColor: '#D5D5D5',
   },
   chipActive: {
-    borderColor: 'rgba(127,127,127,0.8)',
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: `${PRIMARY_GREEN}18`,
   },
-  chipText: {
-    fontSize: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  primary: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.3)',
-    alignItems: 'center',
-  },
-  primaryText: {
-    fontWeight: '600',
-  },
-  secondary: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.3)',
-    alignItems: 'center',
-  },
-  secondaryText: {
-    fontWeight: '600',
-  },
-  danger: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(193, 18, 31, 0.4)',
-    alignItems: 'center',
-  },
-  dangerText: {
-    color: '#c1121f',
-    fontWeight: '600',
-  },
-  busy: {
-    opacity: 0.8,
-    fontSize: 12,
-  },
+  chipText: { fontSize: 12, color: TEXT_SECONDARY },
+  chipTextActive: { color: TEXT_PRIMARY, fontWeight: '600' },
+  privacyNote: { marginHorizontal: 20, fontSize: 11, lineHeight: 17, color: TEXT_SECONDARY },
+  busy: { marginHorizontal: 18, marginBottom: 14, fontSize: 12, color: PRIMARY_GREEN },
 });
-

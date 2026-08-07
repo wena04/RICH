@@ -2,11 +2,23 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 import {
+  formatIsoDateCN,
   isIsoDate,
   isoDateToLegacy,
   legacyDateToIso,
   toIsoDate,
 } from '../utils/date';
+
+describe('formatIsoDateCN', () => {
+  it('formats an ISO date for compact app controls', () => {
+    assert.equal(formatIsoDateCN('2025-01-05'), '1月5日');
+    assert.equal(formatIsoDateCN('2025-01-05', true), '2025年1月5日');
+  });
+
+  it('leaves malformed values visible instead of inventing a date', () => {
+    assert.equal(formatIsoDateCN('not-a-date'), 'not-a-date');
+  });
+});
 
 describe('toIsoDate', () => {
   it('formats a Date as YYYY-MM-DD with leading zeros', () => {

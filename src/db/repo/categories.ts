@@ -13,16 +13,26 @@ export async function listCategories(db: AppDb): Promise<Category[]> {
 export async function listCategoriesWithSubcategoryCounts(
   db: AppDb
 ): Promise<Array<Category & { subcategoryCount: number }>> {
-  const rows = await db.getAllAsync<{ id: string; name: string; sub_cnt: number }>(
+  const rows = await db.getAllAsync<{
+    id: string;
+    name: string;
+    icon: string | null;
+    sub_cnt: number;
+  }>(
     `
-    SELECT c.id, c.name, COUNT(s.id) AS sub_cnt
+    SELECT c.id, c.name, c.icon, COUNT(s.id) AS sub_cnt
     FROM categories c
     LEFT JOIN subcategories s ON s.category_id = c.id
-    GROUP BY c.id, c.name
+    GROUP BY c.id, c.name, c.icon
     ORDER BY c.name ASC
     `
   );
-  return rows.map((r) => ({ id: r.id, name: r.name, subcategoryCount: r.sub_cnt ?? 0 }));
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    icon: r.icon,
+    subcategoryCount: r.sub_cnt ?? 0,
+  }));
 }
 
 export async function getCategoryByName(db: AppDb, name: string): Promise<Category | null> {
@@ -88,7 +98,16 @@ export async function getCategoryById(db: AppDb, id: string): Promise<Category |
 
 export async function ensureCategory(db: AppDb, name: string, icon?: string | null): Promise<Category> {
   const existing = await getCategoryByName(db, name);
-  if (existing) return existing;
+  if (existing) {
+    if (icon && !existing.icon) {
+      await db.runAsync(
+        'UPDATE categories SET icon = ?, updated_at = ? WHERE id = ?',
+        [icon, new Date().toISOString(), existing.id],
+      );
+      return { ...existing, icon };
+    }
+    return existing;
+  }
   return await createCategory(db, name, icon);
 }
 
@@ -187,4 +206,3 @@ export async function ensureSubcategory(
   if (existing) return existing;
   return await createSubcategory(db, categoryId, name);
 }
-

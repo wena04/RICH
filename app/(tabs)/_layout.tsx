@@ -3,20 +3,31 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
-import Colors, { PRIMARY_GREEN, FAB_BACKGROUND, FAB_ICON, TEXT_PRIMARY, TEXT_MUTED } from '@/constants/Colors';
+import Colors, { PRIMARY_GREEN, FAB_BACKGROUND, FAB_ICON, TEXT_MUTED } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { RICH_SIZE } from '@/constants/Design';
 
 // Custom Tab Bar Component
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   const isHomeActive = state.index === 0;
   const isChartsActive = state.index === 2;
 
   return (
-    <View style={styles.tabBar}>
+    <View
+      style={[
+        styles.tabBar,
+        {
+          height: RICH_SIZE.tabBar + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
+        },
+      ]}
+    >
       {/* Home Tab */}
       <Pressable
         style={styles.tab}
@@ -45,7 +56,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           accessibilityLabel="记一笔"
           accessibilityRole="button"
         >
-          <FontAwesome name="plus" size={24} color={FAB_ICON} />
+          <Text style={styles.fabPlus}>+</Text>
         </Pressable>
       </View>
 
@@ -125,18 +136,13 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 70,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingHorizontal: 24,
-    paddingBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#DDDDDD',
   },
   tab: {
     flex: 1,
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
     color: TEXT_MUTED,
   },
   tabLabelActive: {
-    color: TEXT_PRIMARY,
+    color: PRIMARY_GREEN,
     fontWeight: '600',
   },
   fabContainer: {
@@ -159,13 +165,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: RICH_SIZE.fab,
+    height: RICH_SIZE.fab,
+    borderRadius: RICH_SIZE.fab / 2,
     backgroundColor: FAB_BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -24,
+    marginTop: -28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -175,5 +181,11 @@ const styles = StyleSheet.create({
   fabPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.95 }],
+  },
+  fabPlus: {
+    color: FAB_ICON,
+    fontSize: 30,
+    fontWeight: '300',
+    lineHeight: 32,
   },
 });

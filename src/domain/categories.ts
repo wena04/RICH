@@ -23,3 +23,15 @@ export const DEFAULT_CATEGORIES: Array<{ name: string; icon: string }> = [
   { name: '人情/借钱', icon: 'handshake' },
   { name: '买菜', icon: 'carrot' },
 ];
+
+/** Default income categories matching the original RICH app order. */
+export const DEFAULT_INCOME_CATEGORIES: Array<{ name: string; icon: string }> = [
+  { name: '工资', icon: 'wallet' },
+  { name: '兼职', icon: 'clockyen' },
+  { name: '理财', icon: 'chart' },
+  { name: '奖金', icon: 'trophyyen' },
+  { name: '报销', icon: 'clipplus' },
+  { name: '退款', icon: 'refund' },
+  { name: '收红包', icon: 'envmoney' },
+  { name: '其他收入', icon: 'grid' },
+];
