@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+import { AssetGoalIllustration, ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { 
   PRIMARY_GREEN, 
@@ -132,7 +133,7 @@ export default function AccountsScreen() {
   }
 
   function onTransfer() {
-    router.push('/transaction/transfer' as Href);
+    router.push('/transaction/transfer');
   }
 
   const refresh = useCallback(async () => {
@@ -206,23 +207,11 @@ export default function AccountsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
       
-      {/* Green Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
-        </Pressable>
-        <Text style={styles.headerTitle}>资产管理</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="资产管理" onBack={() => router.back()} backgroundColor={PRIMARY_GREEN} />
 
       {/* Asset Summary + savings goal */}
       <View style={styles.assetSummary}>
-        <View style={styles.assetIllustration}>
-          <FontAwesome name="university" size={34} color="#E8D9A0" />
-          <View style={styles.pctBadge}>
-            <Text style={styles.pctBadgeText}>{goalPct}%</Text>
-          </View>
-        </View>
+        <AssetGoalIllustration progress={goalPct} />
         <View style={styles.assetInfo}>
           <Pressable style={styles.goalRow} onPress={onEditGoal}>
             <Text style={styles.goalLabel}>🚩 目标资产 ¥{centsToYuan(goalCents)}</Text>
@@ -441,54 +430,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PRIMARY_GREEN,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: PRIMARY_GREEN,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
   assetSummary: {
     flexDirection: 'row',
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 16,
+    gap: 14,
     backgroundColor: PRIMARY_GREEN,
-  },
-  assetIllustration: {
-    width: 76,
-    height: 76,
-    backgroundColor: '#1b242f',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    position: 'relative',
-  },
-  pctBadge: {
-    position: 'absolute',
-    right: 5,
-    bottom: 6,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-  },
-  pctBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '600',
   },
   assetInfo: {
     flex: 1,
@@ -499,11 +446,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 34,
     backgroundColor: 'transparent',
   },
   goalLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: TEXT_PRIMARY,
   },
   goalValue: {
@@ -512,12 +459,12 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
   },
   totalLabel: {
-    fontSize: 12,
+    fontSize: 16,
     color: TEXT_PRIMARY,
     marginBottom: 4,
   },
   totalValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: TEXT_PRIMARY,
   },
@@ -527,10 +474,10 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   accountGroup: {
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginBottom: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 4,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   groupHeader: {
@@ -597,10 +544,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   xferButton: {
-    marginHorizontal: 16,
+    marginHorizontal: 60,
     marginTop: 2,
     backgroundColor: '#1A1A1A',
-    borderRadius: 12,
+    borderRadius: 0,
     paddingVertical: 14,
     alignItems: 'center',
   },

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Pressable, SafeAreaView, StatusBar, ScrollView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
+import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 
@@ -28,10 +29,7 @@ export default function MoreScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
       
-      {/* Green Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的</Text>
-      </View>
+      <ScreenHeader title="我的" onBack={() => router.back()} backgroundColor={PRIMARY_GREEN} />
 
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Settings Section */}
@@ -78,12 +76,12 @@ export default function MoreScreen() {
             <MenuItem 
               icon="info-circle" 
               label="关于应用" 
-              onPress={() => {}} 
+              onPress={() => router.push('/about')}
             />
             <MenuItem 
               icon="shield" 
               label="隐私政策" 
-              onPress={() => {}} 
+              onPress={() => router.push('/privacy')}
             />
           </View>
         </View>
@@ -105,22 +103,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PRIMARY_GREEN,
   },
-  header: {
-    backgroundColor: PRIMARY_GREEN,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
   scrollContent: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     paddingTop: 24,
   },
   section: {
@@ -136,7 +121,7 @@ const styles = StyleSheet.create({
   menuGroup: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   menuItem: {

@@ -1,0 +1,487 @@
+<!-- RICH 记账 — current-design mockups. Faithful recreation of the existing React Native screens. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RICH 记账 — Screen Mockups</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+  :root{
+    --green:#3ECDA5; --green-dark:#2BB890;
+    --red:#FF6B6B; --inc:#4CAF50; --blue:#5C9CE6;
+    --ink:#1A1A1A; --sec:#666; --mut:#999;
+    --bg:#F5F5F5; --line:#E5E5E5; --hair:#F0F0F0;
+    --fab:#1A1A1A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    background:#0e1116; color:#e8eaed; padding:32px 20px 80px; line-height:1.45;
+  }
+  .page-head{max-width:1200px; margin:0 auto 28px;}
+  .page-head h1{font-size:26px; font-weight:700; letter-spacing:-.4px;}
+  .page-head p{color:#9aa0a6; font-size:14px; margin-top:6px; max-width:680px;}
+  .swatches{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+  .sw{display:flex; align-items:center; gap:7px; font-size:12px; color:#c2c6cc; background:#1a1f27; padding:6px 10px; border-radius:8px;}
+  .sw i{width:14px; height:14px; border-radius:4px; display:inline-block;}
+  .grid{
+    max-width:1200px; margin:0 auto;
+    display:flex; flex-wrap:wrap; gap:34px 28px; justify-content:center;
+  }
+  .frame-wrap{width:300px;}
+  .caption{margin-top:14px; text-align:center;}
+  .caption .t{font-weight:600; font-size:14px;}
+  .caption .d{color:#9aa0a6; font-size:12px; margin-top:3px;}
+
+  /* iPhone frame */
+  .phone{
+    width:300px; height:620px; background:#000; border-radius:42px; padding:11px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55), 0 0 0 1px #2a2f37; position:relative;
+  }
+  .screen{
+    width:100%; height:100%; background:#fff; border-radius:32px; overflow:hidden;
+    position:relative; display:flex; flex-direction:column;
+  }
+  .notch{position:absolute; top:11px; left:50%; transform:translateX(-50%); width:110px; height:24px; background:#000; border-radius:0 0 16px 16px; z-index:50;}
+  .statusbar{height:34px; flex:0 0 34px; display:flex; align-items:center; justify-content:space-between; padding:0 22px 0 26px; font-size:12px; font-weight:600; color:var(--ink); z-index:40;}
+  .statusbar.on-green{color:var(--ink);}
+  .statusbar .right i{margin-left:5px; font-size:11px;}
+
+  /* shared bits */
+  .green-head{background:var(--green); padding:6px 20px 14px;}
+  .green-head .brand{font-size:24px; font-weight:700; color:var(--ink);}
+  .green-head.center{text-align:center; padding:14px 20px;}
+  .green-head .title{font-size:17px; font-weight:600; color:var(--ink);}
+  .row{display:flex; align-items:center;}
+  .between{justify-content:space-between;}
+  .avatar{width:34px;height:34px;border:1.6px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:14px;}
+
+  .card{background:#fff; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.10);}
+  .body{flex:1; overflow:hidden;}
+
+  /* HOME */
+  .home{background:var(--green); height:100%; display:flex; flex-direction:column;}
+  .cal-card{margin:0 16px; background:#fff; border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .cal-top{display:flex; align-items:center; margin-bottom:12px;}
+  .cal-top .mlabel{font-size:13px; font-weight:600; color:var(--ink); margin:0 4px;}
+  .cal-top .nav{color:var(--sec); font-size:11px; padding:4px;}
+  .cal-top .totals{margin-left:auto; display:flex; gap:16px;}
+  .cal-top .tot{text-align:right;}
+  .cal-top .tot .l{font-size:9px; color:var(--sec);}
+  .cal-top .tot .v{font-size:13px; font-weight:600; color:var(--ink);}
+  .wk{display:flex; margin-bottom:6px;}
+  .wk span{flex:1; text-align:center; font-size:10px; color:var(--sec); font-weight:500;}
+  .days{display:flex; flex-wrap:wrap;}
+  .day{width:14.28%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--ink);}
+  .day .c{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .day.today .c{background:var(--green); color:var(--ink); font-weight:600;}
+  .day.sel .c{border:2px solid var(--ink); font-weight:600;}
+  .day.dot .c{font-weight:700;}
+  .daily{flex:1; background:#fff; margin-top:14px; border-radius:24px 24px 0 0; padding-top:14px; display:flex; flex-direction:column;}
+  .daily-head{display:flex; justify-content:space-between; align-items:center; padding:0 18px 10px; border-bottom:1px solid var(--hair);}
+  .daily-head .d{font-size:13px; color:var(--sec);}
+  .daily-head .tt{display:flex; gap:12px; font-size:12px;}
+  .tx{display:flex; align-items:center; padding:12px 18px; border-bottom:1px solid #F5F5F5;}
+  .tx .ic{width:38px;height:38px;border-radius:50%;background:#F5F5F5;display:flex;align-items:center;justify-content:center;margin-right:12px;color:var(--sec);font-size:14px;}
+  .tx .info{flex:1;}
+  .tx .info .ti{font-size:14px; font-weight:500; color:var(--ink);}
+  .tx .info .su{font-size:11px; color:var(--sec); margin-top:2px;}
+  .tx .amt{font-size:15px; font-weight:600;}
+
+  /* tab bar */
+  .tabbar{height:58px; flex:0 0 58px; background:#fff; box-shadow:0 -2px 8px rgba(0,0,0,.08); display:flex; align-items:center; justify-content:space-around; position:relative;}
+  .tabbar .ti{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--mut);}
+  .tabbar .ti.act{color:var(--ink);}
+  .tabbar .ti i{font-size:19px;}
+  .fab{width:50px;height:50px;border-radius:50%;background:var(--fab);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;margin-top:-22px;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+
+  /* ADD */
+  .add{background:#fff; height:100%; display:flex; flex-direction:column;}
+  .add-head{display:flex; align-items:center; padding:10px 16px; border-bottom:1px solid var(--hair);}
+  .add-head .back{padding:6px 8px; color:var(--ink);}
+  .toggle{display:flex; background:#F5F5F5; border-radius:20px; padding:2px; margin-left:14px;}
+  .toggle span{padding:5px 15px; border-radius:18px; font-size:13px; color:var(--sec);}
+  .toggle span.act{background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .add-head .date{margin-left:auto; font-size:13px; color:var(--ink);}
+  .amount{padding:20px 22px; font-size:38px; font-weight:300; color:var(--ink); letter-spacing:-1px;}
+  .amount .cur{color:var(--green);}
+  .catgrid{flex:1; overflow:hidden; display:flex; flex-wrap:wrap; padding:0 12px; align-content:flex-start;}
+  .cat{width:20%; display:flex; flex-direction:column; align-items:center; padding:9px 0;}
+  .cat .ci{width:44px;height:44px;border-radius:50%;background:#F5F5F5;display:flex;align-items:center;justify-content:center;color:var(--sec);font-size:18px;margin-bottom:5px;}
+  .cat .cn{font-size:10px; color:var(--sec); text-align:center;}
+  .cat.sel .ci{background:rgba(62,205,165,.13); border:2px solid var(--green); color:var(--green);}
+  .cat.sel .cn{color:var(--green); font-weight:500;}
+  .botbar{display:flex; align-items:center; padding:10px 14px; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair);}
+  .acct{display:flex; align-items:center; padding-right:14px; border-right:1px solid var(--line);}
+  .acct .ai{width:26px;height:26px;border-radius:50%;background:#FFF3E0;display:flex;align-items:center;justify-content:center;color:#FFA500;font-size:12px;margin-right:7px;}
+  .acct .an{font-size:13px; color:var(--ink); margin-right:6px;}
+  .note{flex:1; display:flex; align-items:center; gap:8px; margin-left:14px; color:var(--sec); font-size:13px;}
+  .numpad{display:flex; background:#F8F8F8;}
+  .npgrid{flex:3;}
+  .nprow{display:flex;}
+  .nkey{flex:1; height:46px; display:flex; align-items:center; justify-content:center; background:#fff; border:.5px solid var(--line); font-size:20px; color:var(--ink);}
+  .npops{flex:1; display:flex; flex-direction:column;}
+  .opkey{height:46px; display:flex; align-items:center; justify-content:center; background:#F5F5F5; border:.5px solid var(--line); font-size:22px; color:var(--ink);}
+  .confirm{flex:1; background:var(--fab); color:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:600;}
+
+  /* generic scroll page on grey */
+  .greypage{background:var(--green); height:100%; display:flex; flex-direction:column;}
+  .scroll{flex:1; background:var(--bg); border-radius:24px 24px 0 0; padding:16px 0; overflow:hidden;}
+  .summary{display:flex; margin:0 16px 14px; background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.1);}
+  .summary .s{flex:1; text-align:center;}
+  .summary .s .l{font-size:11px; color:var(--sec); margin-bottom:6px;}
+  .summary .s .v{font-size:15px; font-weight:600; color:var(--ink);}
+  .month-row{display:flex; justify-content:center; align-items:center; gap:24px; margin-bottom:14px;}
+  .month-row .ml{font-size:15px; font-weight:600; color:var(--ink);}
+  .month-row .nav{color:var(--sec); font-size:13px;}
+  .pcard{background:#fff; margin:0 16px 14px; border-radius:12px; padding:14px;}
+  .pcard .ct{font-size:15px; font-weight:600; color:var(--ink);}
+  .pcard .cs{font-size:11px; color:var(--sec); margin-top:3px;}
+  .pierow{display:flex; gap:14px; align-items:center; margin-top:12px;}
+  .donut{width:120px;height:120px;border-radius:50%;flex:0 0 120px;
+    background:conic-gradient(#FF6B6B 0 32%, #4ECDC4 32% 55%, #FFE66D 55% 72%, #95E1D3 72% 86%, #F38181 86% 100%);
+    display:flex; align-items:center; justify-content:center; position:relative;}
+  .donut::after{content:""; width:64px;height:64px;border-radius:50%;background:#fff;}
+  .legend{flex:1; display:flex; flex-direction:column; gap:6px;}
+  .lg{display:flex; align-items:center; gap:8px; background:#F5F5F5; padding:6px 9px; border-radius:8px;}
+  .lg.act{background:rgba(62,205,165,.13); border:1px solid var(--green);}
+  .lg .sw{width:11px;height:11px;border-radius:50%;}
+  .lg .ln{flex:1; font-size:12px; font-weight:500; color:var(--ink);}
+  .lg .lp{font-size:12px; color:var(--sec);}
+  .trend{height:90px; margin-top:10px; position:relative;}
+  .ticks{display:flex; justify-content:space-between; margin-top:6px; padding:0 4px;}
+  .ticks span{font-size:9px; color:var(--sec);}
+  .tlegend{display:flex; justify-content:center; gap:22px; margin-top:10px;}
+  .tlegend .ti{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--sec);}
+  .tlegend .dot{width:8px;height:8px;border-radius:50%;}
+
+  /* asset / list rows */
+  .asset-summary{text-align:center; padding:10px 0 16px;}
+  .asset-summary .l{font-size:12px; color:var(--ink); opacity:.85;}
+  .asset-summary .v{font-size:30px; font-weight:700; color:var(--ink); margin-top:4px;}
+  .grp{margin:0 16px 16px; background:#fff; border-radius:12px; overflow:hidden;}
+  .grp-head{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--hair);}
+  .grp-head .gl{font-size:13px; font-weight:600; color:var(--ink);}
+  .grp-head .gr{font-size:12px; color:var(--sec);}
+  .grp-head .add{font-size:12px; color:var(--green); font-weight:600;}
+  .arow{display:flex; align-items:center; padding:12px 14px; border-bottom:1px solid #F5F5F5;}
+  .arow .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;margin-right:11px;}
+  .arow .an{flex:1; font-size:14px; color:var(--ink);}
+  .arow .ab{font-size:14px; font-weight:600; color:var(--ink); margin-right:8px;}
+  .arow .chev{color:var(--mut); font-size:12px;}
+
+  /* categories list */
+  .crow{display:flex; align-items:center; padding:13px 14px; background:#fff; border-bottom:1px solid var(--hair);}
+  .crow .exp{color:var(--mut); font-size:11px; width:16px;}
+  .crow .ci{width:32px;height:32px;border-radius:8px;background:rgba(62,205,165,.15);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;margin:0 11px;}
+  .crow .cn{flex:1; font-size:14px; color:var(--ink);}
+  .crow .menu{color:var(--mut); font-size:16px;}
+  .subrow{display:flex; align-items:center; padding:11px 14px 11px 56px; background:#FAFAFA; border-bottom:1px solid var(--hair); font-size:13px; color:var(--sec);}
+  .addbtn{margin:16px; background:var(--fab); color:#fff; border-radius:12px; text-align:center; padding:14px; font-size:15px; font-weight:600;}
+
+  /* more / settings */
+  .sec{margin-bottom:20px;}
+  .sec .st{font-size:12px; color:var(--sec); padding:0 20px; margin-bottom:8px;}
+  .mgroup{background:#fff; margin:0 16px; border-radius:12px; overflow:hidden;}
+  .mitem{display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid #F5F5F5;}
+  .mitem i.lead{width:22px; color:var(--sec); font-size:16px; margin-right:12px;}
+  .mitem .ml{flex:1; font-size:15px; color:var(--ink);}
+  .mitem i.chev{color:var(--mut); font-size:13px;}
+  .appinfo{text-align:center; padding:24px 0;}
+  .appinfo .n{font-size:15px; font-weight:600; color:var(--ink);}
+  .appinfo .vv{font-size:11px; color:var(--sec); margin-top:4px;}
+
+  /* detail */
+  .field{display:flex; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--hair); font-size:14px;}
+  .field .fl{color:var(--sec);}
+  .field .fv{color:var(--ink); font-weight:500;}
+  .delbtn{margin:20px 18px; border:1px solid var(--red); color:var(--red); border-radius:12px; text-align:center; padding:13px; font-size:15px; font-weight:600;}
+
+  /* import-export (note: currently English in code) */
+  .ie-title{font-size:20px; font-weight:700; color:var(--ink); padding:14px 18px 2px;}
+  .ie-sub{font-size:12px; color:var(--sec); padding:0 18px 10px;}
+  .warn{margin:0 16px 14px; background:#FFF7E6; border:1px solid #FFE0A3; border-radius:10px; padding:11px 13px;}
+  .warn .wt{font-size:12px; font-weight:700; color:#B26A00;}
+  .iecard{margin:0 16px 12px; background:#fff; border:1px solid var(--hair); border-radius:12px; padding:13px;}
+  .iecard .ct{font-size:14px; font-weight:600; color:var(--ink);}
+  .iecard .hint{font-size:11px; color:var(--sec); margin:4px 0 10px;}
+  .btn-primary{background:var(--green); color:#fff; border-radius:9px; padding:10px; text-align:center; font-size:13px; font-weight:600; margin-bottom:8px;}
+  .btn-sec{background:#F2F2F2; color:var(--ink); border-radius:9px; padding:10px; text-align:center; font-size:13px; font-weight:600;}
+  .btn-danger{background:#fff; color:var(--red); border:1px solid var(--red); border-radius:9px; padding:10px; text-align:center; font-size:13px; font-weight:600; margin-top:8px;}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .chip{font-size:11px; padding:5px 10px; border-radius:14px; background:#EEF7F3; color:var(--green-dark); border:1px solid #CDEBE0;}
+
+  .flag{display:inline-block; font-size:11px; background:#3a2a00; color:#ffd27a; border:1px solid #6b4f00; padding:2px 7px; border-radius:6px;}
+</style>
+
+<div class="page-head">
+  <h1>RICH 记账 — current design, all screens</h1>
+  <p>These mockups faithfully recreate what each screen renders <em>today</em> from your code (tokens, layout, copy, colors all matched). Use them to judge the look and tell me what to change — I can edit any screen and then push the changes back into the actual React Native files.</p>
+  <div class="swatches">
+    <span class="sw"><i style="background:#3ECDA5"></i>#3ECDA5 primary</span>
+    <span class="sw"><i style="background:#FF6B6B"></i>#FF6B6B expense</span>
+    <span class="sw"><i style="background:#4CAF50"></i>#4CAF50 income</span>
+    <span class="sw"><i style="background:#1A1A1A"></i>#1A1A1A ink / FAB</span>
+    <span class="sw"><i style="background:#F5F5F5"></i>#F5F5F5 bg</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- 1. HOME -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="home">
+        <div class="green-head"><div class="row between"><span class="brand">Rich记账</span><span class="avatar"><i class="fa fa-user-o"></i></span></div></div>
+        <div class="cal-card">
+          <div class="cal-top">
+            <span class="nav"><i class="fa fa-chevron-left"></i></span>
+            <span class="mlabel">6月 ▼</span>
+            <span class="nav"><i class="fa fa-chevron-right"></i></span>
+            <div class="totals">
+              <div class="tot"><div class="l">总支出</div><div class="v">¥ 3204.50</div></div>
+              <div class="tot"><div class="l">总收入</div><div class="v">¥ 8000.00</div></div>
+            </div>
+          </div>
+          <div class="wk"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+          <div class="days">
+            <div class="day"><span class="c"></span></div><div class="day"><span class="c"></span></div>
+            <div class="day"><span class="c">1</span></div><div class="day dot"><span class="c">2</span></div><div class="day"><span class="c">3</span></div><div class="day dot"><span class="c">4</span></div><div class="day"><span class="c">5</span></div>
+            <div class="day"><span class="c">6</span></div><div class="day dot"><span class="c">7</span></div><div class="day"><span class="c">8</span></div><div class="day"><span class="c">9</span></div><div class="day dot"><span class="c">10</span></div><div class="day"><span class="c">11</span></div><div class="day"><span class="c">12</span></div>
+            <div class="day dot"><span class="c">13</span></div><div class="day"><span class="c">14</span></div><div class="day"><span class="c">15</span></div><div class="day dot"><span class="c">16</span></div><div class="day"><span class="c">17</span></div><div class="day"><span class="c">18</span></div><div class="day dot"><span class="c">19</span></div>
+            <div class="day"><span class="c">20</span></div><div class="day"><span class="c">21</span></div><div class="day today sel dot"><span class="c">22</span></div><div class="day"><span class="c">23</span></div><div class="day"><span class="c">24</span></div><div class="day"><span class="c">25</span></div><div class="day"><span class="c">26</span></div>
+            <div class="day"><span class="c">27</span></div><div class="day"><span class="c">28</span></div><div class="day"><span class="c">29</span></div><div class="day"><span class="c">30</span></div>
+          </div>
+        </div>
+        <div class="daily">
+          <div class="daily-head"><span class="d">6月22日</span><div class="tt"><span style="color:var(--red)">-¥ 58.00</span><span style="color:var(--inc)">+¥ 0.00</span></div></div>
+          <div class="tx"><span class="ic"><i class="fa fa-arrow-up"></i></span><div class="info"><div class="ti">午餐</div><div class="su">餐饮</div></div><span class="amt" style="color:var(--ink)">-32.00</span></div>
+          <div class="tx"><span class="ic"><i class="fa fa-arrow-up"></i></span><div class="info"><div class="ti">地铁</div><div class="su">交通</div></div><span class="amt" style="color:var(--ink)">-6.00</span></div>
+          <div class="tx"><span class="ic"><i class="fa fa-arrow-up"></i></span><div class="info"><div class="ti">咖啡</div><div class="su">餐饮</div></div><span class="amt" style="color:var(--ink)">-20.00</span></div>
+        </div>
+        <div class="tabbar">
+          <div class="ti act"><i class="fa fa-calendar"></i><span>首页</span></div>
+          <div class="fab"><i class="fa fa-plus"></i></div>
+          <div class="ti"><i class="fa fa-pie-chart"></i><span>预算/计划</span></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">1 · 首页 Home (calendar)</div><div class="d">Green header, month calendar, daily list</div></div>
+  </div>
+
+  <!-- 2. ADD -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="add">
+        <div class="add-head">
+          <span class="back"><i class="fa fa-chevron-left"></i></span>
+          <div class="toggle"><span class="act">支出</span><span>收入</span></div>
+          <span class="date">6月22日 ▼</span>
+        </div>
+        <div class="amount">¥0<span class="cur">|</span></div>
+        <div class="catgrid">
+          <div class="cat sel"><span class="ci"><i class="fa fa-cutlery"></i></span><span class="cn">餐饮</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">衣服</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-bus"></i></span><span class="cn">交通</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-mobile"></i></span><span class="cn">网费话费</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-book"></i></span><span class="cn">学习</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-home"></i></span><span class="cn">日用</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-building"></i></span><span class="cn">住房</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-medkit"></i></span><span class="cn">医疗</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-gamepad"></i></span><span class="cn">娱乐</span></div>
+          <div class="cat"><span class="ci"><i class="fa fa-car"></i></span><span class="cn">汽车/加油</span></div>
+        </div>
+        <div class="botbar">
+          <div class="acct"><span class="ai"><i class="fa fa-bank"></i></span><span class="an">现金</span><i class="fa fa-chevron-right" style="color:var(--sec);font-size:11px"></i></div>
+          <div class="note"><i class="fa fa-pencil"></i><span>备注...</span></div>
+        </div>
+        <div class="numpad">
+          <div class="npgrid">
+            <div class="nprow"><div class="nkey">1</div><div class="nkey">2</div><div class="nkey">3</div></div>
+            <div class="nprow"><div class="nkey">4</div><div class="nkey">5</div><div class="nkey">6</div></div>
+            <div class="nprow"><div class="nkey">7</div><div class="nkey">8</div><div class="nkey">9</div></div>
+            <div class="nprow"><div class="nkey"><i class="fa fa-long-arrow-left"></i></div><div class="nkey">0</div><div class="nkey">.</div></div>
+          </div>
+          <div class="npops"><div class="opkey">+</div><div class="opkey">−</div><div class="confirm">确定</div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">2 · 记一笔 Add transaction</div><div class="d">Amount-first, category grid, custom numpad</div></div>
+  </div>
+
+  <!-- 3. CHARTS -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="greypage">
+        <div class="green-head center"><div class="title">预算/计划</div></div>
+        <div class="summary">
+          <div class="s"><div class="l">计划清单</div><div class="v">¥ 0.00</div></div>
+          <div class="s"><div class="l">结余</div><div class="v" style="color:var(--inc)">¥ 4795.50</div></div>
+          <div class="s"><div class="l">趋势图</div><div class="v"><i class="fa fa-line-chart" style="color:var(--green)"></i></div></div>
+        </div>
+        <div class="scroll">
+          <div class="month-row"><span class="nav"><i class="fa fa-chevron-left"></i></span><span class="ml">6月</span><span class="nav"><i class="fa fa-chevron-right"></i></span></div>
+          <div class="pcard">
+            <div class="ct">支出分类</div><div class="cs">本月支出: ¥3204.50</div>
+            <div class="pierow">
+              <div class="donut"></div>
+              <div class="legend">
+                <div class="lg act"><span class="sw" style="background:#FF6B6B"></span><span class="ln">餐饮</span><span class="lp">32%</span></div>
+                <div class="lg"><span class="sw" style="background:#4ECDC4"></span><span class="ln">购物</span><span class="lp">23%</span></div>
+                <div class="lg"><span class="sw" style="background:#FFE66D"></span><span class="ln">交通</span><span class="lp">17%</span></div>
+                <div class="lg"><span class="sw" style="background:#95E1D3"></span><span class="ln">娱乐</span><span class="lp">14%</span></div>
+                <div class="lg"><span class="sw" style="background:#F38181"></span><span class="ln">日用</span><span class="lp">14%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="pcard">
+            <div class="ct">月度趋势</div><div class="cs">支出 vs 收入 (近6个月)</div>
+            <div class="trend">
+              <svg width="100%" height="90" viewBox="0 0 260 90" preserveAspectRatio="none">
+                <polyline fill="none" stroke="#FF6B6B" stroke-width="2" points="6,60 50,52 94,66 138,40 182,55 226,30"/>
+                <polyline fill="none" stroke="#4CAF50" stroke-width="2" points="6,40 50,38 94,30 138,34 182,22 226,20"/>
+              </svg>
+            </div>
+            <div class="ticks"><span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span></div>
+            <div class="tlegend"><div class="ti"><span class="dot" style="background:#FF6B6B"></span>支出</div><div class="ti"><span class="dot" style="background:#4CAF50"></span>收入</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">3 · 预算/计划 Charts</div><div class="d">Summary cards, pie + legend, trend line</div></div>
+  </div>
+
+  <!-- 4. ACCOUNTS -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="greypage">
+        <div class="green-head center">
+          <div class="title">资产管理</div>
+          <div class="asset-summary"><div class="l">已有总资产</div><div class="v">¥ 12,480.00</div></div>
+        </div>
+        <div class="scroll">
+          <div class="grp">
+            <div class="grp-head"><span class="gl">资金账户</span><span class="gr">¥ 9,980.00</span><span class="add">+ 添加</span></div>
+            <div class="arow"><span class="ic" style="background:#4CAF50"><i class="fa fa-money"></i></span><span class="an">现金</span><span class="ab">1,200.00</span><i class="fa fa-chevron-right chev"></i></div>
+            <div class="arow"><span class="ic" style="background:#2196F3"><i class="fa fa-bank"></i></span><span class="an">Chase</span><span class="ab">8,780.00</span><i class="fa fa-chevron-right chev"></i></div>
+          </div>
+          <div class="grp">
+            <div class="grp-head"><span class="gl">信用账户</span><span class="gr">¥ 0.00</span><span class="add">+ 添加</span></div>
+            <div class="arow"><span class="ic" style="background:#FF9800"><i class="fa fa-credit-card"></i></span><span class="an">信用卡</span><span class="ab">0.00</span><i class="fa fa-chevron-right chev"></i></div>
+          </div>
+          <div class="grp">
+            <div class="grp-head"><span class="gl">储值账户</span><span class="gr">¥ 2,500.00</span><span class="add">+ 添加</span></div>
+            <div class="arow"><span class="ic" style="background:#9C27B0"><i class="fa fa-ticket"></i></span><span class="an">微信</span><span class="ab">2,500.00</span><i class="fa fa-chevron-right chev"></i></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">4 · 资产管理 Accounts</div><div class="d">Grouped by type with real balances</div></div>
+  </div>
+
+  <!-- 5. CATEGORIES -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div style="height:100%; display:flex; flex-direction:column; background:#fff;">
+        <div class="add-head"><span class="back"><i class="fa fa-chevron-left"></i></span><span style="margin-left:14px; font-size:16px; font-weight:600; color:var(--ink)">自定义</span></div>
+        <div class="body" style="overflow:hidden;">
+          <div class="crow"><span class="exp"><i class="fa fa-caret-down"></i></span><span class="ci"><i class="fa fa-cutlery"></i></span><span class="cn">餐饮</span><span class="menu">⋯</span></div>
+          <div class="subrow">早餐</div>
+          <div class="subrow">午餐</div>
+          <div class="subrow">晚餐</div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="cn">衣服</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-bus"></i></span><span class="cn">交通</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-medkit"></i></span><span class="cn">医疗</span><span class="menu">⋯</span></div>
+          <div class="crow"><span class="exp"><i class="fa fa-caret-right"></i></span><span class="ci"><i class="fa fa-gamepad"></i></span><span class="cn">娱乐</span><span class="menu">⋯</span></div>
+        </div>
+        <div class="addbtn">+ 添加自定义</div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">5 · 自定义 Categories</div><div class="d">Expandable list, subcategories, add button</div></div>
+  </div>
+
+  <!-- 6. MORE -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="greypage">
+        <div class="green-head center"><div class="title">我的</div></div>
+        <div class="scroll" style="padding-top:22px;">
+          <div class="sec"><div class="st">设置</div><div class="mgroup">
+            <div class="mitem"><i class="fa fa-bank lead"></i><span class="ml">账户管理</span><i class="fa fa-chevron-right chev"></i></div>
+            <div class="mitem"><i class="fa fa-tags lead"></i><span class="ml">分类管理</span><i class="fa fa-chevron-right chev"></i></div>
+          </div></div>
+          <div class="sec"><div class="st">数据</div><div class="mgroup">
+            <div class="mitem"><i class="fa fa-download lead"></i><span class="ml">导出数据</span><i class="fa fa-chevron-right chev"></i></div>
+            <div class="mitem"><i class="fa fa-upload lead"></i><span class="ml">导入数据</span><i class="fa fa-chevron-right chev"></i></div>
+          </div></div>
+          <div class="sec"><div class="st">关于</div><div class="mgroup">
+            <div class="mitem"><i class="fa fa-info-circle lead"></i><span class="ml">关于应用</span><i class="fa fa-chevron-right chev"></i></div>
+            <div class="mitem"><i class="fa fa-shield lead"></i><span class="ml">隐私政策</span><i class="fa fa-chevron-right chev"></i></div>
+          </div></div>
+          <div class="appinfo"><div class="n">Rich记账 MVP</div><div class="vv">本地存储 · 隐私优先</div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">6 · 我的 More / Settings</div><div class="d">Settings, data, about sections</div></div>
+  </div>
+
+  <!-- 7. DETAIL -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div style="height:100%; display:flex; flex-direction:column; background:#fff;">
+        <div class="add-head"><span class="back"><i class="fa fa-chevron-left"></i></span><span style="margin-left:14px; font-size:16px; font-weight:600; color:var(--ink)">交易详情</span></div>
+        <div class="amount" style="text-align:center; padding:28px 0 20px;">- ¥58.00</div>
+        <div class="body">
+          <div class="field"><span class="fl">类型</span><span class="fv">支出</span></div>
+          <div class="field"><span class="fl">分类</span><span class="fv">餐饮</span></div>
+          <div class="field"><span class="fl">账户</span><span class="fv">现金</span></div>
+          <div class="field"><span class="fl">日期</span><span class="fv">2026-06-22</span></div>
+          <div class="field"><span class="fl">备注</span><span class="fv">午餐 + 咖啡</span></div>
+        </div>
+        <div class="delbtn"><i class="fa fa-trash-o"></i>&nbsp; 删除该笔支出</div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">7 · 交易详情 Edit / detail</div><div class="d">View, edit fields, delete</div></div>
+  </div>
+
+  <!-- 8. IMPORT/EXPORT -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div style="height:100%; display:flex; flex-direction:column; background:var(--bg);">
+        <div style="background:#fff;">
+          <div class="ie-title">Import / Export <span class="flag">EN — not localized</span></div>
+          <div class="ie-sub">CSV v1 (legacy) + optional CSV v2 + database file export/import (local-only).</div>
+        </div>
+        <div class="body" style="padding-top:14px; overflow:hidden;">
+          <div class="warn"><div class="wt">⚠ Privacy warning</div><div style="font-size:11px;color:var(--sec);margin-top:3px;">Exports contain your financial data. Store them somewhere safe.</div></div>
+          <div class="iecard">
+            <div class="ct">CSV v1 (legacy)</div>
+            <div class="hint">Import requires selecting a target account (v1 has no account column).</div>
+            <div class="chips"><span class="chip">现金</span><span class="chip">Chase</span><span class="chip">微信</span></div>
+            <div class="btn-primary">Import CSV v1</div>
+            <div class="btn-sec">Export CSV v1</div>
+          </div>
+          <div class="iecard">
+            <div class="ct">CSV v2 (extended)</div>
+            <div class="hint">Includes IDs + account + optional subcategory fields.</div>
+            <div class="btn-sec">Export CSV v2</div>
+          </div>
+          <div class="iecard">
+            <div class="ct">Database file</div>
+            <div class="hint">Full-fidelity backup and migration.</div>
+            <div class="btn-sec">Export DB file</div>
+            <div class="btn-danger">Import DB file</div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">8 · Import / Export</div><div class="d">CSV v1/v2 + DB file (currently English)</div></div>
+  </div>
+
+</div>

@@ -1,0 +1,84 @@
+# --------------------------------------------
+# Privacy-first ignores (finance data safety)
+# --------------------------------------------
+
+# Reference screenshots (often proprietary and/or sensitive)
+docs/reference/rich-screens/**/screenshots/
+
+# Ignore ALL CSVs by default (real exports/backups must not be committed)
+*.csv
+!.gitignore
+!data/sample.csv
+
+# Common export/backup outputs (scoped; avoid ignoring docs)
+exports/
+export/
+backups/
+backup/
+**/*backup*.csv
+**/*export*.csv
+**/*backup*.db
+**/*export*.db
+**/*backup*.sqlite*
+**/*export*.sqlite*
+
+# SQLite database files (and WAL/SHM)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db3
+*.db3-wal
+*.db3-shm
+*-wal
+*-shm
+
+# Optional: database exports by name (case-sensitive)
+**/*_export.*
+**/*_backup.*
+
+# --------------------------------------------
+# Node / React Native / Expo
+# --------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# Metro / bundler caches
+.metro/
+.cache/
+
+# Build outputs
+dist/
+build/
+web-build/
+coverage/
+
+# --------------------------------------------
+# Secrets & local config
+# --------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+
+# --------------------------------------------
+# OS / Editor
+# --------------------------------------------
+.DS_Store
+Thumbs.db
+
+.idea/
+.vscode/
+

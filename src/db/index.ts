@@ -10,8 +10,8 @@ export function initDb(): Promise<void> {
     initPromise = (async () => {
       const db = await getDb();
       await migrateDb(db);
-      await ensureAtLeastOneAccount(db);
       await seedDemoData(db);
+      await ensureAtLeastOneAccount(db);
     })();
   }
   return initPromise;

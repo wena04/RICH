@@ -1,12 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Pressable,
   StyleSheet,
   SafeAreaView,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-
+import { MoneyNumpad, ScreenHeader } from "@/components/rich";
 import { Text, View } from "@/components/Themed";
 import {
   PRIMARY_GREEN,
@@ -97,13 +95,7 @@ export default function AdjustBalanceScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
-        </Pressable>
-        <Text style={styles.headerTitle}>调整余额</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="调整余额" onBack={() => router.back()} borderBottom />
 
       <View style={styles.body}>
         <Text style={styles.accountLabel}>{accountName || "账户"}</Text>
@@ -132,55 +124,15 @@ export default function AdjustBalanceScreen() {
       </View>
 
       <View style={styles.numpad}>
-        <View style={styles.numpadContainer}>
-          <View style={styles.numpadGrid}>
-            <View style={styles.numpadRow}>
-              {["1", "2", "3"].map((n) => (
-                <Pressable key={n} style={styles.numKey} onPress={() => handleNumPress(n)}>
-                  <Text style={styles.numKeyText}>{n}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <View style={styles.numpadRow}>
-              {["4", "5", "6"].map((n) => (
-                <Pressable key={n} style={styles.numKey} onPress={() => handleNumPress(n)}>
-                  <Text style={styles.numKeyText}>{n}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <View style={styles.numpadRow}>
-              {["7", "8", "9"].map((n) => (
-                <Pressable key={n} style={styles.numKey} onPress={() => handleNumPress(n)}>
-                  <Text style={styles.numKeyText}>{n}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <View style={styles.numpadRow}>
-              <Pressable style={styles.numKey} onPress={handleBackspace}>
-                <FontAwesome name="long-arrow-left" size={20} color={TEXT_PRIMARY} />
-              </Pressable>
-              <Pressable style={styles.numKey} onPress={() => handleNumPress("0")}>
-                <Text style={styles.numKeyText}>0</Text>
-              </Pressable>
-              <Pressable style={styles.numKey} onPress={() => handleNumPress(".")}>
-                <Text style={styles.numKeyText}>.</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.numpadOps}>
-            <Pressable style={styles.numKeyOp} onPress={handleToggleSign}>
-              <Text style={styles.numKeyOpText}>±</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.confirmKey, !canSave && styles.confirmKeyDisabled]}
-              onPress={onSave}
-              disabled={!canSave}
-            >
-              <Text style={styles.confirmKeyText}>{saving ? "..." : "确定"}</Text>
-            </Pressable>
-          </View>
-        </View>
+        <MoneyNumpad
+          onDigit={handleNumPress}
+          onBackspace={handleBackspace}
+          operators={[{ label: "±", accessibilityLabel: "切换正负", onPress: handleToggleSign }]}
+          onConfirm={onSave}
+          confirmDisabled={!canSave}
+          confirmLabel={saving ? "..." : "确定"}
+          keyHeight={56}
+        />
       </View>
     </SafeAreaView>
   );
@@ -190,26 +142,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: TEXT_PRIMARY,
   },
   body: {
     flex: 1,
@@ -254,57 +186,5 @@ const styles = StyleSheet.create({
   },
   numpad: {
     backgroundColor: "#F8F8F8",
-    paddingBottom: 20,
-  },
-  numpadContainer: {
-    flexDirection: "row",
-  },
-  numpadGrid: {
-    flex: 3,
-  },
-  numpadOps: {
-    flex: 1,
-  },
-  numpadRow: {
-    flexDirection: "row",
-  },
-  numKey: {
-    flex: 1,
-    height: 56,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
-  },
-  numKeyText: {
-    fontSize: 22,
-    color: TEXT_PRIMARY,
-  },
-  numKeyOp: {
-    height: 56,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
-  },
-  numKeyOpText: {
-    fontSize: 24,
-    color: TEXT_PRIMARY,
-  },
-  confirmKey: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1A1A1A",
-  },
-  confirmKeyDisabled: {
-    backgroundColor: "#666666",
-  },
-  confirmKeyText: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
 });

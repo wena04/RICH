@@ -1,19 +1,20 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
+  Modal,
   Pressable,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   TextInput,
   Dimensions,
-  Modal,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { Text, View } from "@/components/Themed";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { DatePickerModal } from "@/components/DatePickerModal";
+import { DashedDivider, MoneyNumpad } from "@/components/rich";
 import {
   PRIMARY_GREEN,
   TEXT_PRIMARY,
@@ -41,46 +42,14 @@ import type {
   Subcategory,
   TransactionType,
 } from "@/src/domain/types";
-import { isoDateToday, isIsoDate } from "@/src/utils/date";
+import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/src/domain/categories";
+import { formatIsoDateCN, isIsoDate, isoDateToday } from "@/src/utils/date";
 import { centsToYuan } from "@/src/utils/money";
 import { newId } from "@/src/utils/id";
-
-import { DEFAULT_CATEGORIES } from "@/src/domain/categories";
-const MONTH_NAMES_CN = [
-  "1月",
-  "2月",
-  "3月",
-  "4月",
-  "5月",
-  "6月",
-  "7月",
-  "8月",
-  "9月",
-  "10月",
-  "11月",
-  "12月",
-];
-
-function formatDateCN(dateStr: string): string {
-  const [year, month, day] = dateStr.split("-");
-  return `${parseInt(month)}月${parseInt(day)}日`;
-}
-
-// RN can't reliably render a dashed bottom-border, so draw the dashes manually.
-function DashedLine() {
-  return (
-    <View style={styles.dashRow}>
-      {Array.from({ length: 60 }).map((_, i) => (
-        <View key={i} style={styles.dash} />
-      ))}
-    </View>
-  );
-}
 
 export default function NewTransactionScreen() {
   const router = useRouter();
   const { date: initialDateParam } = useLocalSearchParams<{ date?: string }>();
-  const today = new Date();
 
   const [type, setType] = useState<"expense" | "income">("expense");
   const [amountStr, setAmountStr] = useState("0");
@@ -102,6 +71,7 @@ export default function NewTransactionScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [subInput, setSubInput] = useState("");
+  const [savingSubcategory, setSavingSubcategory] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -146,7 +116,16 @@ export default function NewTransactionScreen() {
     }
   }
 
-  // Inline "add subcategory" from the entry tray.
+  function iconForCategory(name: string): string | null {
+    return (
+      [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].find(
+        (category) => category.name === name,
+      )?.icon ??
+      categories.find((category) => category.name === name)?.icon ??
+      null
+    );
+  }
+
   function onAddSubcategory() {
     if (!selectedCategory) return;
     setSubInput("");
@@ -154,16 +133,21 @@ export default function NewTransactionScreen() {
   }
 
   async function onSaveSubcategory() {
-    if (!selectedCategory) return;
     const name = subInput.trim().slice(0, 20);
-    if (!name) return;
-    const db = await getDb();
-    const cat = await ensureCategory(db, selectedCategory);
-    const sub = await ensureSubcategory(db, cat.id, name);
-    setSubcategories(await listSubcategories(db, cat.id));
-    setSelectedSubId(sub.id);
-    setShowSubModal(false);
-    setSubInput("");
+    if (!selectedCategory || !name || savingSubcategory) return;
+    setSavingSubcategory(true);
+    try {
+      const db = await getDb();
+      const cat = await ensureCategory(db, selectedCategory, iconForCategory(selectedCategory));
+      const sub = await ensureSubcategory(db, cat.id, name);
+      setSubcategories(await listSubcategories(db, cat.id));
+      setSelectedSubId(sub.id);
+      setCatsWithSubs((current) => new Set(current).add(selectedCategory));
+      setShowSubModal(false);
+      setSubInput("");
+    } finally {
+      setSavingSubcategory(false);
+    }
   }
 
   // Numpad handlers
@@ -218,7 +202,11 @@ export default function NewTransactionScreen() {
     setSaving(true);
     try {
       const db = await getDb();
-      const category = await ensureCategory(db, selectedCategory);
+      const category = await ensureCategory(
+        db,
+        selectedCategory,
+        iconForCategory(selectedCategory),
+      );
 
       const subcategoryId =
         selectedSubId && subcategories.some((s) => s.id === selectedSubId)
@@ -244,15 +232,31 @@ export default function NewTransactionScreen() {
     }
   }
 
+  function onSelectType(nextType: "expense" | "income") {
+    if (nextType === type) return;
+    setType(nextType);
+    setSelectedCategory(null);
+    setSubcategories([]);
+    setSelectedSubId(null);
+  }
+
   // All categories to display (default + user created), plus the 管理分类 tile.
   type CatCell = { name: string; iconId?: string | null; manage?: boolean };
+  const defaultCategories = type === "income" ? DEFAULT_INCOME_CATEGORIES : DEFAULT_CATEGORIES;
+  const builtInNames = new Set(
+    [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].map((category) => category.name),
+  );
   const displayCategories: CatCell[] = [
-    ...DEFAULT_CATEGORIES.map((c) => ({ name: c.name, iconId: c.icon })),
+    ...defaultCategories.map((c) => ({ name: c.name, iconId: c.icon })),
     ...categories
-      .filter((c) => !DEFAULT_CATEGORIES.some((dc) => dc.name === c.name))
+      .filter((category) => !builtInNames.has(category.name))
       .map((c) => ({ name: c.name, iconId: c.icon })),
     { name: "管理分类", manage: true },
   ];
+  const canSaveTransaction =
+    Boolean(selectedCategory && accountId) &&
+    evalPending(parseFloat(amountStr) || 0) > 0 &&
+    !saving;
 
   // Chunk into rows so the subcategory zone can expand under the selected row.
   const COLUMNS = 5;
@@ -276,7 +280,7 @@ export default function NewTransactionScreen() {
               styles.typeButton,
               type === "expense" && styles.typeButtonActive,
             ]}
-            onPress={() => setType("expense")}
+            onPress={() => onSelectType("expense")}
           >
             <Text
               style={[
@@ -292,7 +296,7 @@ export default function NewTransactionScreen() {
               styles.typeButton,
               type === "income" && styles.typeButtonActive,
             ]}
-            onPress={() => setType("income")}
+            onPress={() => onSelectType("income")}
           >
             <Text
               style={[
@@ -307,7 +311,7 @@ export default function NewTransactionScreen() {
 
         {/* Date selector */}
         <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-          <Text style={styles.dateText}>{formatDateCN(date)} ▼</Text>
+          <Text style={styles.dateText}>{formatIsoDateCN(date)} ▼</Text>
         </Pressable>
       </View>
 
@@ -325,7 +329,7 @@ export default function NewTransactionScreen() {
           <Text style={styles.cursor}>|</Text>
         </Text>
       </View>
-      <DashedLine />
+      <DashedDivider style={styles.amountDivider} />
 
       {/* Category grid */}
       <ScrollView
@@ -431,18 +435,11 @@ export default function NewTransactionScreen() {
                           </Pressable>
                         );
                       })}
-                      <Pressable
-                        style={styles.subItem}
-                        onPress={onAddSubcategory}
-                      >
+                      <Pressable style={styles.subItem} onPress={onAddSubcategory}>
                         <View style={[styles.subItemIcon, styles.subAddIcon]}>
-                          <FontAwesome
-                            name="plus"
-                            size={14}
-                            color={TEXT_SECONDARY}
-                          />
+                          <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
                         </View>
-                        <Text style={styles.subItemName}>添加</Text>
+                        <Text style={styles.subItemName}>添加子类</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -543,144 +540,45 @@ export default function NewTransactionScreen() {
 
         {/* Custom numpad */}
         <View style={styles.numpad}>
-          <View style={styles.numpadContainer}>
-            {/* Left side: digit grid */}
-            <View style={styles.numpadGrid}>
-              <View style={styles.numpadRow}>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("1")}
-                >
-                  <Text style={styles.numKeyText}>1</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("2")}
-                >
-                  <Text style={styles.numKeyText}>2</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("3")}
-                >
-                  <Text style={styles.numKeyText}>3</Text>
-                </Pressable>
-              </View>
-              <View style={styles.numpadRow}>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("4")}
-                >
-                  <Text style={styles.numKeyText}>4</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("5")}
-                >
-                  <Text style={styles.numKeyText}>5</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("6")}
-                >
-                  <Text style={styles.numKeyText}>6</Text>
-                </Pressable>
-              </View>
-              <View style={styles.numpadRow}>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("7")}
-                >
-                  <Text style={styles.numKeyText}>7</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("8")}
-                >
-                  <Text style={styles.numKeyText}>8</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("9")}
-                >
-                  <Text style={styles.numKeyText}>9</Text>
-                </Pressable>
-              </View>
-              <View style={styles.numpadRow}>
-                <Pressable style={styles.numKey} onPress={handleBackspace}>
-                  <FontAwesome
-                    name="long-arrow-left"
-                    size={20}
-                    color={TEXT_PRIMARY}
-                  />
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress("0")}
-                >
-                  <Text style={styles.numKeyText}>0</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.numKey}
-                  onPress={() => handleNumPress(".")}
-                >
-                  <Text style={styles.numKeyText}>.</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Right side: operators + confirm */}
-            <View style={styles.numpadOps}>
-              <Pressable style={styles.numKeyOp} onPress={() => handleOperator("+")}>
-                <Text style={styles.numKeyOpText}>+</Text>
-              </Pressable>
-              <Pressable style={styles.numKeyOp} onPress={() => handleOperator("-")}>
-                <Text style={styles.numKeyOpText}>−</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.confirmKey,
-                  (!selectedCategory || amountStr === "0") &&
-                    styles.confirmKeyDisabled,
-                ]}
-                onPress={onSave}
-                disabled={!selectedCategory || amountStr === "0" || saving}
-              >
-                <Text style={styles.confirmKeyText}>
-                  {saving ? "..." : "确定"}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+          <MoneyNumpad
+            onDigit={handleNumPress}
+            onBackspace={handleBackspace}
+            operators={[
+              { label: "+", accessibilityLabel: "加", onPress: () => handleOperator("+") },
+              { label: "−", accessibilityLabel: "减", onPress: () => handleOperator("-") },
+            ]}
+            onConfirm={onSave}
+            confirmDisabled={!canSaveTransaction}
+            confirmLabel={saving ? "..." : "确定"}
+          />
         </View>
       </View>
 
-      <Modal visible={showSubModal} animationType="slide" transparent>
-        <View style={styles.subModalOverlay}>
-          <View style={styles.subModalContent}>
-            <View style={styles.subModalHeader}>
+      <Modal visible={showSubModal} transparent animationType="fade" onRequestClose={() => setShowSubModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
               <Pressable onPress={() => setShowSubModal(false)}>
-                <Text style={styles.subModalCancel}>取消</Text>
+                <Text style={styles.modalCancel}>取消</Text>
               </Pressable>
-              <Text style={styles.subModalTitle}>添加子类</Text>
-              <Pressable onPress={onSaveSubcategory}>
-                <Text style={styles.subModalSave}>保存</Text>
+              <Text style={styles.modalTitle}>添加子类</Text>
+              <Pressable onPress={onSaveSubcategory} disabled={!subInput.trim() || savingSubcategory}>
+                <Text style={[styles.modalSave, (!subInput.trim() || savingSubcategory) && styles.modalSaveDisabled]}>
+                  保存
+                </Text>
               </Pressable>
             </View>
-            <View style={styles.subModalBody}>
-              <Text style={styles.subModalHint}>
-                为「{selectedCategory}」添加子分类
-              </Text>
-              <TextInput
-                value={subInput}
-                onChangeText={setSubInput}
-                placeholder="子分类名称"
-                style={styles.subModalInput}
-                placeholderTextColor={TEXT_SECONDARY}
-                maxLength={20}
-                autoFocus
-              />
-            </View>
+            <Text style={styles.modalHint}>为「{selectedCategory}」添加一个子分类</Text>
+            <TextInput
+              autoFocus
+              value={subInput}
+              onChangeText={(value) => setSubInput(value.slice(0, 20))}
+              style={styles.modalInput}
+              placeholder="子分类名称"
+              placeholderTextColor="#A0A0A0"
+              returnKeyType="done"
+              onSubmitEditing={onSaveSubcategory}
+            />
           </View>
         </View>
       </Modal>
@@ -745,14 +643,10 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: "#FFFFFF",
   },
-  dashRow: {
-    flexDirection: "row",
-    overflow: "hidden",
-    height: 1,
+  amountDivider: {
     marginHorizontal: 18,
     marginBottom: 6,
   },
-  dash: { width: 5, height: 1, backgroundColor: "#D8D8D8", marginRight: 4 },
   amountText: {
     fontSize: 42,
     fontWeight: "300",
@@ -911,63 +805,11 @@ const styles = StyleSheet.create({
   accountSheetBal: { width: 84, textAlign: "right", fontSize: 14, color: TEXT_PRIMARY },
   numpad: {
     backgroundColor: "#F8F8F8",
-    paddingBottom: 20,
-  },
-  numpadContainer: {
-    flexDirection: "row",
-  },
-  numpadGrid: {
-    flex: 3,
-  },
-  numpadOps: {
-    flex: 1,
-  },
-  numpadRow: {
-    flexDirection: "row",
-  },
-  numKey: {
-    flex: 1,
-    height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
-  },
-  numKeyText: {
-    fontSize: 22,
-    color: TEXT_PRIMARY,
-  },
-  numKeyOp: {
-    height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
-  },
-  numKeyOpText: {
-    fontSize: 24,
-    color: TEXT_PRIMARY,
-  },
-  confirmKey: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1A1A1A",
-  },
-  confirmKeyDisabled: {
-    backgroundColor: "#666666",
-  },
-  confirmKeyText: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
   subZone: {
     position: "relative",
     backgroundColor: "#F0F0F0",
-    borderRadius: 14,
+    borderRadius: 0,
     marginTop: 2,
     marginBottom: 8,
     paddingTop: 14,
@@ -1024,36 +866,37 @@ const styles = StyleSheet.create({
     borderColor: "#C8C8C8",
     borderStyle: "dashed",
   },
-  subModalOverlay: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.32)",
   },
-  subModalContent: {
+  modalSheet: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: 32,
+    paddingBottom: 30,
   },
-  subModalHeader: {
+  modalHeader: {
+    minHeight: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFEFEF",
+    paddingHorizontal: 18,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E5E5",
   },
-  subModalCancel: { fontSize: 16, color: TEXT_SECONDARY },
-  subModalTitle: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
-  subModalSave: { fontSize: 16, fontWeight: "600", color: PRIMARY_GREEN },
-  subModalBody: { padding: 16 },
-  subModalHint: { fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12 },
-  subModalInput: {
-    fontSize: 16,
-    color: TEXT_PRIMARY,
+  modalCancel: { fontSize: 13, color: TEXT_SECONDARY },
+  modalTitle: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
+  modalSave: { fontSize: 13, fontWeight: "600", color: PRIMARY_GREEN },
+  modalSaveDisabled: { color: "#B0B0B0" },
+  modalHint: { fontSize: 11, color: TEXT_SECONDARY, paddingHorizontal: 18, paddingTop: 16 },
+  modalInput: {
+    marginHorizontal: 18,
+    marginTop: 10,
+    minHeight: 46,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    paddingVertical: 10,
+    borderBottomColor: "#D8D8D8",
+    color: TEXT_PRIMARY,
+    fontSize: 15,
+    paddingHorizontal: 2,
   },
 });

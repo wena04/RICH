@@ -128,7 +128,8 @@ export const migrations: Migration[] = [
         period TEXT NOT NULL UNIQUE,
         total_cents INTEGER,
         created_at TEXT,
-        updated_at TEXT
+        updated_at TEXT,
+        CHECK (total_cents IS NULL OR total_cents >= 0)
       );
       `,
       `
@@ -140,14 +141,13 @@ export const migrations: Migration[] = [
         created_at TEXT,
         updated_at TEXT,
         FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE,
-        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+        CHECK (limit_cents > 0),
+        UNIQUE (budget_id, category_id)
       );
       `,
-      `
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_categories
-        ON budget_categories(budget_id, category_id);
-      `,
+      `CREATE INDEX IF NOT EXISTS idx_budget_categories_budget_id ON budget_categories(budget_id);`,
+      `CREATE INDEX IF NOT EXISTS idx_budget_categories_category_id ON budget_categories(category_id);`,
     ],
   },
 ];
-

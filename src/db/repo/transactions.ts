@@ -9,7 +9,7 @@ export type TransactionListItem = {
   amountCents: number;
   date: string; // YYYY-MM-DD
   account: { id: string; name: string };
-  category: { id: string; name: string } | null;
+  category: { id: string; name: string; icon: string | null } | null;
   subcategory: { id: string; name: string } | null;
   note: string | null;
 };
@@ -24,6 +24,7 @@ export async function listTransactions(db: AppDb): Promise<TransactionListItem[]
     account_name: string;
     category_id: string | null;
     category_name: string | null;
+    category_icon: string | null;
     subcategory_id: string | null;
     subcategory_name: string | null;
     note: string | null;
@@ -38,6 +39,7 @@ export async function listTransactions(db: AppDb): Promise<TransactionListItem[]
       a.name AS account_name,
       c.id AS category_id,
       c.name AS category_name,
+      c.icon AS category_icon,
       s.id AS subcategory_id,
       s.name AS subcategory_name,
       t.note
@@ -55,7 +57,9 @@ export async function listTransactions(db: AppDb): Promise<TransactionListItem[]
     amountCents: r.amount_cents,
     date: r.date,
     account: { id: r.account_id, name: r.account_name },
-    category: r.category_id ? { id: r.category_id, name: r.category_name ?? '' } : null,
+    category: r.category_id
+      ? { id: r.category_id, name: r.category_name ?? '', icon: r.category_icon }
+      : null,
     subcategory: r.subcategory_id
       ? { id: r.subcategory_id, name: r.subcategory_name ?? '' }
       : null,
@@ -151,4 +155,3 @@ export async function updateTransaction(db: AppDb, input: Transaction) {
 export async function deleteTransaction(db: AppDb, id: string) {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
 }
-

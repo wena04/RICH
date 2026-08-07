@@ -74,15 +74,20 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="trends" options={{ headerShown: false }} />
+        <Stack.Screen name="accounts" options={{ headerShown: false }} />
+        <Stack.Screen name="import-export" options={{ headerShown: false }} />
+        <Stack.Screen name="about" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/edit/[id]" options={{ title: '编辑' }} />
+        <Stack.Screen name="transaction/adjust" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
         <Stack.Screen name="categories" options={{ headerShown: false }} />
         <Stack.Screen name="categories/add" options={{ headerShown: false }} />
         <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
         <Stack.Screen
           name="transaction/new"
-          options={{ presentation: 'modal', title: 'Add transaction' }}
+          options={{ presentation: 'modal', headerShown: false }}
         />
       </Stack>
     </ThemeProvider>

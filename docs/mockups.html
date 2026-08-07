@@ -5,10 +5,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <style>
   :root{
-    --green:#3ECDA5; --green-dark:#2BB890;
-    --red:#FF6B6B; --inc:#4CAF50; --blue:#5C9CE6;
+    /* RICH visual contract: mint identifies the product; neutrals carry structure. */
+    --green:#3ECDA5; --green-dark:#2BB890; --green-soft:#B5EAD7;
+    --red:#FF6B6B; --amber:#E2A33A; --inc:#4CAF50; --blue:#5C9CE6;
+    --chart-teal:#61CFCB; --chart-blue:#88A8EE; --chart-violet:#9B8CFF;
     --ink:#1A1A1A; --sec:#666; --mut:#999;
-    --bg:#F5F5F5; --line:#E5E5E5; --hair:#F0F0F0;
+    --surface:#FFFFFF; --panel:#F5F6F7; --bg:#F4F4F4;
+    --line:#E5E5E5; --hair:#F0F0F0; --dash:#D8D8D8;
     --fab:#1A1A1A;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -103,7 +106,11 @@
   .tabbar .ti{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--mut);}
   .tabbar .ti.act{color:var(--ink);}
   .tabbar .ti i{font-size:19px;}
-  .fab{flex:0 0 auto; width:50px;height:50px;border-radius:50%;background:var(--fab);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:300;margin-top:-22px;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+  .tabbar .nav-glyph{width:22px;height:22px;display:block;overflow:visible;}
+  .tabbar .nav-ink{stroke:currentColor;}
+  .tabbar .nav-accent{stroke:currentColor;}
+  .tabbar .ti.act .nav-accent{stroke:var(--green);}
+  .fab{flex:0 0 auto; width:44px;height:44px;border-radius:50%;background:var(--fab);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:200;line-height:1;margin-top:-21px;box-shadow:0 3px 8px rgba(0,0,0,.28);}
 
   /* ADD */
   .add{background:#fff; flex:1; min-height:0; display:flex; flex-direction:column;}
@@ -295,53 +302,93 @@
   .subbar-fill{height:8px; border-radius:4px;}
   .taphint{font-size:11px; color:var(--green); margin-top:10px;}
 
-  /* PROPOSED: budget page */
-  .budg-card{background:#fff; margin:0 16px 14px; border-radius:4px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.1);}
-  .budg-card .lbl{font-size:12px; color:var(--sec);}
-  .budg-card .big{font-size:30px; font-weight:700; color:var(--ink); margin-top:2px;}
-  .budg-card .big small{font-size:14px; font-weight:500; color:var(--sec);}
-  .budg-card .meta{display:flex; justify-content:space-between; margin-top:10px; font-size:12px;}
-  .budg-card .meta .used{color:var(--ink);}
-  .budg-card .meta .left{color:var(--inc); font-weight:600;}
-  .pbar{height:10px; border-radius:5px; background:#F0F0F0; overflow:hidden; margin-top:10px;}
-  .pbar .fill{height:10px; border-radius:5px; background:var(--green);}
-  .pbar .fill.warn{background:#FFB020;}
+  /* Budget / plan: one structure for empty and configured states. */
+  .budget-page .green-head.center{padding:9px 20px 5px;}
+  .budget-page .scroll{background:var(--surface);padding:0;}
+  .budget-period{height:32px;display:flex;align-items:center;justify-content:center;gap:20px;color:var(--ink);}
+  .budget-period .nav{width:30px;height:30px;display:flex;align-items:center;justify-content:center;color:var(--sec);font-size:10px;}
+  .budget-period .month{min-width:54px;text-align:center;font-size:12px;font-weight:600;color:var(--ink);}
+  .budget-overview{background:var(--surface);padding:10px 16px 12px;border-top:1px solid var(--hair);border-bottom:8px solid var(--bg);}
+  .budget-overview-head{display:flex;align-items:center;justify-content:space-between;}
+  .budget-overview .lbl{font-size:12px;font-weight:600;color:var(--ink);}
+  .budget-overview .edit{font-size:10px;color:var(--sec);}
+  .budget-total{display:flex;align-items:baseline;margin-top:4px;}
+  .budget-total .spent{font-size:21px;font-weight:600;color:var(--ink);}
+  .budget-total .limit{font-size:10px;color:var(--sec);margin-left:2px;}
+  .budget-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:9.5px;color:var(--sec);}
+  .budget-meta .remaining{color:var(--green-dark);font-weight:600;}
+  .pbar{height:6px;border-radius:3px;background:#ECEEEF;overflow:hidden;margin-top:8px;}
+  .pbar .fill{height:6px;border-radius:3px;background:var(--green);}
+  .pbar .fill.warn{background:var(--amber);}
   .pbar .fill.over{background:var(--red);}
-  .blist{margin:0 16px 14px; background:#fff; border-radius:4px; overflow:hidden;}
-  .blist-head{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--hair);}
-  .blist-head .h{font-size:13px; font-weight:600; color:var(--ink);}
-  .blist-head .a{font-size:12px; color:var(--green); font-weight:600;}
-  .brow{padding:12px 14px; border-bottom:1px solid #F5F5F5;}
-  .brow-top{display:flex; align-items:center;}
-  .brow .ci{width:30px;height:30px;border-radius:4px;background:rgba(62,205,165,.15);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;margin-right:10px;}
-  .brow .bn{flex:1; font-size:13px; color:var(--ink);}
-  .brow .bv{font-size:12px; color:var(--sec);}
-  .brow .bv b{color:var(--ink); font-weight:600;}
+  .blist{background:var(--surface);overflow:hidden;}
+  .blist-head{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 16px;border-bottom:1px solid var(--line);}
+  .blist-head .h{font-size:12px;font-weight:600;color:var(--ink);}
+  .blist-head .a{font-size:10px;color:var(--sec);}
+  .brow{padding:8px 16px 9px;border-bottom:1px solid var(--hair);}
+  .brow-top{display:flex;align-items:center;min-height:28px;}
+  .brow .ci{width:28px;height:28px;border-radius:50%;background:#F4F4F4;color:var(--ink);display:flex;align-items:center;justify-content:center;margin-right:9px;}
+  .brow .ci .svgic{width:17px;height:17px;}
+  .brow .bn{flex:1;font-size:11.5px;color:var(--ink);}
+  .brow .bv{font-size:10px;color:var(--sec);font-variant-numeric:tabular-nums;}
+  .brow .bv b{color:var(--ink);font-weight:500;}
   .brow .bv.over b{color:var(--red);}
-  .budg-add{margin:4px 16px 0; background:var(--fab); color:#fff; border-radius:12px; text-align:center; padding:13px; font-size:14px; font-weight:600;}
-  /* budget empty state (faithful to original) */
-  .be-h{text-align:center; font-size:18px; font-weight:700; color:var(--ink); padding:20px 0 4px;}
-  .budg-empty{margin:14px 16px 0; background:#F5F6F7; border-radius:4px; padding:22px 16px; text-align:center;}
+  .brow .pbar{height:4px;margin:6px 0 0 37px;}
+  .brow .pbar .fill{height:4px;}
+  .budg-add{margin:10px 16px 14px;background:var(--fab);color:#fff;border-radius:0;text-align:center;padding:10px;font-size:12px;font-weight:500;}
+  /* Budget empty state: faithful to IMG_3425. */
+  .be-h{text-align:center;font-size:17px;font-weight:700;color:var(--ink);padding:20px 0 3px;}
+  .budg-empty{margin:14px 16px 0;background:var(--panel);border-radius:0;padding:18px 14px;text-align:center;}
   .donut2{width:128px;height:128px;border-radius:50%;margin:0 auto;position:relative;display:flex;align-items:center;justify-content:center;
     background:conic-gradient(#7ED9BE 0 55%, #B7E9D8 55% 85%, #Dff2ea 85% 100%);}
   .donut2::after{content:"";width:62px;height:62px;border-radius:50%;background:#F7F7F7;}
   .be-leg{display:flex; justify-content:center; gap:14px; margin-top:14px; flex-wrap:wrap;}
   .be-leg span{font-size:12px; color:var(--sec);}
-  .be-tag{font-size:13px; color:var(--sec); margin:16px 0;}
-  .be-create{background:#111; color:#fff; border-radius:6px; padding:14px; font-size:15px; font-weight:600;}
+  .be-tag{font-size:12px;color:var(--sec);margin:12px 0 14px;}
+  .be-create{background:#111;color:#fff;border-radius:0;padding:12px;font-size:13px;font-weight:500;}
   /* budget summary card: left 计划清单 cell + right stacked 结余/趋势图 cell */
-  .bsum{display:flex; margin:0 16px 14px; background:#fff; border-radius:2px; box-shadow:0 2px 8px rgba(0,0,0,.10);}
-  .bsum-l{flex:0 0 46%; padding:16px 14px; border-right:1px solid var(--line); display:flex; flex-direction:column;}
-  .bsum-l .lbl{font-size:15px; font-weight:700; color:var(--ink);}
-  .bsum-l .amt{font-size:13px; font-weight:700; color:var(--ink); text-align:right; margin-top:auto;}
+  .bsum{height:88px;display:flex;margin:0 16px 14px;background:#fff;border-radius:0;box-shadow:none;}
+  .bsum-l{flex:0 0 50%;padding:13px 12px 10px;border-right:1px solid var(--green);display:flex;flex-direction:column;}
+  .bsum-l .lbl{font-size:14px;font-weight:700;color:var(--ink);}
+  .bsum-l .amt{font-size:12px;font-weight:600;color:var(--ink);text-align:right;margin-top:auto;font-variant-numeric:tabular-nums;}
   .bsum-r{flex:1; display:flex; flex-direction:column;}
-  .br-row{flex:1; min-height:46px; display:flex; justify-content:space-between; align-items:center; padding:0 14px;}
+  .br-row{flex:1;display:flex;justify-content:space-between;align-items:center;padding:0 11px;}
   .br-row + .br-row{border-top:1px solid var(--line);}
-  .br-row .k{font-size:12.5px; color:#555;}
-  .br-row .val{font-size:12.5px; color:var(--ink); font-weight:600;}
-  .tdonut{width:30px;height:30px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
-    background:conic-gradient(#9b8cff 0 35%, #6fa8ff 35% 62%, #7fe0b0 62% 100%);}
-  .tdonut::after{content:"";width:16px;height:16px;border-radius:50%;background:#fff;}
+  .br-row .k{font-size:12px;color:var(--ink);font-weight:500;}
+  .br-row .val{font-size:11px;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;}
+  .tdonut{width:28px;height:28px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--chart-teal) 0 45%, var(--chart-blue) 45% 72%, #7FE0B0 72% 100%);}
+  .tdonut::after{content:"";width:15px;height:15px;border-radius:50%;background:#fff;}
+
+  /* PROPOSED (roadmap): recurring transactions — see docs/FEATURES.md §5.2 */
+  .rrow{display:flex; align-items:center; padding:11px 14px; border-bottom:1px solid #F5F5F5;}
+  .rrow .ic{width:32px;height:32px;border-radius:50%;background:#F4F4F4;display:flex;align-items:center;justify-content:center;color:var(--ink);margin-right:11px;}
+  .rrow .info{flex:1; min-width:0;}
+  .rrow .rn{font-size:13px; color:var(--ink); font-weight:500;}
+  .rrow .rd{font-size:10.5px; color:var(--sec); margin-top:2px;}
+  .rrow .rv{text-align:right;}
+  .rrow .ramt{font-size:13px; font-weight:600; color:var(--ink);}
+  .rrow .rtag{font-size:9.5px; color:var(--sec); background:#F0F0F0; border-radius:8px; padding:2px 7px; margin-top:3px; display:inline-block;}
+  .rsum{display:flex; margin:0 16px 14px; background:#fff; border-radius:4px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.1);}
+  .rsum .s{flex:1; text-align:center;}
+  .rsum .s .l{font-size:11px; color:var(--sec); margin-bottom:6px;}
+  .rsum .s .v{font-size:16px; font-weight:700; color:var(--ink);}
+
+  /* PROPOSED (roadmap): on-device natural-language quick add — see docs/FEATURES.md §5.3 */
+  .ai-input{display:flex; align-items:center; gap:10px; margin:14px 16px 0; background:#F5F5F5; border-radius:14px; padding:13px 14px;}
+  .ai-input .spark{color:var(--green); font-size:16px;}
+  .ai-input .ph{flex:1; font-size:13.5px; color:var(--ink);}
+  .ai-card{margin:16px 16px 0; background:#fff; border:1px solid var(--hair); border-radius:8px; overflow:hidden;}
+  .ai-card-head{display:flex; align-items:center; gap:6px; padding:10px 14px; background:rgba(62,205,165,.08); border-bottom:1px solid var(--hair);}
+  .ai-card-head .tag{font-size:11px; font-weight:600; color:var(--green-dark);}
+  .ai-row{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--hair);}
+  .ai-row:last-child{border-bottom:none;}
+  .ai-row .k{font-size:12px; color:var(--sec);}
+  .ai-row .v{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--ink);}
+  .ai-why{padding:9px 14px; font-size:10.5px; color:var(--sec); background:#FAFAFA;}
+  .ai-actions{display:flex; gap:10px; margin:16px 16px 0;}
+  .ai-confirm{flex:1; background:var(--fab); color:#fff; border-radius:10px; text-align:center; padding:13px; font-size:14px; font-weight:600;}
+  .ai-manual{flex:0 0 auto; padding:13px 16px; text-align:center; font-size:13px; color:var(--sec); border:1px solid var(--line); border-radius:10px;}
 </style>
 
 <!-- Custom hand-drawn icon sprite (full set). viewBox 0 0 24 24, thin rounded line style. -->
@@ -466,13 +513,15 @@
 
 <div class="page-head">
   <h1>RICH 记账 — design mockups (aligned to original screenshots)</h1>
-  <p>Updated against the 8 original-app screenshots. Screens flagged <span class="flag">faithful to original</span> match the real app; <span class="flag">PROPOSED</span> are my design suggestions for things not built yet. Key corrections applied: nav bar = only 首页 + ➕ + 预算/计划 (no More tab); date-header & amount dividers are <b>dashed</b>; expense amounts are <b>black</b> (green only for income); 预算/计划 is a budget page (charts live under 趋势图); added 账户转账 + 目标资产.</p>
+  <p>Updated against the 8 original-app screenshots. Screens flagged <span class="flag">faithful to original</span> match the real app; <span class="flag">PROPOSED</span> are design suggestions for flows without a complete source screenshot. Shared rules: only 首页 + ➕ + 预算/计划 in the tab bar; dashed date/amount boundaries; black expense values; square content sections; and the original two-tone black/mint icon language. Screens 9-10 are flagged <span class="flag">PROPOSED — roadmap</span>: not in the current app at all, sketched from the competitive research in <code>docs/FEATURES.md</code> §5 for visual discussion only.</p>
   <div class="swatches">
-    <span class="sw"><i style="background:#3ECDA5"></i>#3ECDA5 primary</span>
-    <span class="sw"><i style="background:#FF6B6B"></i>#FF6B6B expense</span>
+    <span class="sw"><i style="background:#3ECDA5"></i>#3ECDA5 brand mint</span>
+    <span class="sw"><i style="background:#B5EAD7"></i>#B5EAD7 entry mint</span>
     <span class="sw"><i style="background:#4CAF50"></i>#4CAF50 income</span>
-    <span class="sw"><i style="background:#1A1A1A"></i>#1A1A1A ink / FAB</span>
-    <span class="sw"><i style="background:#F5F5F5"></i>#F5F5F5 bg</span>
+    <span class="sw"><i style="background:#E2A33A"></i>#E2A33A warning</span>
+    <span class="sw"><i style="background:#FF6B6B"></i>#FF6B6B danger / over</span>
+    <span class="sw"><i style="background:#1A1A1A"></i>#1A1A1A ink / command</span>
+    <span class="sw"><i style="background:#F4F4F4"></i>#F4F4F4 section gray</span>
   </div>
 </div>
 
@@ -515,9 +564,15 @@
           <div class="tx"><span class="ic"><i class="fa fa-bus"></i></span><div class="info"><div class="ti">打车</div><div class="su">交通</div></div><span class="amt" style="color:var(--ink)">-20.00</span></div>
         </div>
         <div class="tabbar">
-          <div class="ti act"><i class="fa fa-calendar-o"></i><span>首页</span></div>
-          <div class="fab"><i class="fa fa-plus"></i></div>
-          <div class="ti"><i class="fa fa-clock-o"></i><span>预算/计划</span></div>
+          <div class="ti act">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-ink" d="M5 5.5h14v14H5zM8 3.5v4M16 3.5v4M5 9h14"/><path class="nav-accent" d="M8 14h8M8 17h5"/></svg>
+            <span>首页</span>
+          </div>
+          <div class="fab">+</div>
+          <div class="ti">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-accent" d="M6.5 5 4.5 3.5M17.5 5l2-1.5"/><circle class="nav-ink" cx="12" cy="13" r="7"/><path class="nav-accent" d="M12 9v4l-3 2"/></svg>
+            <span>预算/计划</span>
+          </div>
         </div>
       </div>
     </div></div>
@@ -706,7 +761,7 @@
   <div class="frame-wrap">
     <div class="phone"><div class="notch"></div><div class="screen">
       <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
-      <div class="greypage">
+      <div class="greypage budget-page">
         <div class="green-head center"><div class="title">预算/计划</div></div>
         <div class="bsum">
           <div class="bsum-l">
@@ -718,10 +773,10 @@
             <div class="br-row"><span class="k">趋势图</span><span class="tdonut"></span></div>
           </div>
         </div>
-        <div class="scroll" style="background:#fff;">
+        <div class="scroll">
           <div class="be-h">您还未创建预算</div>
           <div class="budg-empty">
-            <svg width="250" height="150" viewBox="0 0 250 150" style="display:block;margin:0 auto">
+            <svg viewBox="0 0 250 150" style="display:block;width:100%;height:128px;margin:0 auto">
               <g transform="rotate(-90 125 72)" fill="none" stroke-width="15">
                 <circle cx="125" cy="72" r="40" stroke="#6FD9B5" stroke-dasharray="138.2 113.1"/>
                 <circle cx="125" cy="72" r="40" stroke="#A9E7D0" stroke-dasharray="75.4 175.9" stroke-dashoffset="-138.2"/>
@@ -743,53 +798,80 @@
           </div>
         </div>
         <div class="tabbar">
-          <div class="ti"><i class="fa fa-calendar-o"></i><span>首页</span></div>
-          <div class="fab"><i class="fa fa-plus"></i></div>
-          <div class="ti act"><i class="fa fa-clock-o"></i><span>预算/计划</span></div>
+          <div class="ti">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-ink" d="M5 5.5h14v14H5zM8 3.5v4M16 3.5v4M5 9h14"/><path class="nav-accent" d="M8 14h8M8 17h5"/></svg>
+            <span>首页</span>
+          </div>
+          <div class="fab">+</div>
+          <div class="ti act">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-accent" d="M6.5 5 4.5 3.5M17.5 5l2-1.5"/><circle class="nav-ink" cx="12" cy="13" r="7"/><path class="nav-accent" d="M12 9v4l-3 2"/></svg>
+            <span>预算/计划</span>
+          </div>
         </div>
       </div>
     </div></div>
     <div class="caption"><div class="t">3b · 预算/计划 — empty state <span class="flag">faithful to original</span></div><div class="d">The real original layout: summary card (计划清单 / 结余 / 趋势图) + "您还未创建预算" + 创建预算. This tab is a BUDGET page, not charts.</div></div>
   </div>
 
-  <!-- 3c. BUDGET — after creating (proposed) -->
+  <!-- 3c. BUDGET — configured state -->
   <div class="frame-wrap">
     <div class="phone"><div class="notch"></div><div class="screen">
       <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
-      <div class="greypage">
+      <div class="greypage budget-page">
         <div class="green-head center"><div class="title">预算/计划</div></div>
+        <div class="bsum">
+          <div class="bsum-l">
+            <div class="lbl">计划清单</div>
+            <div class="amt">¥ 5000.00</div>
+          </div>
+          <div class="bsum-r">
+            <div class="br-row"><span class="k">结余</span><span class="val">¥ −1828.52</span></div>
+            <div class="br-row"><span class="k">趋势图</span><span class="tdonut"></span></div>
+          </div>
+        </div>
         <div class="scroll">
-          <div class="month-row"><span class="nav"><i class="fa fa-chevron-left"></i></span><span class="ml">6月</span><span class="nav"><i class="fa fa-chevron-right"></i></span></div>
-          <div class="budg-card">
-            <div class="lbl">本月总预算</div>
-            <div class="big">¥3204.50 <small>/ ¥5000.00</small></div>
+          <div class="budget-period"><span class="nav"><i class="fa fa-chevron-left"></i></span><span class="month">6月</span><span class="nav"><i class="fa fa-chevron-right"></i></span></div>
+          <div class="budget-overview">
+            <div class="budget-overview-head"><span class="lbl">本月总预算</span><span class="edit">编辑</span></div>
+            <div class="budget-total"><span class="spent">¥3204.50</span><span class="limit"> / ¥5000.00</span></div>
             <div class="pbar"><div class="fill" style="width:64%"></div></div>
-            <div class="meta"><span class="used">已用 64%</span><span class="left">剩余 ¥1795.50</span></div>
+            <div class="budget-meta"><span>已用 64%</span><span class="remaining">剩余 ¥1795.50</span></div>
           </div>
           <div class="blist">
             <div class="blist-head"><span class="h">分类预算</span><span class="a">编辑</span></div>
             <div class="brow">
-              <div class="brow-top"><span class="ci"><i class="fa fa-cutlery"></i></span><span class="bn">餐饮</span><span class="bv"><b>¥1025</b> / ¥1200</span></div>
+              <div class="brow-top"><span class="ci"><svg class="svgic"><use href="#ic-food"/></svg></span><span class="bn">餐饮</span><span class="bv"><b>¥1025</b> / ¥1200</span></div>
               <div class="pbar"><div class="fill warn" style="width:85%"></div></div>
             </div>
             <div class="brow">
-              <div class="brow-top"><span class="ci"><i class="fa fa-bus"></i></span><span class="bn">交通</span><span class="bv over"><b>¥520</b> / ¥500</span></div>
+              <div class="brow-top"><span class="ci"><svg class="svgic"><use href="#ic-bus"/></svg></span><span class="bn">交通</span><span class="bv over"><b>¥520</b> / ¥500</span></div>
               <div class="pbar"><div class="fill over" style="width:100%"></div></div>
             </div>
             <div class="brow">
-              <div class="brow-top"><span class="ci"><i class="fa fa-shopping-bag"></i></span><span class="bn">购物</span><span class="bv"><b>¥740</b> / ¥1000</span></div>
+              <div class="brow-top"><span class="ci"><svg class="svgic"><use href="#ic-bag"/></svg></span><span class="bn">购物</span><span class="bv"><b>¥740</b> / ¥1000</span></div>
               <div class="pbar"><div class="fill" style="width:74%"></div></div>
             </div>
             <div class="brow">
-              <div class="brow-top"><span class="ci"><i class="fa fa-gamepad"></i></span><span class="bn">娱乐</span><span class="bv"><b>¥210</b> / ¥600</span></div>
+              <div class="brow-top"><span class="ci"><svg class="svgic"><use href="#ic-drink"/></svg></span><span class="bn">娱乐</span><span class="bv"><b>¥210</b> / ¥600</span></div>
               <div class="pbar"><div class="fill" style="width:35%"></div></div>
             </div>
           </div>
           <div class="budg-add">+ 设置分类预算</div>
         </div>
+        <div class="tabbar">
+          <div class="ti">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-ink" d="M5 5.5h14v14H5zM8 3.5v4M16 3.5v4M5 9h14"/><path class="nav-accent" d="M8 14h8M8 17h5"/></svg>
+            <span>首页</span>
+          </div>
+          <div class="fab">+</div>
+          <div class="ti act">
+            <svg class="nav-glyph" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path class="nav-accent" d="M6.5 5 4.5 3.5M17.5 5l2-1.5"/><circle class="nav-ink" cx="12" cy="13" r="7"/><path class="nav-accent" d="M12 9v4l-3 2"/></svg>
+            <span>预算/计划</span>
+          </div>
+        </div>
       </div>
     </div></div>
-    <div class="caption"><div class="t">3c · 预算/计划 — after creating <span class="flag">PROPOSED</span></div><div class="d">My proposal for the filled state: monthly total + per-category limits with spent/remaining bars (green→amber→red)</div></div>
+    <div class="caption"><div class="t">3c · 预算/计划 — configured state <span class="flag">RICH system pass</span></div><div class="d">Same summary matrix and tab bar as the empty state. The content changes to a compact monthly total and square-edged category list; green → amber → coral communicates budget status.</div></div>
   </div>
 
   <!-- 4. ACCOUNTS -->
@@ -1171,6 +1253,80 @@
       </div>
     </div></div>
     <div class="caption"><div class="t">8 · Import / Export</div><div class="d">CSV v1/v2 + DB file (currently English)</div></div>
+  </div>
+
+  <!-- 9. RECURRING BILLS — not in the app today; see docs/FEATURES.md §5.2 -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar on-green" style="background:var(--green)"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="greypage">
+        <div class="green-head center">
+          <span class="title">定期账单</span>
+        </div>
+        <div class="scroll">
+          <div class="rsum">
+            <div class="s"><div class="l">本月待入账</div><div class="v">¥1,258</div></div>
+            <div class="s"><div class="l">下一笔</div><div class="v">8月3日</div></div>
+            <div class="s"><div class="l">已启用</div><div class="v">5</div></div>
+          </div>
+          <div class="grp">
+            <div class="grp-head"><span class="gl">每月</span><span class="add">+ 添加</span></div>
+            <div class="rrow">
+              <span class="ic"><svg class="svgic"><use href="#ic-house"/></svg></span>
+              <div class="info"><div class="rn">房租</div><div class="rd">每月 1 日 · 自动记为支出</div></div>
+              <div class="rv"><div class="ramt">¥3,200</div><span class="rtag">已启用</span></div>
+            </div>
+            <div class="rrow">
+              <span class="ic"><svg class="svgic"><use href="#ic-gem"/></svg></span>
+              <div class="info"><div class="rn">视频会员</div><div class="rd">每月 8 日 · 提醒后手动确认</div></div>
+              <div class="rv"><div class="ramt">¥25</div><span class="rtag">已启用</span></div>
+            </div>
+            <div class="rrow">
+              <span class="ic"><svg class="svgic"><use href="#ic-signal"/></svg></span>
+              <div class="info"><div class="rn">网费话费</div><div class="rd">每月 15 日</div></div>
+              <div class="rv"><div class="ramt">¥88</div><span class="rtag">已启用</span></div>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp-head"><span class="gl">每年</span><span class="add">+ 添加</span></div>
+            <div class="rrow">
+              <span class="ic"><svg class="svgic"><use href="#ic-carshield"/></svg></span>
+              <div class="info"><div class="rn">车险</div><div class="rd">明年 3 月 12 日</div></div>
+              <div class="rv"><div class="ramt">¥2,400</div><span class="rtag">已启用</span></div>
+            </div>
+          </div>
+          <div class="addbtn">+ 添加定期账单</div>
+        </div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">9 · 定期账单 Recurring bills <span class="flag">PROPOSED — roadmap</span></div><div class="d">On-device due-date tracking only — one new table + a due-check on app open, no reminders infra required. See FEATURES.md §5.2.</div></div>
+  </div>
+
+  <!-- 10. AI QUICK ADD — not in the app today; see docs/FEATURES.md §5.3 -->
+  <div class="frame-wrap">
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="right"><i class="fa fa-signal"></i><i class="fa fa-wifi"></i><i class="fa fa-battery-three-quarters"></i></span></div>
+      <div class="add">
+        <div class="add-head">
+          <span class="back"><i class="fa fa-chevron-left"></i></span>
+          <span class="date" style="margin-left:auto;">今天 ▼</span>
+        </div>
+        <div class="ai-input"><i class="fa fa-magic spark"></i><span class="ph">午饭15元</span></div>
+        <div class="ai-card">
+          <div class="ai-card-head"><i class="fa fa-magic" style="color:var(--green);font-size:11px;"></i><span class="tag">已智能识别 · 请确认</span></div>
+          <div class="ai-row"><span class="k">金额</span><span class="v">¥15.00 <i class="fa fa-pencil" style="font-size:11px;color:var(--mut);"></i></span></div>
+          <div class="ai-row"><span class="k">分类</span><span class="v"><svg class="svgic" style="width:16px;height:16px;"><use href="#ic-food"/></svg> 餐饮 <i class="fa fa-pencil" style="font-size:11px;color:var(--mut);"></i></span></div>
+          <div class="ai-row"><span class="k">日期</span><span class="v">今天 <i class="fa fa-pencil" style="font-size:11px;color:var(--mut);"></i></span></div>
+          <div class="ai-why">识别依据："午饭"→餐饮分类（根据你过去的记账习惯），"15元"→金额。识别全部在本机完成，不上传任何数据。</div>
+        </div>
+        <div class="ai-actions">
+          <div class="ai-manual">手动输入</div>
+          <div class="ai-confirm">确认记一笔</div>
+        </div>
+        <div style="flex:1"></div>
+      </div>
+    </div></div>
+    <div class="caption"><div class="t">10 · AI 智能记一笔 Quick add <span class="flag">PROPOSED — roadmap</span></div><div class="d">Free-text parse ("午饭15元" → amount + category + date), always shown with "why" + a confirm step before writing to `transactions` — the trust rule from FEATURES.md §5.3. No network call.</div></div>
   </div>
 
 </div>
