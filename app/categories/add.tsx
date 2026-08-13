@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Pressable,
   StyleSheet,
   SafeAreaView,
@@ -15,33 +16,14 @@ import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from "@/constants/Colors"
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { getDb } from "@/src/db/db";
 import { createCategory, getCategoryByName } from "@/src/db/repo/categories";
-
-// [sectionTitle, [ [label, iconId], ... ] ]
-const SECTIONS: [string, [string, string][]][] = [
-  ["默认", [["餐饮","food"],["零食","snack"],["衣服","tshirt"],["交通","bus"],["旅行","suitcase"],["孩子","baby"],["宠物","paw"],["网费话费","phone"],["烟酒","wine"],["学习","book"],["日用","jug"],["住房","house"],["美妆","lipstick"],["医疗","medkit"],["发红包","redpacket"],["汽车/加油","fuel"],["娱乐","gamepad"],["请客送礼","gift"],["电器数码","camera"],["运动","dumbbell"],["水电煤","drop"],["其他","grid"]]],
-  ["餐饮零食", [["早餐","bread"],["午餐","noodles"],["晚餐","drumstick"],["三餐","bowl"],["宵夜","pizza"],["水果","apple"],["饮料","drink"],["咖啡","coffee"],["买菜","carrot"],["外卖","burger"]]],
-  ["日常家用", [["柴米油盐","bottles"],["清洁","broom"],["理发","scissors"],["洗澡","bathtub"],["快递","box"]]],
-  ["购物相关", [["购物","bag"],["饰品","necklace"],["鞋子","shoe"],["电子产品","laptop"],["电器","washer"],["家具","sofa"]]],
-  ["电子产品", [["手机","phone"],["3c配件","cable"],["购买app","appstore"],["付费会员","gem"],["相机","camera"]]],
-  ["娱乐", [["游戏","gamepad"],["聚会","party"],["电影","film"],["k歌","mic"],["打赏","handheart"],["运动","dumbbell"],["旅行","suitcase"],["景区门票","ticket"]]],
-  ["家庭相关", [["家人","family"],["父母","parent"],["恋爱","love"],["孩子","baby"],["宠物","paw"]]],
-  ["育儿相关", [["育儿","baby"],["奶粉","milkcan"],["奶瓶","babybottle"],["辅食","babyfood"],["纸尿裤","diaper"],["玩具","pinwheel"],["早教","bulb"],["亲子游","parentchild"],["疫苗看病","syringe"]]],
-  ["汽车维修", [["汽车","car"],["停车费","parkpin"],["洗车","carwash"],["过路费","toll"],["汽车罚款","minuscircle"],["维修保养","wrench"],["车贷","caryen"],["配件","steering"],["车险","carshield"],["车检","carsearch"]]],
-  ["人情往来", [["人情","handshake"],["请客送礼","gift"],["发红包","redpacket"],["礼金","envmoney"]]],
-  ["交通", [["公交","bus"],["飞机","plane"],["火车","train"],["地铁","metro"],["打车","taxi"],["自行车","bike"],["轮船","ship"]]],
-  ["住房", [["酒店","hotel"],["房租","houseyen"],["房贷","houseloan"]]],
-  ["医疗相关", [["挂号费","regbox"],["就诊","clipplus"],["药品","pill"],["住院","hospbed"],["保健品","heartpulse"]]],
-  ["学习提升", [["书籍","book"],["考试","exam"],["文具","ruler"],["培训","grad"]]],
-  ["出差", [["交通","bus"],["酒店住宿","hotel"],["宴请招待","bell"],["差旅费","ticketyen"]]],
-  ["办公相关", [["员工工资","wallet"],["水电杂费","drop"],["网络通讯","signal"],["办公用品","printer"],["场地租金","buildingyen"],["进货费","cartbox"],["维修费","wrench"],["清洁费","broom"],["材料费","boxstack"],["物流费","truck"],["员工奖金","trophyyen"],["员工团建","flag"]]],
-  ["其他分类", [["工作","briefcase"],["保险","umbrella"],["捐赠","handheart"],["利息","coins"],["其他","grid"]]],
-  ["收入相关", [["工资薪水","wallet"],["生活费","moneybag"],["收红包","redpacket"],["兼职外快","clockyen"],["奖金","envmoney"],["投资理财","chart"],["报销","ticketyen"],["退款返款","refund"],["保险","umbrella"],["其他收益","piggy"]]],
-];
+import { CATEGORY_ICON_SECTIONS } from "@/src/domain/categoryIconCatalog";
+import type { CategoryKind } from "@/src/domain/types";
 
 export default function AddCategoryScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<{ id: string; label: string } | null>(null);
+  const [kind, setKind] = useState<CategoryKind>('expense');
   const [saving, setSaving] = useState(false);
 
   async function onDone() {
@@ -51,7 +33,11 @@ export default function AddCategoryScreen() {
     try {
       const db = await getDb();
       const existing = await getCategoryByName(db, finalName);
-      if (!existing) await createCategory(db, finalName, selected.id);
+      if (existing) {
+        Alert.alert('名称已存在', `“${finalName}”已经是一个分类。`);
+        return;
+      }
+      await createCategory(db, finalName, selected.id, kind);
       router.back();
     } catch (e) {
       console.error("Failed to add category:", e);
@@ -80,8 +66,40 @@ export default function AddCategoryScreen() {
         placeholderTextColor={TEXT_SECONDARY}
       />
 
+      <View style={styles.kindSection}>
+        <Text style={styles.kindLabel}>用于</Text>
+        <View style={styles.kindToggle}>
+          {([
+            ['expense', '支出'],
+            ['income', '收入'],
+            ['both', '两者'],
+          ] as const).map(([value, label]) => (
+            <Pressable
+              key={value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: kind === value }}
+              onPress={() => setKind(value)}
+              style={[styles.kindButton, kind === value && styles.kindButtonActive]}
+            >
+              <Text style={[styles.kindText, kind === value && styles.kindTextActive]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {SECTIONS.map(([title, items]) => (
+        <View style={styles.libraryIntro}>
+          <View>
+            <Text style={styles.libraryTitle}>选择图标</Text>
+            <Text style={styles.libraryMeta}>完整分类图标库</Text>
+          </View>
+          <View style={styles.countPill}>
+            <Text style={styles.countText}>
+              {CATEGORY_ICON_SECTIONS.reduce((sum, section) => sum + section.items.length, 0)} 个
+            </Text>
+          </View>
+        </View>
+        {CATEGORY_ICON_SECTIONS.map(({ title, items }) => (
           <View key={title} style={styles.section}>
             <Text style={styles.sectionTitle}>{title}</Text>
             <View style={styles.dash} />
@@ -93,9 +111,16 @@ export default function AddCategoryScreen() {
                     key={label + i}
                     style={styles.item}
                     onPress={() => setSelected({ id, label })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`选择${label}图标`}
+                    accessibilityState={{ selected: active }}
                   >
                     <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-                      <CategoryIcon id={id} size={24} />
+                      <CategoryIcon
+                        id={id}
+                        size={25}
+                        color={active ? '#181A19' : '#858B88'}
+                      />
                     </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>
                       {label}
@@ -135,21 +160,48 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
-  section: { paddingHorizontal: 16, paddingTop: 14 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
+  kindSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  kindLabel: { fontSize: 12, color: TEXT_SECONDARY },
+  kindToggle: { flexDirection: 'row', padding: 2, backgroundColor: '#F1F3F2', borderRadius: 999 },
+  kindButton: { minWidth: 56, paddingHorizontal: 12, paddingVertical: 7, alignItems: 'center', borderRadius: 999 },
+  kindButtonActive: { backgroundColor: '#101A17' },
+  kindText: { fontSize: 11, color: TEXT_SECONDARY },
+  kindTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  libraryIntro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingTop: 17,
+    paddingBottom: 3,
+  },
+  libraryTitle: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  libraryMeta: { marginTop: 2, fontSize: 10, color: TEXT_SECONDARY },
+  countPill: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, backgroundColor: '#F1F3F2' },
+  countText: { fontSize: 10, fontWeight: '600', color: '#636966' },
+  section: { paddingHorizontal: 16, paddingTop: 15 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, letterSpacing: 0.1 },
   dash: { borderBottomWidth: 1, borderBottomColor: "#EEE", borderStyle: "dashed", marginTop: 8, marginBottom: 2 },
   grid: { flexDirection: "row", flexWrap: "wrap" },
-  item: { width: `${100 / 5}%`, alignItems: "center", paddingVertical: 10 },
+  item: { width: `${100 / 5}%`, minHeight: 70, alignItems: "center", paddingVertical: 10 },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F5F5F5",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#F7F8F7",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 5,
   },
-  iconWrapActive: { backgroundColor: `${PRIMARY_GREEN}22`, borderWidth: 2, borderColor: PRIMARY_GREEN },
-  itemLabel: { fontSize: 10, color: TEXT_SECONDARY },
-  itemLabelActive: { color: PRIMARY_GREEN, fontWeight: "600" },
+  iconWrapActive: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#1A1A1A" },
+  itemLabel: { fontSize: 10, color: "#4E5350" },
+  itemLabelActive: { color: "#181A19", fontWeight: "600" },
 });

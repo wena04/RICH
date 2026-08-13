@@ -1,119 +1,101 @@
-# Rich记账 MVP
+# Rich记账
 
-Personal finance iOS app inspired by "RICH 记账" — offline-first, privacy-focused.
+Offline-first personal finance app for iPhone, built with React Native and Expo. Rich记账 keeps the
+ledger in local SQLite and focuses on fast entry, clear category hierarchy, and user-controlled
+backup and restore.
 
-<img src="https://img.shields.io/badge/platform-iOS-lightgrey" alt="iOS"> <img src="https://img.shields.io/badge/storage-SQLite-blue" alt="SQLite"> <img src="https://img.shields.io/badge/privacy-local--only-green" alt="Privacy">
+<img src="https://img.shields.io/badge/platform-iOS-lightgrey" alt="iOS"> <img src="https://img.shields.io/badge/Expo-SDK%2054-black" alt="Expo SDK 54"> <img src="https://img.shields.io/badge/privacy-local--only-green" alt="Privacy">
 
-## Features
+## Highlights
 
-- **Calendar-first home** — Month view with daily transaction list
-- **Amount-first entry** — Custom numpad, category icon grid
-- **Category pie chart** — Visualize spending by category
-- **Monthly trends** — Expense vs income over time
-- **Accounts** — Cash, bank, credit, stored value, investment
-- **Import/Export** — CSV (v1 legacy, v2 extended) + database file
+- Calendar-first home with daily and monthly expense/income totals.
+- Amount-first expense and income entry with a custom calculator keypad.
+- Typed categories (`expense`, `income`, or `both`) and expandable subcategories.
+- Student-friendly starter taxonomy, including practical subcategories for food, transport,
+  learning, housing, entertainment, subscriptions, health, and travel.
+- Hierarchical monthly budgets: parent category envelopes, child allocations, real transaction
+  spend, progress thresholds, and visible unallocated remainder without double counting.
+- Accounts, balance adjustments, target-asset progress, and atomic two-sided transfers.
+- Polished transaction detail and edit flows for amount, date, type, category path, account, and note.
+- CSV v1/v2 portability plus full SQLite database backup and restore.
 
-## Tech Stack
+## First run and privacy
 
-| Layer      | Technology                        |
-| ---------- | --------------------------------- |
-| Framework  | React Native + Expo               |
-| Language   | TypeScript                        |
-| Database   | SQLite (local-only)               |
-| Navigation | Expo Router                       |
-| UI         | Custom (matching RICH app design) |
+A fresh install starts with a clean ledger: **no fake balances and no demo transactions**. The app
+creates a local `现金` account and useful starter categories/subcategories so a student can record a
+real first entry immediately. Deleted starter categories are not recreated on every launch.
 
-## Privacy
+- No backend, sign-in, analytics, ads, or automatic cloud sync.
+- Finance data stays on-device unless the user explicitly exports it.
+- Money is stored as integer cents and dates as local `YYYY-MM-DD` values.
 
-This app keeps your data **private by default**:
+## Tech stack
 
-- ✓ No backend servers
-- ✓ No cloud sync
-- ✓ No analytics or tracking
-- ✓ Data stays on-device unless you export
+| Layer | Technology |
+| --- | --- |
+| App | React Native 0.81 + Expo SDK 54 |
+| Language | TypeScript (strict mode) |
+| Navigation | Expo Router |
+| Storage | `expo-sqlite` |
+| Charts | `react-native-svg` |
+| Portability | PapaParse, Expo file/document/sharing APIs |
+| Tests | Node test runner + `tsx` |
 
-## Getting Started
+## Run locally
 
 ```bash
-# Install dependencies
 npm install
-
-# Start Expo dev server
 npm run start
-
-# Run on iOS Simulator
 npm run ios
 ```
 
-> **Note**: This app uses `expo-sqlite` which requires iOS/Android. It does not work in the web browser.
+The production app targets iOS and Android. For a quick laptop preview, run `npm run web`; the web
+SQLite layer is an Expo alpha feature, so final financial and interaction QA should still happen on
+iOS or Android.
 
-## Project Structure
+## Verification
 
+Verified on August 12, 2026:
+
+- TypeScript strict check passes: `npx tsc --noEmit`
+- Category artwork stays source-controlled as individual SVGs: run `npm run icons:generate`
+  after editing an icon, and `npm run icons:check` to verify the app registry and gallery.
+- Unit suite passes: `npm test` — **37/37 tests**
+- Expo production exports pass for iOS and Android
+- Expo config, SDK dependency check, and `git diff --check` pass
+
+Final release confidence still requires an on-device visual walkthrough and reference screenshots
+across target iPhone sizes.
+
+## Project map
+
+```text
+app/                    Expo Router screens and flows
+components/             Shared UI and RICH visual components
+src/db/                 SQLite schema, migrations, and repositories
+src/domain/             Typed finance model and starter categories
+src/features/           Budgets, charts, and import/export logic
+src/__tests__/          Unit tests
+docs/                   Product, technical, release, and research notes
 ```
-app/                    # Expo Router screens
-├── (tabs)/             # Tab navigation (Home, Charts)
-├── transaction/        # Add/edit transaction
-├── accounts.tsx        # Account management
-├── categories.tsx      # Category management
-└── import-export.tsx   # Data portability
-
-src/                    # Business logic
-├── db/                 # SQLite + migrations
-├── domain/             # TypeScript types
-├── features/           # Charts, import/export
-└── utils/              # Helpers
-
-docs/                   # Documentation
-├── REQUIREMENTS.md     # Goals, scope, acceptance criteria
-├── PRODUCT.md          # UX design, screens, flows
-├── TECHNICAL.md        # Architecture, data model, formats
-└── PROGRESS.md         # Implementation status
-```
-
-## Sample Data
-
-The app automatically seeds **37 demo transactions** on first run, so you can explore all features immediately.
-
-Demo data includes:
-
-- 3 accounts (现金, Chase, 微信)
-- 8 categories with subcategories (餐饮 → 早餐/午餐/晚餐/外卖/咖啡/聚餐, etc.)
-- Transactions spanning the last 30 days with subcategory tags
-
-Additional sample CSV for testing imports: `data/sample.csv`
-
-## Design Workflow
-
-We use a **mockup-first workflow** to match the original RICH app pixel-by-pixel:
-
-1. Open `docs/mockups.html` in any browser (no build step)
-2. Compare mockups against original screenshots
-3. Port designs to React Native code
-
-See [PROGRESS.md](docs/PROGRESS.md) for current design-fidelity status.
-
-## Data Safety
-
-Your real finance data must **NOT** be committed to git.
-
-The `.gitignore` protects against accidental commits:
-
-- All CSV files except `data/sample.csv`
-- SQLite databases (`.db`, `.sqlite`)
-- Export/backup files
 
 ## Documentation
 
-| Doc                                     | Description                          |
-| --------------------------------------- | ------------------------------------ |
-| [REQUIREMENTS.md](docs/REQUIREMENTS.md) | Goals, scope, acceptance criteria    |
-| [PRODUCT.md](docs/PRODUCT.md)           | UX design, screens, navigation       |
-| [TECHNICAL.md](docs/TECHNICAL.md)       | Architecture, data model, formats    |
-| [COMPONENTS.md](docs/COMPONENTS.md)     | Reusable visual/component contracts  |
-| [FEATURES.md](docs/FEATURES.md)         | Current feature and route inventory  |
-| [FLOWS.md](docs/FLOWS.md)               | End-to-end navigation and behavior   |
-| [PROGRESS.md](docs/PROGRESS.md)         | Implementation status & future plans |
-| [mockups.html](docs/mockups.html)       | Visual mockups (open in browser)     |
+| Document | Purpose |
+| --- | --- |
+| [Product](docs/PRODUCT.md) | Current UX and product rules |
+| [Features](docs/FEATURES.md) | Implemented surface, data model, and routes |
+| [Technical](docs/TECHNICAL.md) | Architecture and data formats |
+| [Components](docs/COMPONENTS.md) | Shared visual/component contracts |
+| [Flows](docs/FLOWS.md) | End-to-end navigation and persistence flows |
+| [Progress](docs/PROGRESS.md) | Verification and remaining work |
+| [Apple release guide](docs/APPLE_RELEASE_2026.md) | 2026 App Store readiness and submission plan |
+| [Competitive research](docs/COMPETITIVE_RESEARCH_2026.md) | Current Chinese-market product research |
+
+## Data safety
+
+Do not commit real finance data. The repository ignores CSV exports, SQLite databases, and backup
+files, except for the non-sensitive `data/sample.csv` import fixture.
 
 ## License
 

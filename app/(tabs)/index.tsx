@@ -186,6 +186,9 @@ export default function HomeScreen() {
       <Pressable
         key={day}
         style={styles.dayCell}
+        accessibilityRole="button"
+        accessibilityLabel={`${month + 1}月${day}日${entry ? '，有记录' : '，无记录'}`}
+        accessibilityState={{ selected: isSelected }}
         onPress={() => {
           const clearing = filterDate === dateStr;
           setSelectedDate(clearing ? null : dateStr);
@@ -229,7 +232,7 @@ export default function HomeScreen() {
         <View style={styles.calCard}>
           <View style={styles.calTop}>
             <MonthStepper
-              label={`${year === today.getFullYear() ? "" : `${year}年`}${MONTH_NAMES_CN[month]} ▼`}
+              label={`${year === today.getFullYear() ? "" : `${year}年`}${MONTH_NAMES_CN[month]}`}
               onPrevious={() => changeMonth(-1)}
               onNext={() => changeMonth(1)}
               variant="pill"
@@ -294,6 +297,20 @@ export default function HomeScreen() {
               <Text style={styles.emptyText}>
                 {filterDate ? '这一天还没有记录' : '本月还没有记录'}
               </Text>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.emptyAction}
+                onPress={() =>
+                  router.push({
+                    pathname: '/transaction/new',
+                    params: filterDate ? { date: filterDate } : undefined,
+                  })
+                }
+              >
+                <Text style={styles.emptyActionText}>
+                  {filterDate ? '记这一天' : '记第一笔'}
+                </Text>
+              </Pressable>
             </View>
           ) : (
             visibleGroups.map((g, gi) => (
@@ -319,14 +336,18 @@ export default function HomeScreen() {
                       <CategoryIcon
                         id={t.category?.icon ?? undefined}
                         name={t.category?.name}
-                        size={16}
+                        size={20}
                       />
                     </View>
                     <View style={styles.txInfo}>
                       <Text style={styles.txTitle} numberOfLines={1}>
                         {t.note || t.category?.name || "记录"}
                       </Text>
-                      <Text style={styles.txSub}>{t.category?.name ?? ""}</Text>
+                      <Text style={styles.txSub}>
+                        {t.subcategory?.name
+                          ? `${t.category?.name ?? '分类'} › ${t.subcategory.name}`
+                          : (t.category?.name ?? '')}
+                      </Text>
                     </View>
                     <Text
                       style={[
@@ -395,7 +416,11 @@ export default function HomeScreen() {
                         }}
                       >
                         <View style={styles.txIcon}>
-                          <CategoryIcon name={t.category?.name} size={16} />
+                          <CategoryIcon
+                            id={t.category?.icon ?? undefined}
+                            name={t.category?.name}
+                            size={20}
+                          />
                         </View>
                         <View style={styles.txInfo}>
                           <Text style={styles.txTitle} numberOfLines={1}>
@@ -588,6 +613,17 @@ const styles = StyleSheet.create({
   clearFilterText: { fontSize: 10.5, color: TEXT_PRIMARY },
   empty: { paddingVertical: 60, alignItems: "center" },
   emptyText: { fontSize: 15, color: TEXT_SECONDARY },
+  emptyAction: {
+    marginTop: 16,
+    minWidth: 120,
+    minHeight: 44,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#101A17',
+    borderRadius: 3,
+  },
+  emptyActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
   gapBand: { height: 14, backgroundColor: GAP_GRAY },
   dateHeader: {
@@ -614,10 +650,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   txIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F5F5F5",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F7F8F7",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,

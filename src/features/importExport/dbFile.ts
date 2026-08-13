@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { closeDb, getDb } from '@/src/db/db';
 import { migrateDb } from '@/src/db/migrate';
 import { ensureAtLeastOneAccount } from '@/src/db/repo/accounts';
+import { ensureStarterTaxonomy } from '@/src/db/starter';
 
 function exportDir(): string {
   if (!FileSystem.cacheDirectory) {
@@ -59,5 +60,5 @@ export async function importDatabaseFromFileUri(uri: string): Promise<void> {
   const reopened = await getDb();
   await migrateDb(reopened);
   await ensureAtLeastOneAccount(reopened);
+  await ensureStarterTaxonomy(reopened);
 }
-

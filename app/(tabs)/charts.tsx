@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Svg, { Path } from 'react-native-svg';
 
 import { CategoryIcon } from '@/components/CategoryIcon';
@@ -71,6 +72,7 @@ export default function BudgetScreen() {
   const [month, setMonth] = useState(currentMonth());
   const [balance, setBalance] = useState(0);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const db = await getDb();
@@ -180,7 +182,17 @@ export default function BudgetScreen() {
                     key={category.categoryId}
                     style={[styles.categoryRow, index > 0 && styles.categoryRowDivider]}
                   >
-                    <View style={styles.categoryTopLine}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${category.categoryName}，已用 ${percent}%`}
+                      accessibilityState={{ expanded: expandedCategoryId === category.categoryId }}
+                      onPress={() =>
+                        setExpandedCategoryId((current) =>
+                          current === category.categoryId ? null : category.categoryId,
+                        )
+                      }
+                      style={styles.categoryTopLine}
+                    >
                       <View style={styles.categoryIcon}>
                         <CategoryIcon
                           id={category.categoryIcon ?? undefined}
@@ -188,17 +200,79 @@ export default function BudgetScreen() {
                           size={22}
                         />
                       </View>
-                      <Text style={styles.categoryName}>{category.categoryName}</Text>
+                      <View style={styles.categoryCopy}>
+                        <Text style={styles.categoryName}>{category.categoryName}</Text>
+                        <Text style={styles.categoryMeta}>
+                          {category.subcategories.length
+                            ? `${category.subcategories.length} 项子分类额度`
+                            : '查看分类进度'}
+                        </Text>
+                      </View>
                       <Text style={[styles.categoryAmount, percent > 100 && styles.overText]}>
                         ¥{centsToYuan(category.spentCents)} / ¥{centsToYuan(category.limitCents)}
                       </Text>
-                    </View>
+                      <FontAwesome
+                        name={
+                          expandedCategoryId === category.categoryId
+                            ? 'chevron-up'
+                            : 'chevron-down'
+                        }
+                        size={10}
+                        color={TEXT_SECONDARY}
+                        style={styles.categoryChevron}
+                      />
+                    </Pressable>
                     <ProgressBar
                       percent={percent}
                       color={progressColor(percent)}
                       height={5}
                       style={styles.categoryTrack}
                     />
+
+                    {expandedCategoryId === category.categoryId ? (
+                      <View style={styles.subcategoryPanel}>
+                        <View style={styles.subcategoryRail} />
+                        {category.subcategories.map((subcategory) => {
+                          const childPercent =
+                            subcategory.limitCents > 0
+                              ? Math.round(
+                                  (subcategory.spentCents / subcategory.limitCents) * 100,
+                                )
+                              : 0;
+                          return (
+                            <View key={subcategory.subcategoryId} style={styles.subcategoryRow}>
+                              <View style={styles.subcategoryNode} />
+                              <View style={styles.subcategoryCopy}>
+                                <Text style={styles.subcategoryName}>
+                                  {subcategory.subcategoryName}
+                                </Text>
+                                <ProgressBar
+                                  percent={childPercent}
+                                  color={progressColor(childPercent)}
+                                  height={3}
+                                  style={styles.subcategoryTrack}
+                                />
+                              </View>
+                              <Text
+                                style={[
+                                  styles.subcategoryAmount,
+                                  childPercent > 100 && styles.overText,
+                                ]}
+                              >
+                                ¥{centsToYuan(subcategory.spentCents)} / ¥
+                                {centsToYuan(subcategory.limitCents)}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                        <View style={styles.unallocatedRow}>
+                          <Text style={styles.unallocatedLabel}>主分类内未分配额度</Text>
+                          <Text style={styles.unallocatedValue}>
+                            ¥{centsToYuan(category.unallocatedLimitCents)}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
                   </View>
                 );
               })}
@@ -299,9 +373,54 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F4F4',
     marginRight: 10,
   },
-  categoryName: { flex: 1, fontSize: 13, color: TEXT_PRIMARY },
+  categoryCopy: { flex: 1 },
+  categoryName: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
+  categoryMeta: { marginTop: 2, fontSize: 9.5, color: TEXT_SECONDARY },
   categoryAmount: { fontSize: 11, color: TEXT_SECONDARY },
+  categoryChevron: { marginLeft: 8 },
   categoryTrack: { marginTop: 9, marginLeft: 42 },
+  subcategoryPanel: {
+    position: 'relative',
+    marginTop: 12,
+    marginLeft: 42,
+    paddingLeft: 18,
+    paddingVertical: 7,
+    paddingRight: 2,
+    backgroundColor: '#F3F8F5',
+  },
+  subcategoryRail: {
+    position: 'absolute',
+    left: 7,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: PRIMARY_GREEN,
+  },
+  subcategoryRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center' },
+  subcategoryNode: {
+    position: 'absolute',
+    left: -15,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: '#FFFFFF',
+  },
+  subcategoryCopy: { flex: 1, marginRight: 12 },
+  subcategoryName: { fontSize: 11, color: TEXT_PRIMARY },
+  subcategoryTrack: { marginTop: 5 },
+  subcategoryAmount: { fontSize: 9.5, color: TEXT_SECONDARY, fontVariant: ['tabular-nums'] },
+  unallocatedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#C9D7D0',
+  },
+  unallocatedLabel: { fontSize: 10, color: TEXT_SECONDARY },
+  unallocatedValue: { fontSize: 10, fontWeight: '600', color: TEXT_PRIMARY },
   noCategories: { padding: 20, textAlign: 'center', fontSize: 12, color: TEXT_SECONDARY },
   setBudgetButton: {
     marginHorizontal: 16,

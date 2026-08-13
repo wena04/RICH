@@ -31,12 +31,19 @@ with occasional mint (#3ECDA5) accent detail.
 - **其他分类**: 工作, 保险, 捐赠, 利息, 其他
 - **收入相关**: 工资薪水, 生活费, 收红包, 兼职外快, 奖金, 投资理财, 报销, 退款返款, 保险, 其他收益
 
-## Build plan (incremental, hand-drawn SVG)
+## Current implementation
 
-Full set is ~120 icons — too many to author at once, and renders must be eyeballed. So:
-
-1. **Batch 1 (style check)** — done in `docs/mockups.html` sprite: 衣服(t-shirt), 买菜(carrot),
-   付费会员(gem), 美妆(lipstick), 水电煤(drop), 其他(grid). Confirm stroke weight/proportions.
-2. **Batch 2** — the rest of the 22 add-screen default categories (most visible).
-3. **Batches 3+** — the picker library section by section.
-4. Port the approved SVG set to code as a `react-native-svg` `<CategoryIcon name=…>` component.
+- `assets/icons/categories/` contains 113 independently drawn SVG source icons, including a
+  separate `handcoin` reward glyph so 打赏 does not reuse the donation artwork.
+- `components/CategoryIcon.tsx` renders the same family through `react-native-svg` and can theme
+  the outline and mint detail for idle, selected and inverse states.
+- `scripts/generate-category-icons.mjs` keeps the runtime registry and visual gallery generated
+  from those individual SVG sources; `npm run icons:check` detects drift.
+- `src/domain/categoryIconCatalog.ts` is the typed source for all 18 sections and 134 picker
+  choices, including the distinct 奖金 (briefcase + ¥) and 员工奖金 (trophy + ¥) treatments.
+- `src/domain/categoryIcons.ts` provides semantic fallbacks for built-in categories, common imports
+  and starter subcategories.
+- Idle grid icons use muted gray linework; selected icons use the near-black reference-style ring;
+  the manage tile is the intentional mint/white exception.
+- The design follows the reference's visual grammar without treating external screenshots as
+  reusable artwork or tracing proprietary paths.

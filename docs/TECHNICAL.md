@@ -36,7 +36,7 @@ On app startup:
 1. Open/create SQLite database
 2. Run migrations (create tables if needed)
 3. Ensure at least one default account exists
-4. Seed demo data if database is empty (37 transactions)
+4. Create the starter category/subcategory taxonomy once, without fake financial history
 
 ## Data Model
 
@@ -194,15 +194,15 @@ app/
 └── import-export.tsx
 
 components/
-├── CategoryIcon.tsx     # 111 SVG category icons
+├── CategoryIcon.tsx     # Themeable SVG category icon registry
 └── DatePickerModal.tsx  # Date picker for add screen
 
-assets/icons/categories/ # Source SVG files (111)
+assets/icons/categories/ # Source SVG files (112)
 
 src/
 ├── db/
-│   ├── migrations.ts    # Schema (v1–v4)
-│   ├── seed.ts          # Demo data (37 transactions)
+│   ├── migrations.ts    # Schema (v1–v7)
+│   ├── starter.ts       # Idempotent taxonomy, no fake transactions
 │   └── repo/
 │       ├── budgets.ts   # Budget CRUD + summary
 │       └── ...

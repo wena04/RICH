@@ -29,9 +29,9 @@ export const DEFAULT_INCOME_CATEGORIES: Array<{ name: string; icon: string }> = 
   { name: '工资', icon: 'wallet' },
   { name: '兼职', icon: 'clockyen' },
   { name: '理财', icon: 'chart' },
-  { name: '奖金', icon: 'trophyyen' },
-  { name: '报销', icon: 'clipplus' },
+  { name: '奖金', icon: 'briefcaseyen' },
+  { name: '报销', icon: 'ticketyen' },
   { name: '退款', icon: 'refund' },
-  { name: '收红包', icon: 'envmoney' },
-  { name: '其他收入', icon: 'grid' },
+  { name: '收红包', icon: 'redpacket' },
+  { name: '其他收入', icon: 'piggy' },
 ];

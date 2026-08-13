@@ -150,4 +150,54 @@ export const migrations: Migration[] = [
       `CREATE INDEX IF NOT EXISTS idx_budget_categories_category_id ON budget_categories(category_id);`,
     ],
   },
+  {
+    version: 5,
+    statements: [
+      `ALTER TABLE categories ADD COLUMN kind TEXT NOT NULL DEFAULT 'both' CHECK (kind IN ('expense','income','both'));`,
+      `
+      UPDATE categories
+      SET kind = 'income'
+      WHERE name IN ('工资','兼职','理财','奖金','报销','退款','收红包','其他收入');
+      `,
+      `
+      UPDATE categories
+      SET kind = 'expense'
+      WHERE name IN (
+        '餐饮','衣服','交通','网费话费','学习','日用','住房','医疗','发红包','汽车/加油',
+        '娱乐','请客送礼','电器数码','运动','理发','付费会员','还钱','工作','购物','旅行',
+        '人情/借钱','买菜'
+      );
+      `,
+    ],
+  },
+  {
+    version: 6,
+    statements: [
+      `
+      CREATE TABLE IF NOT EXISTS budget_subcategories (
+        id TEXT PRIMARY KEY,
+        budget_id TEXT NOT NULL,
+        subcategory_id TEXT NOT NULL,
+        limit_cents INTEGER NOT NULL,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE,
+        FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE,
+        CHECK (limit_cents > 0),
+        UNIQUE (budget_id, subcategory_id)
+      );
+      `,
+      `CREATE INDEX IF NOT EXISTS idx_budget_subcategories_budget_id ON budget_subcategories(budget_id);`,
+      `CREATE INDEX IF NOT EXISTS idx_budget_subcategories_subcategory_id ON budget_subcategories(subcategory_id);`,
+    ],
+  },
+  {
+    version: 7,
+    statements: [
+      `UPDATE categories SET icon = 'briefcaseyen' WHERE name = '奖金' AND (icon IS NULL OR icon IN ('trophyyen', 'envmoney'));`,
+      `UPDATE categories SET icon = 'ticketyen' WHERE name = '报销' AND (icon IS NULL OR icon = 'clipplus');`,
+      `UPDATE categories SET icon = 'redpacket' WHERE name = '收红包' AND (icon IS NULL OR icon = 'envmoney');`,
+      `UPDATE categories SET icon = 'piggy' WHERE name = '其他收入' AND (icon IS NULL OR icon = 'grid');`,
+    ],
+  },
 ];
