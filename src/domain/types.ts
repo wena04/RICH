@@ -2,6 +2,8 @@ export type TransactionType = 'expense' | 'income' | 'balance_adjustment';
 
 export type AccountType = 'cash' | 'bank' | 'credit' | 'stored_value' | 'investment';
 
+export type CategoryKind = 'expense' | 'income' | 'both';
+
 export type Account = {
   id: string;
   name: string;
@@ -12,6 +14,7 @@ export type Category = {
   id: string;
   name: string;
   icon?: string | null;
+  kind: CategoryKind;
 };
 
 export type Subcategory = {
@@ -37,6 +40,15 @@ export type BudgetCategoryStatus = {
   categoryId: string;
   categoryName: string;
   categoryIcon: string | null;
+  limitCents: number;
+  spentCents: number;
+  subcategories: BudgetSubcategoryStatus[];
+  unallocatedLimitCents: number;
+};
+
+export type BudgetSubcategoryStatus = {
+  subcategoryId: string;
+  subcategoryName: string;
   limitCents: number;
   spentCents: number;
 };

@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Pressable,
   StyleSheet,
   SafeAreaView,
@@ -32,6 +33,8 @@ export default function TransferScreen() {
   const [picking, setPicking] = useState<null | "from" | "to">(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pendingValue, setPendingValue] = useState<number | null>(null);
+  const [pendingOp, setPendingOp] = useState<"+" | "-" | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -44,6 +47,7 @@ export default function TransferScreen() {
     accounts.find((a) => a.id === id)?.name ?? null;
 
   const press = (n: string) => {
+    if (n !== "." && amountStr.replace(".", "").length >= 9) return;
     if (amountStr === "0" && n !== ".") setAmountStr(n);
     else if (n === "." && amountStr.includes(".")) return;
     else if (amountStr.includes(".") && amountStr.split(".")[1]?.length >= 2)
@@ -53,9 +57,25 @@ export default function TransferScreen() {
   const backspace = () =>
     setAmountStr(amountStr.length <= 1 ? "0" : amountStr.slice(0, -1));
 
+  function evaluate(current: number): number {
+    if (pendingValue == null || !pendingOp) return current;
+    return pendingOp === "+" ? pendingValue + current : pendingValue - current;
+  }
+
+  function handleOperator(operator: "+" | "-") {
+    setPendingValue(evaluate(parseFloat(amountStr) || 0));
+    setPendingOp(operator);
+    setAmountStr("0");
+  }
+
   async function onConfirm() {
     if (saving) return;
-    const cents = Math.round((parseFloat(amountStr) || 0) * 100);
+    const total = evaluate(parseFloat(amountStr) || 0);
+    const cents = Math.round(total * 100);
+    if (!Number.isFinite(cents) || !Number.isSafeInteger(cents)) {
+      Alert.alert('检查金额', '转账金额过大，请输入较小的数值。');
+      return;
+    }
     if (cents <= 0 || !fromId || !toId || fromId === toId) return;
     setSaving(true);
     try {
@@ -65,37 +85,46 @@ export default function TransferScreen() {
       const memo = note.trim()
         ? note.trim().slice(0, 100)
         : `转账 ${fromName} → ${toName}`;
-      // A transfer is two balance adjustments: -X on source, +X on destination.
-      await createTransaction(db, {
-        id: newId("txn"),
-        type: "balance_adjustment",
-        amountCents: -cents,
-        date,
-        accountId: fromId,
-        categoryId: null,
-        subcategoryId: null,
-        note: memo,
-      });
-      await createTransaction(db, {
-        id: newId("txn"),
-        type: "balance_adjustment",
-        amountCents: cents,
-        date,
-        accountId: toId,
-        categoryId: null,
-        subcategoryId: null,
-        note: memo,
+      // Both sides commit together, so an interrupted transfer can never leave one account wrong.
+      await db.withTransactionAsync(async () => {
+        await createTransaction(db, {
+          id: newId("txn"),
+          type: "balance_adjustment",
+          amountCents: -cents,
+          date,
+          accountId: fromId,
+          categoryId: null,
+          subcategoryId: null,
+          note: memo,
+        });
+        await createTransaction(db, {
+          id: newId("txn"),
+          type: "balance_adjustment",
+          amountCents: cents,
+          date,
+          accountId: toId,
+          categoryId: null,
+          subcategoryId: null,
+          note: memo,
+        });
       });
       router.back();
     } catch (e) {
       console.error("Transfer failed:", e);
+      Alert.alert('转账没有保存', e instanceof Error ? e.message : '请稍后再试。');
     } finally {
       setSaving(false);
     }
   }
 
+  const evaluatedAmount = evaluate(parseFloat(amountStr) || 0);
   const canConfirm =
-    (parseFloat(amountStr) || 0) > 0 && fromId && toId && fromId !== toId;
+    Number.isFinite(evaluatedAmount) &&
+    Number.isSafeInteger(Math.round(evaluatedAmount * 100)) &&
+    evaluatedAmount > 0 &&
+    fromId &&
+    toId &&
+    fromId !== toId;
 
   function Selector({ which }: { which: "from" | "to" }) {
     const id = which === "from" ? fromId : toId;
@@ -213,12 +242,22 @@ export default function TransferScreen() {
             </Pressable>
           </View>
           <View style={styles.ops}>
-            <View style={styles.opKey}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="加"
+              style={styles.opKey}
+              onPress={() => handleOperator('+')}
+            >
               <Text style={styles.opText}>+</Text>
-            </View>
-            <View style={styles.opKey}>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="减"
+              style={styles.opKey}
+              onPress={() => handleOperator('-')}
+            >
               <Text style={styles.opText}>−</Text>
-            </View>
+            </Pressable>
             <Pressable
               style={[styles.confirm, !canConfirm && styles.confirmOff]}
               onPress={onConfirm}

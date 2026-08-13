@@ -79,7 +79,7 @@ function RootLayoutNav() {
         <Stack.Screen name="about" options={{ headerShown: false }} />
         <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/edit/[id]" options={{ title: '编辑' }} />
+        <Stack.Screen name="transaction/edit/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/adjust" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
         <Stack.Screen name="categories" options={{ headerShown: false }} />

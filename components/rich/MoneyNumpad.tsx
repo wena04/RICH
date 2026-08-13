@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { TEXT_PRIMARY } from '@/constants/Colors';
@@ -61,10 +60,7 @@ export function MoneyNumpad({
             onPress={onBackspace}
             style={({ pressed }) => [styles.key, { height: keyHeight }, pressed && styles.pressed]}
           >
-            <View style={styles.backspaceIcon}>
-              <FontAwesome name="tag" size={24} color={TEXT_PRIMARY} style={styles.backspaceShape} />
-              <Text style={styles.backspaceX}>×</Text>
-            </View>
+            <Text style={styles.backspaceText}>⌫</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -126,16 +122,7 @@ const styles = StyleSheet.create({
   key: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { backgroundColor: '#ECECEC' },
   keyText: { fontSize: 22, fontWeight: '500', color: TEXT_PRIMARY },
-  backspaceIcon: { width: 30, height: 26, alignItems: 'center', justifyContent: 'center' },
-  backspaceShape: { transform: [{ rotate: '180deg' }] },
-  backspaceX: {
-    position: 'absolute',
-    top: 4,
-    left: 10,
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  backspaceText: { fontSize: 23, fontWeight: '500', color: TEXT_PRIMARY },
   operations: { flex: 1 },
   operator: { alignItems: 'center', justifyContent: 'center' },
   operatorText: { fontSize: 28, fontWeight: '500', color: '#000000' },

@@ -108,11 +108,14 @@ export async function importCsvV1(
 
       if (noteRaw.length > 100) throw new Error(`Row ${i + 2}: 配注 exceeds 100 characters.`);
 
-      let categoryId = categoryCache.get(categoryName);
+      // Include type so a mixed income/expense category is reconciled to
+      // `both` instead of reusing a name-only cache entry and hiding one side.
+      const categoryCacheKey = `${type}:${categoryName}`;
+      let categoryId = categoryCache.get(categoryCacheKey);
       if (!categoryId) {
-        const category = await ensureCategory(db, categoryName);
+        const category = await ensureCategory(db, categoryName, null, type);
         categoryId = category.id;
-        categoryCache.set(categoryName, categoryId);
+        categoryCache.set(categoryCacheKey, categoryId);
       }
 
       await createTransaction(db, {
@@ -132,4 +135,3 @@ export async function importCsvV1(
 
   return { importedCount };
 }
-

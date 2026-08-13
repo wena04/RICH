@@ -103,7 +103,7 @@ export async function ensureAtLeastOneAccount(db: AppDb): Promise<Account> {
   const existing = await listAccounts(db);
   if (existing.length > 0) return existing[0];
 
-  const created = await createAccount(db, { name: 'Cash', type: 'cash' });
+  const created = await createAccount(db, { name: '现金', type: 'cash' });
   await setMeta(db, LAST_USED_ACCOUNT_KEY, created.id);
   return created;
 }
@@ -115,4 +115,3 @@ export async function getLastUsedAccountId(db: AppDb): Promise<string | null> {
 export async function setLastUsedAccountId(db: AppDb, accountId: string): Promise<void> {
   await setMeta(db, LAST_USED_ACCOUNT_KEY, accountId);
 }
-

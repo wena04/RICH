@@ -6,8 +6,13 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
-import Colors, { PRIMARY_GREEN, FAB_BACKGROUND, FAB_ICON, TEXT_MUTED } from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import {
+  PRIMARY_GREEN,
+  FAB_BACKGROUND,
+  FAB_ICON,
+  TAB_ICON_SELECTED,
+  TEXT_MUTED,
+} from '@/constants/Colors';
 import { RICH_SIZE } from '@/constants/Design';
 
 // Custom Tab Bar Component
@@ -34,15 +39,17 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         onPress={() => navigation.navigate('index')}
         accessibilityLabel="首页"
         accessibilityRole="tab"
+        accessibilityState={{ selected: isHomeActive }}
       >
         <FontAwesome
           name="calendar-check-o"
           size={26}
-          color={isHomeActive ? PRIMARY_GREEN : TEXT_MUTED}
+          color={isHomeActive ? TAB_ICON_SELECTED : TEXT_MUTED}
         />
         <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>
           首页
         </Text>
+        {isHomeActive ? <View style={styles.activeMarker} /> : null}
       </Pressable>
 
       {/* Center FAB */}
@@ -66,24 +73,23 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         onPress={() => navigation.navigate('charts')}
         accessibilityLabel="预算/计划"
         accessibilityRole="tab"
+        accessibilityState={{ selected: isChartsActive }}
       >
         <FontAwesome
           name="clock-o"
           size={24}
-          color={isChartsActive ? PRIMARY_GREEN : TEXT_MUTED}
+          color={isChartsActive ? TAB_ICON_SELECTED : TEXT_MUTED}
         />
         <Text style={[styles.tabLabel, isChartsActive && styles.tabLabelActive]}>
           预算/计划
         </Text>
+        {isChartsActive ? <View style={styles.activeMarker} /> : null}
       </Pressable>
     </View>
   );
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -156,9 +162,10 @@ const styles = StyleSheet.create({
     color: TEXT_MUTED,
   },
   tabLabelActive: {
-    color: PRIMARY_GREEN,
+    color: TAB_ICON_SELECTED,
     fontWeight: '600',
   },
+  activeMarker: { width: 18, height: 2, marginTop: -1, backgroundColor: PRIMARY_GREEN },
   fabContainer: {
     flex: 1,
     alignItems: 'center',

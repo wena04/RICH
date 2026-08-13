@@ -4,16 +4,17 @@ import SwiftUI
 /// `constants/Colors.ts` and `constants/Design.ts`, kept in sync by hand.
 enum RICHColor {
     static let primaryGreen = Color(hex: 0x3ECDA5)
-    static let primaryGreenDark = Color(hex: 0x2BB890)
+    /// Darkened for readable text and focus states on white surfaces.
+    static let primaryGreenDark = Color(hex: 0x14745B)
     static let textPrimary = Color(hex: 0x1A1A1A)
     static let textSecondary = Color(hex: 0x666666)
-    static let textMuted = Color(hex: 0x999999)
+    static let textMuted = Color(hex: 0x767676)
     static let cardBackground = Color.white
     static let border = Color(hex: 0xE5E5E5)
     static let entryGreen = Color(hex: 0xB5EAD7)
-    static let incomeGreen = Color(hex: 0x4CAF50)
+    static let incomeGreen = Color(hex: 0x247A3C)
     static let warning = Color(hex: 0xE2A33A)
-    static let expenseRed = Color(hex: 0xFF6B6B)
+    static let expenseRed = Color(hex: 0xC43D4D)
     static let panel = Color(hex: 0xF5F6F7)
     static let page = Color(hex: 0xF4F4F4)
     static let fab = Color.black

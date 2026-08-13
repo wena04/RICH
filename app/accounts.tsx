@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
@@ -29,7 +29,7 @@ import {
   updateAccount,
   type AccountWithBalance,
 } from '@/src/db/repo/accounts';
-import type { Account, AccountType } from '@/src/domain/types';
+import type { AccountType } from '@/src/domain/types';
 import { getMeta, setMeta } from '@/src/db/repo/meta';
 import { centsToYuan } from '@/src/utils/money';
 

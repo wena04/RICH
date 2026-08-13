@@ -16,10 +16,12 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { ScreenHeader } from '@/components/rich';
 import { getDb } from '@/src/db/db';
 import { getBudgetSummary } from '@/src/db/repo/budgets';
-import { getCategoryById } from '@/src/db/repo/categories';
+import { listAccounts } from '@/src/db/repo/accounts';
+import { getCategoryById, getSubcategoryById } from '@/src/db/repo/categories';
 import { deleteTransaction, getTransaction } from '@/src/db/repo/transactions';
 import type { TransactionType } from '@/src/domain/types';
 import { centsToCurrencyString } from '@/src/utils/money';
+import { formatIsoDateCN } from '@/src/utils/date';
 
 function titleFor(type: TransactionType): string {
   if (type === 'income') return '收入编辑';
@@ -42,6 +44,9 @@ export default function TransactionDetailScreen() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [categoryIcon, setCategoryIcon] = useState<string | null>(null);
+  const [subcategoryName, setSubcategoryName] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [date, setDate] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [period, setPeriod] = useState('');
   const [budgetStatus, setBudgetStatus] = useState('未设置');
@@ -57,6 +62,9 @@ export default function TransactionDetailScreen() {
       setType(tx.type);
       setAmountCents(tx.amountCents);
       setNote(tx.note);
+      setDate(tx.date);
+      const accounts = await listAccounts(db);
+      setAccountName(accounts.find((account) => account.id === tx.accountId)?.name ?? '未知账户');
       setCategoryId(tx.categoryId);
       const transactionPeriod = tx.date.slice(0, 7);
       setPeriod(transactionPeriod);
@@ -79,6 +87,12 @@ export default function TransactionDetailScreen() {
         setCategoryName('');
         setCategoryIcon(null);
         setBudgetStatus('不适用');
+      }
+      if (tx.subcategoryId) {
+        const subcategory = await getSubcategoryById(db, tx.subcategoryId);
+        setSubcategoryName(subcategory?.name ?? '');
+      } else {
+        setSubcategoryName('');
       }
       setLoaded(true);
   }, [id]);
@@ -132,12 +146,28 @@ export default function TransactionDetailScreen() {
                   {note || categoryName || '记录'}
                 </Text>
                 {categoryName ? (
-                  <Text style={styles.rowSub}>{categoryName}</Text>
+                  <Text style={styles.rowSub}>
+                    {subcategoryName ? `${categoryName} › ${subcategoryName}` : categoryName}
+                  </Text>
                 ) : null}
               </View>
               <Text style={styles.amount}>¥ {displayAmount}</Text>
               <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
             </Pressable>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.metaGrid}>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>日期</Text>
+                <Text style={styles.metaValue}>{date ? formatIsoDateCN(date) : '—'}</Text>
+              </View>
+              <View style={styles.metaRule} />
+              <View style={styles.metaItem}>
+                <Text style={styles.metaLabel}>账户</Text>
+                <Text style={styles.metaValue} numberOfLines={1}>{accountName}</Text>
+              </View>
+            </View>
 
             <View style={styles.cardDivider} />
 
@@ -198,6 +228,11 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: TEXT_SECONDARY, marginTop: 3 },
   amount: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY, marginRight: 8 },
   cardDivider: { height: 1, backgroundColor: '#EFEFEF', marginHorizontal: 16 },
+  metaGrid: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  metaItem: { flex: 1, gap: 4 },
+  metaRule: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: '#E5E5E5', marginHorizontal: 16 },
+  metaLabel: { fontSize: 10, color: TEXT_SECONDARY },
+  metaValue: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
   planLabel: { fontSize: 14, color: TEXT_SECONDARY },
   planValue: { fontSize: 12, color: TEXT_SECONDARY, marginRight: 8 },
 

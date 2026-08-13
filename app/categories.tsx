@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { 
   Alert, 
@@ -33,13 +33,14 @@ import {
   updateCategory,
   updateSubcategory,
 } from '@/src/db/repo/categories';
-import type { Category, Subcategory } from '@/src/domain/types';
+import type { Category, CategoryKind, Subcategory } from '@/src/domain/types';
 import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/src/domain/categories';
 
 
 export default function CategoriesScreen() {
   const router = useRouter();
   const [categories, setCategories] = useState<Array<Category & { subcategoryCount: number }>>([]);
+  const [filter, setFilter] = useState<'expense' | 'income' | 'all'>('expense');
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   
@@ -48,10 +49,20 @@ export default function CategoriesScreen() {
   
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
+  const [editCategoryKind, setEditCategoryKind] = useState<CategoryKind>('expense');
   
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
+
+  const visibleCategories = useMemo(
+    () =>
+      categories.filter(
+        (category) =>
+          filter === 'all' || category.kind === filter || category.kind === 'both',
+      ),
+    [categories, filter],
+  );
 
   const refresh = useCallback(async () => {
     const db = await getDb();
@@ -99,6 +110,7 @@ export default function CategoriesScreen() {
   function openEditCategory(category: Category) {
     setEditingCategory(category);
     setEditCategoryName(category.name);
+    setEditCategoryKind(category.kind);
     setShowEditModal(true);
   }
 
@@ -113,10 +125,14 @@ export default function CategoriesScreen() {
     const name = editCategoryName.trim();
     if (!name) return;
     const db = await getDb();
-    await updateCategory(db, { id: editingCategory.id, name });
-    setShowEditModal(false);
-    setEditingCategory(null);
-    await refresh();
+    try {
+      await updateCategory(db, { id: editingCategory.id, name, kind: editCategoryKind });
+      setShowEditModal(false);
+      setEditingCategory(null);
+      await refresh();
+    } catch (error) {
+      Alert.alert('无法保存', error instanceof Error ? error.message : '分类名称可能已存在。');
+    }
   }
 
   async function onDeleteCategory() {
@@ -151,9 +167,13 @@ export default function CategoriesScreen() {
     const name = newSubcategoryName.trim();
     if (!name) return;
     const db = await getDb();
-    await createSubcategory(db, expandedCategoryId, name);
-    setNewSubcategoryName('');
-    await refresh();
+    try {
+      await createSubcategory(db, expandedCategoryId, name);
+      setNewSubcategoryName('');
+      await refresh();
+    } catch {
+      Alert.alert('无法添加', '这个分类下已经有同名子分类。');
+    }
   }
 
   async function onSaveSubcategory() {
@@ -197,9 +217,37 @@ export default function CategoriesScreen() {
       
       <ScreenHeader title="自定义" onBack={() => router.back()} borderBottom />
 
+      <View style={styles.filterBar}>
+        {([
+          ['expense', '支出'],
+          ['income', '收入'],
+          ['all', '全部'],
+        ] as const).map(([value, label]) => (
+          <Pressable
+            key={value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: filter === value }}
+            onPress={() => {
+              setFilter(value);
+              setExpandedCategoryId(null);
+            }}
+            style={[styles.filterButton, filter === value && styles.filterButtonActive]}
+          >
+            <Text style={[styles.filterText, filter === value && styles.filterTextActive]}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.introRow}>
+        <Text style={styles.introTitle}>分类 → 子分类</Text>
+        <Text style={styles.introHint}>点开分类即可整理第二层</Text>
+      </View>
+
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Category List */}
-        {categories.map((category) => (
+        {visibleCategories.map((category) => (
           <View key={category.id} style={styles.categorySection}>
             <Pressable 
               style={styles.categoryRow}
@@ -220,11 +268,14 @@ export default function CategoriesScreen() {
                 <CategoryIcon
                   id={category.icon ?? undefined}
                   name={category.name}
-                  size={20}
+                  size={22}
                 />
               </View>
               
               <Text style={styles.categoryName}>{category.name}</Text>
+              <View style={styles.categoryMetaPill}>
+                <Text style={styles.categoryMetaText}>{category.subcategoryCount} 个子类</Text>
+              </View>
               
               <Pressable 
                 style={styles.menuButton}
@@ -244,6 +295,9 @@ export default function CategoriesScreen() {
                     onPress={() => openEditSubcategory(sub)}
                   >
                     <View style={styles.subcategoryIndent} />
+                    <View style={styles.subcategoryIcon}>
+                      <CategoryIcon name={sub.name} size={18} />
+                    </View>
                     <Text style={styles.subcategoryName}>{sub.name}</Text>
                     <FontAwesome name="ellipsis-h" size={14} color={TEXT_SECONDARY} />
                   </Pressable>
@@ -304,6 +358,37 @@ export default function CategoriesScreen() {
                 />
               </View>
 
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>用于</Text>
+                <View style={styles.kindToggle}>
+                  {([
+                    ['expense', '支出'],
+                    ['income', '收入'],
+                    ['both', '两者'],
+                  ] as const).map(([value, label]) => (
+                    <Pressable
+                      key={value}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: editCategoryKind === value }}
+                      onPress={() => setEditCategoryKind(value)}
+                      style={[
+                        styles.kindButton,
+                        editCategoryKind === value && styles.kindButtonActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.kindText,
+                          editCategoryKind === value && styles.kindTextActive,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
               <Pressable style={styles.deleteButton} onPress={onDeleteCategory}>
                 <Text style={styles.deleteButtonText}>删除该分类</Text>
               </Pressable>
@@ -358,6 +443,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  filterBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 3,
+    backgroundColor: '#F1F3F2',
+    borderRadius: 999,
+  },
+  filterButton: { flex: 1, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+  filterButtonActive: { backgroundColor: '#101A17' },
+  filterText: { fontSize: 12, color: TEXT_SECONDARY },
+  filterTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  introRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 8,
+  },
+  introTitle: { fontSize: 14, fontWeight: '700', color: TEXT_PRIMARY },
+  introHint: { fontSize: 10.5, color: TEXT_SECONDARY },
   categorySection: {
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
@@ -390,6 +497,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: TEXT_PRIMARY,
   },
+  categoryMetaPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 3,
+    borderRadius: 999,
+    backgroundColor: '#F1F4F2',
+  },
+  categoryMetaText: { fontSize: 9.5, color: TEXT_SECONDARY },
   menuButton: {
     width: 40,
     height: 40,
@@ -405,6 +520,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  subcategoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
   subcategoryIndent: {
     width: 72,
@@ -509,4 +633,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  kindToggle: { flexDirection: 'row', backgroundColor: '#F1F3F2', padding: 3, borderRadius: 999 },
+  kindButton: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 999 },
+  kindButtonActive: { backgroundColor: '#101A17' },
+  kindText: { fontSize: 12, color: TEXT_SECONDARY },
+  kindTextActive: { color: '#FFFFFF', fontWeight: '600' },
 });

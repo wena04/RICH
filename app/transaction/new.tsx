@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { Text, View } from "@/components/Themed";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -19,8 +21,6 @@ import {
   PRIMARY_GREEN,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
-  EXPENSE_RED,
-  INCOME_GREEN,
 } from "@/constants/Colors";
 import { getDb } from "@/src/db/db";
 import {
@@ -40,7 +40,6 @@ import { createTransaction } from "@/src/db/repo/transactions";
 import type {
   Category,
   Subcategory,
-  TransactionType,
 } from "@/src/domain/types";
 import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/src/domain/categories";
 import { formatIsoDateCN, isIsoDate, isoDateToday } from "@/src/utils/date";
@@ -74,16 +73,27 @@ export default function NewTransactionScreen() {
   const [savingSubcategory, setSavingSubcategory] = useState(false);
 
   useEffect(() => {
-    (async () => {
+    if (typeof initialDateParam === "string" && isIsoDate(initialDateParam)) {
+      setDate(initialDateParam);
+    }
+  }, [initialDateParam]);
+
+  const loadChoices = useCallback(async () => {
+    try {
       const db = await getDb();
       const list = await listAccountsWithBalances(db);
       setAccounts(list);
       const last = await getLastUsedAccountId(db);
-      const chosen =
-        last && list.some((a) => a.id === last) ? last : (list[0]?.id ?? "");
-      setAccountId(chosen);
-      const chosenAccount = list.find((a) => a.id === chosen);
-      setSelectedAccountName(chosenAccount?.name ?? "Account");
+      setAccountId((current) => {
+        const chosen =
+          current && list.some((account) => account.id === current)
+            ? current
+            : last && list.some((account) => account.id === last)
+              ? last
+              : (list[0]?.id ?? "");
+        setSelectedAccountName(list.find((account) => account.id === chosen)?.name ?? "选择账户");
+        return chosen;
+      });
 
       // Load existing categories + which ones have subcategories (for the "…" badge)
       const cats = await listCategories(db);
@@ -94,14 +104,16 @@ export default function NewTransactionScreen() {
           withCounts.filter((c) => c.subcategoryCount > 0).map((c) => c.name),
         ),
       );
-    })();
+    } catch (error) {
+      console.error('Failed to load transaction choices:', error);
+    }
   }, []);
 
-  useEffect(() => {
-    if (typeof initialDateParam === "string" && isIsoDate(initialDateParam)) {
-      setDate(initialDateParam);
-    }
-  }, [initialDateParam]);
+  useFocusEffect(
+    useCallback(() => {
+      loadChoices();
+    }, [loadChoices]),
+  );
 
   // When a category is tapped, load its subcategories (if it exists in the DB yet).
   async function onSelectCategory(name: string) {
@@ -117,13 +129,7 @@ export default function NewTransactionScreen() {
   }
 
   function iconForCategory(name: string): string | null {
-    return (
-      [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].find(
-        (category) => category.name === name,
-      )?.icon ??
-      categories.find((category) => category.name === name)?.icon ??
-      null
-    );
+    return categories.find((category) => category.name === name)?.icon ?? null;
   }
 
   function onAddSubcategory() {
@@ -138,7 +144,12 @@ export default function NewTransactionScreen() {
     setSavingSubcategory(true);
     try {
       const db = await getDb();
-      const cat = await ensureCategory(db, selectedCategory, iconForCategory(selectedCategory));
+      const cat = await ensureCategory(
+        db,
+        selectedCategory,
+        iconForCategory(selectedCategory),
+        type,
+      );
       const sub = await ensureSubcategory(db, cat.id, name);
       setSubcategories(await listSubcategories(db, cat.id));
       setSelectedSubId(sub.id);
@@ -152,6 +163,7 @@ export default function NewTransactionScreen() {
 
   // Numpad handlers
   const handleNumPress = (num: string) => {
+    if (num !== "." && amountStr.replace(".", "").length >= 9) return;
     if (amountStr === "0" && num !== ".") {
       setAmountStr(num);
     } else if (num === "." && amountStr.includes(".")) {
@@ -206,6 +218,7 @@ export default function NewTransactionScreen() {
         db,
         selectedCategory,
         iconForCategory(selectedCategory),
+        type,
       );
 
       const subcategoryId =
@@ -227,6 +240,7 @@ export default function NewTransactionScreen() {
       router.back();
     } catch (e) {
       console.error("Failed to save transaction:", e);
+      Alert.alert('没有保存', e instanceof Error ? e.message : '请检查金额、分类和账户。');
     } finally {
       setSaving(false);
     }
@@ -242,17 +256,31 @@ export default function NewTransactionScreen() {
 
   // All categories to display (default + user created), plus the 管理分类 tile.
   type CatCell = { name: string; iconId?: string | null; manage?: boolean };
-  const defaultCategories = type === "income" ? DEFAULT_INCOME_CATEGORIES : DEFAULT_CATEGORIES;
-  const builtInNames = new Set(
-    [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].map((category) => category.name),
+  const defaultOrder = useMemo(
+    () =>
+      new Map(
+        (type === 'income' ? DEFAULT_INCOME_CATEGORIES : DEFAULT_CATEGORIES).map(
+          (category, index) => [category.name, index],
+        ),
+      ),
+    [type],
   );
-  const displayCategories: CatCell[] = [
-    ...defaultCategories.map((c) => ({ name: c.name, iconId: c.icon })),
-    ...categories
-      .filter((category) => !builtInNames.has(category.name))
-      .map((c) => ({ name: c.name, iconId: c.icon })),
-    { name: "管理分类", manage: true },
-  ];
+  const displayCategories: CatCell[] = useMemo(
+    () => [
+      ...categories
+        .filter((category) => category.kind === type || category.kind === 'both')
+        .sort((left, right) => {
+          const leftOrder = defaultOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER;
+          const rightOrder = defaultOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER;
+          return leftOrder === rightOrder
+            ? left.name.localeCompare(right.name, 'zh-CN')
+            : leftOrder - rightOrder;
+        })
+        .map((category) => ({ name: category.name, iconId: category.icon })),
+      { name: '管理分类', manage: true },
+    ],
+    [categories, defaultOrder, type],
+  );
   const canSaveTransaction =
     Boolean(selectedCategory && accountId) &&
     evalPending(parseFloat(amountStr) || 0) > 0 &&
@@ -269,7 +297,12 @@ export default function NewTransactionScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="返回"
+        >
           <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
         </Pressable>
 
@@ -281,6 +314,8 @@ export default function NewTransactionScreen() {
               type === "expense" && styles.typeButtonActive,
             ]}
             onPress={() => onSelectType("expense")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: type === 'expense' }}
           >
             <Text
               style={[
@@ -297,6 +332,8 @@ export default function NewTransactionScreen() {
               type === "income" && styles.typeButtonActive,
             ]}
             onPress={() => onSelectType("income")}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: type === 'income' }}
           >
             <Text
               style={[
@@ -310,7 +347,12 @@ export default function NewTransactionScreen() {
         </View>
 
         {/* Date selector */}
-        <Pressable style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`选择日期，当前${formatIsoDateCN(date)}`}
+        >
           <Text style={styles.dateText}>{formatIsoDateCN(date)} ▼</Text>
         </Pressable>
       </View>
@@ -328,8 +370,25 @@ export default function NewTransactionScreen() {
           ¥{amountStr}
           <Text style={styles.cursor}>|</Text>
         </Text>
+        {pendingOp && pendingValue != null ? (
+          <Text style={styles.pendingText}>
+            ¥{centsToYuan(Math.round(pendingValue * 100))} {pendingOp} 当前输入
+          </Text>
+        ) : null}
       </View>
       <DashedDivider style={styles.amountDivider} />
+
+      {selectedCategory ? (
+        <View style={styles.selectionPath}>
+          <Text style={styles.selectionEyebrow}>{type === 'expense' ? '支出分类' : '收入分类'}</Text>
+          <Text style={styles.selectionValue} numberOfLines={1}>
+            {selectedCategory}
+            {selectedSubId
+              ? `  ›  ${subcategories.find((subcategory) => subcategory.id === selectedSubId)?.name ?? ''}`
+              : '  ›  不细分'}
+          </Text>
+        </View>
+      ) : null}
 
       {/* Category grid */}
       <ScrollView
@@ -339,7 +398,7 @@ export default function NewTransactionScreen() {
         <View style={styles.categoryGrid}>
           {categoryRows.map((row, rowIdx) => {
             const selIdx = row.findIndex((c) => c.name === selectedCategory);
-            const showZone = selIdx !== -1 && subcategories.length > 0;
+            const showZone = selIdx !== -1;
             return (
               <View key={rowIdx}>
                 <View style={styles.catRow}>
@@ -349,9 +408,16 @@ export default function NewTransactionScreen() {
                         key="__manage"
                         style={styles.categoryItem}
                         onPress={() => router.push("/categories")}
+                        accessibilityRole="button"
+                        accessibilityLabel="管理分类"
                       >
                         <View style={[styles.categoryIcon, styles.manageIcon]}>
-                          <FontAwesome name="cog" size={22} color="#FFFFFF" />
+                          <CategoryIcon
+                            id="gear"
+                            size={25}
+                            color="#FFFFFF"
+                            accentColor="#FFFFFF"
+                          />
                         </View>
                         <Text style={styles.categoryName}>管理分类</Text>
                       </Pressable>
@@ -360,6 +426,9 @@ export default function NewTransactionScreen() {
                         key={cat.name}
                         style={styles.categoryItem}
                         onPress={() => onSelectCategory(cat.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${cat.name}${catsWithSubs.has(cat.name) ? '，有子分类' : ''}`}
+                        accessibilityState={{ selected: selectedCategory === cat.name }}
                       >
                         <View
                           style={[
@@ -368,7 +437,12 @@ export default function NewTransactionScreen() {
                               styles.categoryIconSelected,
                           ]}
                         >
-                          <CategoryIcon id={cat.iconId ?? undefined} name={cat.name} size={26} />
+                          <CategoryIcon
+                            id={cat.iconId ?? undefined}
+                            name={cat.name}
+                            size={27}
+                            color={selectedCategory === cat.name ? '#181A19' : '#858B88'}
+                          />
                           {catsWithSubs.has(cat.name) && (
                             <View style={styles.catBadge}>
                               <Text style={styles.catBadgeText}>⋯</Text>
@@ -403,7 +477,38 @@ export default function NewTransactionScreen() {
                         },
                       ]}
                     />
+                    <View style={styles.subZoneHeader}>
+                      <Text style={styles.subZoneTitle}>{selectedCategory} · 子分类</Text>
+                      <Text style={styles.subZoneHint}>可选，下一次仍可修改</Text>
+                    </View>
                     <View style={styles.subGrid}>
+                      <Pressable
+                        style={styles.subItem}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: selectedSubId == null }}
+                        onPress={() => setSelectedSubId(null)}
+                      >
+                        <View
+                          style={[
+                            styles.subItemIcon,
+                            selectedSubId == null && styles.subItemIconSelected,
+                          ]}
+                        >
+                          <FontAwesome
+                            name="circle-o"
+                            size={16}
+                            color={selectedSubId == null ? '#181A19' : TEXT_SECONDARY}
+                          />
+                        </View>
+                        <Text
+                          style={[
+                            styles.subItemName,
+                            selectedSubId == null && styles.subItemNameSelected,
+                          ]}
+                        >
+                          不细分
+                        </Text>
+                      </Pressable>
                       {subcategories.map((s) => {
                         const active = selectedSubId === s.id;
                         return (
@@ -411,6 +516,8 @@ export default function NewTransactionScreen() {
                             key={s.id}
                             style={styles.subItem}
                             onPress={() => setSelectedSubId(active ? null : s.id)}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: active }}
                           >
                             <View
                               style={[
@@ -418,10 +525,10 @@ export default function NewTransactionScreen() {
                                 active && styles.subItemIconSelected,
                               ]}
                             >
-                              <FontAwesome
-                                name="tag"
-                                size={16}
-                                color={active ? PRIMARY_GREEN : TEXT_SECONDARY}
+                              <CategoryIcon
+                                name={s.name}
+                                size={22}
+                                color={active ? '#181A19' : '#858B88'}
                               />
                             </View>
                             <Text
@@ -435,7 +542,12 @@ export default function NewTransactionScreen() {
                           </Pressable>
                         );
                       })}
-                      <Pressable style={styles.subItem} onPress={onAddSubcategory}>
+                      <Pressable
+                        style={styles.subItem}
+                        onPress={onAddSubcategory}
+                        accessibilityRole="button"
+                        accessibilityLabel={`给${selectedCategory}添加子分类`}
+                      >
                         <View style={[styles.subItemIcon, styles.subAddIcon]}>
                           <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
                         </View>
@@ -493,24 +605,6 @@ export default function NewTransactionScreen() {
                 {type === "expense" ? "选择支出账户" : "选择收入账户"}
               </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
-                <Pressable
-                  style={[
-                    styles.accountSheetRow,
-                    !accountId && styles.accountSheetRowActive,
-                  ]}
-                  onPress={() => {
-                    setAccountId("");
-                    setSelectedAccountName("不选择账户");
-                    setShowAccountPicker(false);
-                  }}
-                >
-                  <View style={[styles.accountSheetIcon, { backgroundColor: "#EDEDED" }]}>
-                    <FontAwesome name="close" size={14} color={TEXT_SECONDARY} />
-                  </View>
-                  <Text style={styles.accountSheetName}>不选择账户</Text>
-                  <View style={{ width: 84 }} />
-                </Pressable>
-
                 {accounts.map((acc) => (
                   <Pressable
                     key={acc.id}
@@ -653,10 +747,32 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
     letterSpacing: -1,
   },
+  pendingText: {
+    marginTop: 3,
+    fontSize: 10.5,
+    color: TEXT_SECONDARY,
+    fontVariant: ['tabular-nums'],
+  },
   cursor: {
     color: PRIMARY_GREEN,
     fontWeight: "300",
   },
+  selectionPath: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    backgroundColor: '#F2F8F5',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#D7E6DE',
+  },
+  selectionEyebrow: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: PRIMARY_GREEN,
+    marginRight: 12,
+  },
+  selectionValue: { flex: 1, fontSize: 11.5, fontWeight: '600', color: TEXT_PRIMARY },
   categoryScroll: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -678,44 +794,47 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F7F8F7",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
   },
   categoryIconSelected: {
-    backgroundColor: `${PRIMARY_GREEN}20`,
+    backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: PRIMARY_GREEN,
+    borderColor: "#1A1A1A",
   },
   manageIcon: {
     backgroundColor: PRIMARY_GREEN,
   },
   catBadge: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#D8D8D8",
+    top: -1,
+    right: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#C9CCCA",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
   },
   catBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
+    lineHeight: 10,
     color: "#FFFFFF",
     fontWeight: "700",
-    marginTop: -4,
+    marginTop: -2,
   },
   categoryName: {
     fontSize: 11,
-    color: TEXT_SECONDARY,
+    color: "#4E5350",
     textAlign: "center",
   },
   categoryNameSelected: {
-    color: PRIMARY_GREEN,
-    fontWeight: "500",
+    color: "#181A19",
+    fontWeight: "600",
   },
   bottomSection: {
     backgroundColor: "#FFFFFF",
@@ -808,14 +927,23 @@ const styles = StyleSheet.create({
   },
   subZone: {
     position: "relative",
-    backgroundColor: "#F0F0F0",
+    backgroundColor: "#F4F6F5",
     borderRadius: 0,
     marginTop: 2,
     marginBottom: 8,
-    paddingTop: 14,
+    paddingTop: 10,
     paddingBottom: 4,
     paddingHorizontal: 4,
   },
+  subZoneHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+  subZoneTitle: { fontSize: 11, fontWeight: '700', color: TEXT_PRIMARY },
+  subZoneHint: { fontSize: 9, color: TEXT_SECONDARY },
   subZoneCaret: {
     position: "absolute",
     top: -7,
@@ -826,7 +954,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 8,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: "#F4F6F5",
   },
   subGrid: {
     flexDirection: "row",
@@ -847,9 +975,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   subItemIconSelected: {
-    backgroundColor: `${PRIMARY_GREEN}20`,
+    backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: PRIMARY_GREEN,
+    borderColor: "#1A1A1A",
   },
   subItemName: {
     fontSize: 10,
@@ -857,8 +985,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   subItemNameSelected: {
-    color: PRIMARY_GREEN,
-    fontWeight: "500",
+    color: "#181A19",
+    fontWeight: "600",
   },
   subAddIcon: {
     backgroundColor: "#FFFFFF",

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import { Pressable, StyleSheet, ScrollView, SafeAreaView, StatusBar, useWindowDimensions } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { Text, View } from '@/components/Themed';
@@ -33,6 +33,7 @@ function formatMonthCN(monthStr: string): string {
 
 export default function TrendsScreen() {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
   const [month, setMonth] = useState(currentMonth());
   const [categories, setCategories] = useState<CategoryTotal[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -125,7 +126,14 @@ export default function TrendsScreen() {
                   return (
                     <Pressable
                       key={c.categoryId}
-                      onPress={() => setSelectedCategoryId(c.categoryId)}
+                      onPress={() =>
+                        setSelectedCategoryId((current) =>
+                          current === c.categoryId ? null : c.categoryId,
+                        )
+                      }
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${c.categoryName}，占支出 ${pct}%`}
                       style={[styles.legendRow, selected && styles.legendRowActive]}>
                       <View style={[styles.swatch, { backgroundColor: palette[idx % palette.length] }]} />
                       <View style={styles.legendText}>
@@ -155,7 +163,7 @@ export default function TrendsScreen() {
           ) : (
             <>
               <LineChart
-                width={320}
+                width={Math.min(320, windowWidth - 64)}
                 height={120}
                 series={[
                   { values: monthly.map((m) => m.expenseCents), color: EXPENSE_RED },

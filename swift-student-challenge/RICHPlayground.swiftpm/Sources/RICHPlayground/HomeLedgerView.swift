@@ -1,90 +1,107 @@
 import SwiftUI
 
-private struct SampleTransaction: Identifiable {
-    let id = UUID()
-    let title: String
-    let category: String
-    let amountText: String
-    let isIncome: Bool
-}
-
-/// Distilled version of the RICH React Native app's 首页 (home) screen:
-/// mint header, square white calendar card, consecutive entry-days joined
-/// into one band, an outlined "today" cell, and a dashed-divider ledger.
+/// The first chapter of the story: Maya can understand her allowance and
+/// purchases from a calendar without signing in or sending data to a server.
 struct HomeLedgerView: View {
-    private let weekdaySymbols = ["日", "一", "二", "三", "四", "五", "六"]
-    private let leadingBlankDays = 3
-    private let daysInMonth = 30
-    private let entryDays: Set<Int> = [3, 4, 5, 9, 14, 15, 16, 17, 22, 27]
+    let transactions: [StudentTransaction]
+
+    private let weekdaySymbols = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    private let leadingBlankDays = 2
+    private let daysInMonth = 31
     private let today = 15
 
-    @State private var selectedDay: Int?
+    @ScaledMetric(relativeTo: .body) private var calendarCellHeight: CGFloat = 40
+    @State private var selectedDay: Int? = 15
 
-    private let dailyLedger: [Int: [SampleTransaction]] = [
-        15: [
-            SampleTransaction(title: "晚餐 实习intern", category: "餐饮", amountText: "13.11", isIncome: false),
-            SampleTransaction(title: "地铁", category: "交通", amountText: "6.00", isIncome: false),
-        ],
-        14: [
-            SampleTransaction(title: "工资", category: "工资", amountText: "8,200.00", isIncome: true)
-        ],
-    ]
+    private var entryDays: Set<Int> {
+        Set(transactions.map(\.day))
+    }
+
+    private var monthIncome: Double {
+        transactions.filter(\.isIncome).reduce(0) { $0 + $1.amount }
+    }
+
+    private var monthExpense: Double {
+        transactions.filter { !$0.isIncome }.reduce(0) { $0 + $1.amount }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            calendarCard
+
+            ScrollView {
+                VStack(spacing: RICHSpacing.lg) {
+                    calendarCard
+                    ledgerList
+                }
                 .padding(.horizontal, RICHSpacing.lg)
-                .padding(.top, RICHSpacing.lg)
-            ledgerList
+                .padding(.vertical, RICHSpacing.lg)
+            }
+            .background(RICHColor.page)
         }
         .background(RICHColor.primaryGreen.ignoresSafeArea(edges: .top))
-        .onAppear { selectedDay = today }
     }
 
     private var header: some View {
-        HStack {
-            Text("RICH")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(RICHColor.textPrimary)
-            Circle()
-                .stroke(RICHColor.textPrimary, lineWidth: 1.5)
-                .frame(width: 22, height: 22)
-                .overlay(Image(systemName: "chevron.down").font(.system(size: 9)).foregroundStyle(RICHColor.textPrimary))
+        HStack(alignment: .center, spacing: RICHSpacing.md) {
+            VStack(alignment: .leading, spacing: RICHSpacing.xs) {
+                Text("RICH")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(RICHColor.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Maya's private student budget")
+                    .font(.caption)
+                    .foregroundStyle(RICHColor.textPrimary)
+            }
+
             Spacer()
+
+            Label("Offline", systemImage: "lock.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(RICHColor.textPrimary)
+                .padding(.horizontal, RICHSpacing.md)
+                .padding(.vertical, RICHSpacing.sm)
+                .background(.white.opacity(0.72))
+                .clipShape(Capsule())
+                .accessibilityLabel("All demo data stays offline")
         }
         .padding(.horizontal, RICHSpacing.xl)
-        .padding(.top, RICHSpacing.md)
+        .padding(.vertical, RICHSpacing.md)
+        .background(RICHColor.primaryGreen)
     }
 
     private var calendarCard: some View {
         VStack(spacing: RICHSpacing.md) {
-            HStack {
-                Text("7月 2026")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(RICHColor.textPrimary)
-                    .padding(.horizontal, RICHSpacing.md)
-                    .padding(.vertical, 4)
-                    .background(RICHColor.page)
-                    .clipShape(Capsule())
-                Spacer()
-                totalColumn(label: "收入", value: "¥8,200.00")
-                Divider().frame(height: 22)
-                totalColumn(label: "支出", value: "¥340.11")
-            }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: RICHSpacing.md) {
+                    monthLabel
+                    Spacer(minLength: RICHSpacing.sm)
+                    totals
+                }
 
-            HStack {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
-                    Text(symbol)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(RICHColor.textSecondary)
-                        .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: RICHSpacing.md) {
+                    monthLabel
+                    totals
                 }
             }
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
+            HStack(spacing: 0) {
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
+                    Text(symbol)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(RICHColor.textSecondary)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityHidden(true)
+                }
+            }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7),
+                spacing: 3
+            ) {
                 ForEach(0..<leadingBlankDays, id: \.self) { _ in
-                    Color.clear.frame(height: 28)
+                    Color.clear.frame(minHeight: calendarCellHeight)
                 }
                 ForEach(1...daysInMonth, id: \.self) { day in
                     dayCell(day)
@@ -93,115 +110,200 @@ struct HomeLedgerView: View {
         }
         .padding(RICHSpacing.md)
         .background(RICHColor.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: RICHRadius.soft))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: RICHRadius.card))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("July 2026 calendar")
     }
 
-    private func totalColumn(label: String, value: String) -> some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            Text(label).font(.system(size: 9)).foregroundStyle(RICHColor.textSecondary)
-            Text(value).font(.system(size: 11, weight: .bold)).foregroundStyle(RICHColor.textPrimary)
+    private var monthLabel: some View {
+        Text("July 2026")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(RICHColor.textPrimary)
+            .padding(.horizontal, RICHSpacing.md)
+            .padding(.vertical, RICHSpacing.sm)
+            .background(RICHColor.page)
+            .clipShape(Capsule())
+    }
+
+    private var totals: some View {
+        HStack(spacing: RICHSpacing.md) {
+            totalColumn(label: "Allowance", value: money(monthIncome), color: RICHColor.incomeGreen)
+            Divider().frame(minHeight: 30)
+            totalColumn(label: "Spent", value: money(monthExpense), color: RICHColor.textPrimary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func totalColumn(label: String, value: String, color: Color) -> some View {
+        VStack(alignment: .trailing, spacing: RICHSpacing.xs) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(RICHColor.textSecondary)
+            Text(value)
+                .font(.subheadline.weight(.bold).monospacedDigit())
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
     private func dayCell(_ day: Int) -> some View {
+        let count = transactions.filter { $0.day == day }.count
         let isEntry = entryDays.contains(day)
         let isToday = day == today
         let isSelected = day == selectedDay
 
         return Button {
-            selectedDay = (selectedDay == day) ? nil : day
+            selectedDay = selectedDay == day ? nil : day
         } label: {
             ZStack {
-                if isEntry {
+                if isSelected {
+                    Circle()
+                        .fill(Color(hex: 0xE2E2E2))
+                        .overlay(Circle().strokeBorder(RICHColor.textPrimary, lineWidth: 1.5))
+                } else if isEntry {
                     Circle().fill(RICHColor.entryGreen)
-                } else if isSelected {
-                    Circle().fill(Color(hex: 0xE2E2E2))
                 } else if isToday {
                     Circle().strokeBorder(RICHColor.textPrimary.opacity(0.8), lineWidth: 1.5)
                 }
+
                 Text("\(day)")
-                    .font(.system(size: 12, weight: isEntry || isToday ? .semibold : .regular))
+                    .font(.caption.weight(isEntry || isToday ? .semibold : .regular).monospacedDigit())
                     .foregroundStyle(RICHColor.textPrimary)
+
                 if isToday {
                     VStack {
                         Spacer()
-                        Circle().fill(RICHColor.textPrimary).frame(width: 3, height: 3)
+                        Circle()
+                            .fill(RICHColor.textPrimary)
+                            .frame(width: 3, height: 3)
                     }
-                    .padding(.bottom, 3)
+                    .padding(.bottom, 4)
                 }
             }
-            .frame(height: 28)
+            .frame(maxWidth: .infinity, minHeight: max(40, calendarCellHeight))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("July \(day)")
+        .accessibilityValue(dayAccessibilityValue(isSelected: isSelected, isToday: isToday, count: count))
+        .accessibilityHint("Shows this day's ledger entries")
+    }
+
+    private func dayAccessibilityValue(isSelected: Bool, isToday: Bool, count: Int) -> String {
+        var parts: [String] = []
+        if isSelected { parts.append("Selected") }
+        if isToday { parts.append("Demo today") }
+        parts.append(count == 1 ? "1 entry" : "\(count) entries")
+        return parts.joined(separator: ", ")
     }
 
     private var ledgerList: some View {
-        let entries = dailyLedger[selectedDay ?? -1] ?? []
+        let entries = transactions.filter { $0.day == selectedDay }
+
         return VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(selectedDay.map { "7月\($0)日" } ?? "选择一个日期")
-                    .font(.system(size: 13))
-                    .foregroundStyle(RICHColor.textSecondary)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: RICHSpacing.xs) {
+                    Text(selectedDay.map { "July \($0)" } ?? "Choose a date")
+                        .font(.headline)
+                        .foregroundStyle(RICHColor.textPrimary)
+                    Text("Parent categories become specific subcategories.")
+                        .font(.caption)
+                        .foregroundStyle(RICHColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Spacer()
             }
-            .padding(.horizontal, RICHSpacing.xl)
-            .padding(.top, RICHSpacing.lg)
-            .padding(.bottom, RICHSpacing.sm)
+            .padding(RICHSpacing.xl)
             .overlay(alignment: .bottom) {
                 DashedDivider().padding(.horizontal, RICHSpacing.xl)
             }
 
             if entries.isEmpty {
-                Text("这天没有记录").font(.system(size: 12)).foregroundStyle(RICHColor.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, RICHSpacing.xxl)
+                ContentUnavailableView(
+                    "No entries on this day",
+                    systemImage: "calendar.badge.plus",
+                    description: Text("Choose July 14 or 15, or use the center add button.")
+                )
+                .padding(.vertical, RICHSpacing.lg)
             } else {
                 ForEach(entries) { entry in
-                    HStack(spacing: RICHSpacing.md) {
-                        Circle()
-                            .fill(RICHColor.page)
-                            .frame(width: 26, height: 26)
-                            .overlay(Text(String(entry.category.prefix(1))).font(.system(size: 11)).foregroundStyle(RICHColor.textSecondary))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(entry.title).font(.system(size: 12.5, weight: .medium)).foregroundStyle(RICHColor.textPrimary)
-                            Text(entry.category).font(.system(size: 10)).foregroundStyle(RICHColor.textSecondary)
-                        }
-                        Spacer()
-                        Text((entry.isIncome ? "+" : "-") + entry.amountText)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(entry.isIncome ? RICHColor.incomeGreen : RICHColor.textPrimary)
-                    }
-                    .padding(.horizontal, RICHSpacing.xl)
-                    .padding(.vertical, 5)
+                    transactionRow(entry)
                 }
             }
-            Spacer()
         }
         .frame(maxWidth: .infinity)
         .background(RICHColor.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: RICHRadius.card))
+    }
+
+    private func transactionRow(_ entry: StudentTransaction) -> some View {
+        HStack(spacing: RICHSpacing.md) {
+            Image(systemName: symbol(for: entry.category))
+                .font(.body)
+                .foregroundStyle(entry.isIncome ? RICHColor.incomeGreen : RICHColor.textSecondary)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(RICHColor.page))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: RICHSpacing.xs) {
+                Text(entry.title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(RICHColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(entry.categoryPath)
+                    .font(.caption)
+                    .foregroundStyle(RICHColor.textSecondary)
+            }
+
+            Spacer(minLength: RICHSpacing.sm)
+
+            Text((entry.isIncome ? "+" : "−") + money(entry.amount))
+                .font(.body.weight(.semibold).monospacedDigit())
+                .foregroundStyle(entry.isIncome ? RICHColor.incomeGreen : RICHColor.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, RICHSpacing.xl)
+        .padding(.vertical, RICHSpacing.md)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            "\(entry.title), \(entry.categoryPath), \(entry.isIncome ? "income" : "expense") \(money(entry.amount))"
+        )
+    }
+
+    private func symbol(for category: String) -> String {
+        switch category {
+        case "Food": return "fork.knife"
+        case "Transit": return "bus.fill"
+        case "Study": return "book.closed.fill"
+        case "Income": return "wallet.bifold.fill"
+        default: return "tag.fill"
+        }
+    }
+
+    private func money(_ amount: Double) -> String {
+        String(format: "$%.2f", amount)
     }
 }
 
-/// Matches the RN app's `components/rich/DashedDivider.tsx` contract:
-/// a thin dashed rule under date/amount summaries.
+/// A thin dashed rule used beneath date and amount summaries.
 struct DashedDivider: View {
     var body: some View {
-        Rectangle()
-            .fill(Color(hex: 0xD8D8D8))
-            .frame(height: 1)
-            .overlay(
-                GeometryReader { proxy in
-                    Path { path in
-                        path.move(to: CGPoint(x: 0, y: 0))
-                        path.addLine(to: CGPoint(x: proxy.size.width, y: 0))
-                    }
-                    .stroke(Color(hex: 0xD8D8D8), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                }
-            )
+        GeometryReader { proxy in
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: 0.5))
+                path.addLine(to: CGPoint(x: proxy.size.width, y: 0.5))
+            }
+            .stroke(RICHColor.border, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        }
+        .frame(height: 1)
+        .accessibilityHidden(true)
     }
 }
 
-#Preview {
-    HomeLedgerView()
-}
+#if DEBUG
+    #Preview {
+        HomeLedgerView(transactions: StudentStory.sampleTransactions)
+    }
+#endif

@@ -1,62 +1,118 @@
 # RICH Playground — Swift Student Challenge companion
 
-A small, individually-authored SwiftUI app playground distilling RICH's brand
-and interaction design, scoped for a future Apple Swift Student Challenge
-(SSC) submission. This is **not** a port of the RICH app — the main app is
-Expo/React Native and cannot be submitted to SSC directly, since entries must
-be a native `.swiftpm` App Playground built with Swift Playgrounds or Xcode.
+`RICHPlayground.swiftpm` is a self-contained SwiftUI App Playground for the
+Swift Student Challenge. It is intentionally separate from the larger
+React Native RICH app: the submission artifact is native Swift, runs without
+a network connection, and can be understood in under three minutes.
 
-## What's here
+## The story
 
-`RICHPlayground.swiftpm/` is a self-contained App Playground:
+Maya is a student with a $600 monthly allowance. She wants enough structure
+to make good choices, but she does not want a finance account, ads, analytics,
+or uploads of sensitive spending data.
 
-- `DesignTokens.swift` — RICH's color, spacing, and radius tokens ported by
-  hand from `constants/Colors.ts` / `constants/Design.ts`.
-- `WelcomeView.swift` — states the app's real differentiator (on-device only,
-  nothing uploaded) before showing any UI.
-- `HomeLedgerView.swift` — distilled 首页: mint header, square calendar card,
-  entry-day banding, tap-to-select day, dashed-divider ledger.
-- `QuickAddView.swift` — distilled amount-first composer: decimal entry,
-  backspace, `+`/`-` chaining, category selection, confirm.
-- `BudgetPreviewView.swift` — distilled 预算/计划 empty state (headline,
-  illustrated donut, tagline, black CTA).
-- `RootView.swift` — ties the above together with the real app's two-tab +
-  center-FAB bottom bar instead of a stock iOS `TabView`.
+The playground connects three moments:
 
-Everything is bundled SF Symbols and hand-drawn SwiftUI shapes — no network
-calls, no external assets, consistent with SSC's offline-judging requirement.
+1. **See the month.** The English-only welcome screen opens Maya's July ledger.
+   Tapping a calendar date reveals sample transactions and their full
+   parent-to-subcategory paths, such as `Food › Campus meals`.
+2. **Record one choice.** The center add button opens an amount-first expense
+   sheet. A judge can use a prepared amount, choose `Food`, `Transit`, or
+   `Study`, then choose one of that parent's children and add the entry. The
+   custom keypad also supports decimal entry and chained addition/subtraction.
+3. **Give every dollar a job.** The Budget tab shows a $220 `Food` parent cap
+   divided among `Campus meals`, `Groceries`, and `Coffee`. Allocation presets
+   and $10 decrease/increase controls update the child amounts and unallocated
+   remainder immediately. A quick-added matching expense also contributes to
+   the relevant child progress.
 
-## Verifying it
+This hierarchy is the signature interaction: the parent answers “How much can
+I spend on Food?”, while its children answer “What matters this month?” The
+unallocated remainder deliberately leaves room for student life to change.
 
-This machine only has the Swift command-line toolchain (no full Xcode), so
-`swift build` was used to type-check the view/logic code in isolation (a
-scratch macOS package with the `#Preview` macros stripped — that macro needs
-Xcode/Swift Playgrounds' plugin, not available to plain `swift build`). It
-compiled clean. The `.swiftpm` bundle itself — including whether
-`Package.swift`'s `AppleProductTypes` manifest is exactly right for the
-current SSC toolchain — has **not** been opened/run, since that requires
-Swift Playgrounds (iPad/Mac) or Xcode 26+, neither of which is installed
-here. Before relying on this for a submission: open
-`RICHPlayground.swiftpm` in Swift Playgrounds or Xcode and confirm it runs.
+## Suggested three-minute walkthrough
 
-## Eligibility recap (as of this research, mid-2026)
+- **0:00–0:25:** Read the privacy premise and three steps, then tap
+  **Start the 3-minute story**.
+- **0:25–1:00:** In **Ledger**, choose July 14 and July 15. Notice that every
+  transaction identifies both its parent and child category.
+- **1:00–1:45:** Tap the center **Add** button. Keep the prepared `$8.75`,
+  choose `Food › Coffee`, and tap **Add**. The entry returns to July 15.
+- **1:45–2:45:** Open **Budget**. Try `Campus first` and `Cook more`, then use
+  a $10 plus or minus control. Watch the parent allocation strip and
+  unallocated remainder respond.
+- **2:45–3:00:** Read the final reflection: progressive budgeting adds useful
+  specificity without pretending every month can be predicted perfectly.
 
-- Age 13+ by default; higher minimums in some countries (mainland China is
-  14+).
-- Must not be a full-time professional developer; must be a student
-  (accredited institution, homeschool equivalent, Apple Developer Academy,
-  a STEM org curriculum, or a recent high-school graduate awaiting/accepted
-  to college).
-- Submission: a `.swiftpm` ZIP ≤25MB, completable within 3 minutes, judged
-  offline, individually authored, all content in English.
-- The 2026 cycle closed February 28, 2026. The next cycle is expected
-  ~February 2027 — check `developer.apple.com/swift-student-challenge`
-  closer to the date for the actual window and current rules, since Apple
-  can change requirements year to year.
+## Package contents
 
-## Scope notes
+- `StudentStory.swift` — small in-memory student transaction model and sample
+  story data.
+- `WelcomeView.swift` — privacy premise and visible three-step path.
+- `HomeLedgerView.swift` — tappable English calendar, monthly totals, and
+  parent/subcategory ledger rows.
+- `QuickAddView.swift` — interactive amount, parent category, subcategory,
+  arithmetic keypad, and confirm flow.
+- `BudgetPreviewView.swift` — live parent/child budget allocation, progress,
+  presets, and unallocated remainder.
+- `RootView.swift` — shared in-memory state, two tabs, and center add action.
+- `DesignTokens.swift` — RICH's mint, near-black, compact spacing, and
+  square-card visual language, with darker semantic text colors for contrast.
 
-This deliberately stays small: three screens plus one sheet, no persistence,
-no navigation framework beyond a hand-rolled tab switch. SSC judges reward a
-polished, interactive, story-driven playground over broad feature coverage —
-better to keep this tight and finish it than to grow it toward the full app.
+Everything uses SwiftUI, SF Symbols, and shapes bundled with the package.
+There are no remote assets, accounts, analytics SDKs, API calls, or network
+permissions. Changes last only for the current playground session.
+
+## Accessibility and layout
+
+- Visible text is English, as required by the 2026 rules.
+- Interactive calendar dates, category choices, allocation controls, tabs,
+  and keypad actions have explicit VoiceOver labels, values, and hints where
+  their visual meaning is not enough.
+- Selected tabs/categories expose the selected accessibility trait.
+- Primary controls meet or exceed a 44-point touch target.
+- Text uses semantic SwiftUI styles, numeric values use monospaced digits,
+  adaptive grids replace fixed column widths, and `ViewThatFits` provides
+  compact alternatives for summary layouts.
+- Every primary screen scrolls so larger Dynamic Type sizes can reach all
+  content. A final device pass with Accessibility sizes is still required.
+
+## Verification performed here
+
+The available machine has the Apple command-line tools, not full Xcode or
+Swift Playground. The following checks pass:
+
+```text
+swiftc -parse Sources/RICHPlayground/*.swift
+swiftc -typecheck -parse-as-library \
+  -module-cache-path /tmp/rich-swift-module-cache \
+  Sources/RICHPlayground/*.swift
+```
+
+The type-check uses a writable module cache and excludes `#Preview` expansion
+outside `DEBUG`; the actual previews remain available in Xcode/Swift
+Playground. `Package.swift` imports `AppleProductTypes`, which belongs to the
+App Playground environment and cannot be validated by plain SwiftPM here.
+
+Before submission, open `RICHPlayground.swiftpm` in Swift Playground 4.6+ or
+Xcode 26+, run it on both iPhone and iPad, test portrait and landscape, test
+VoiceOver and larger Dynamic Type sizes, and complete the full path offline.
+
+## 2026 rule and AI disclosure note
+
+Apple's 2026 terms require an English, offline App Playground ZIP of no more
+than 25 MB that runs in Swift Playground 4.6 or Xcode 26 or later. AI tools may
+assist with specific tasks only when **all use is fully disclosed**; the
+applicant must still demonstrate significant individual contribution and
+technical understanding, and must personally write every required submission
+essay.
+
+This repository was revised with OpenAI Codex assistance. If any of this work
+is submitted, do not describe it as created without AI. Review, understand,
+test, and substantially own every line, then adapt the truthful disclosure
+draft in `SUBMISSION.md` to match the complete history of tools actually used.
+
+Official sources:
+
+- <https://developer.apple.com/swift-student-challenge/eligibility/>
+- <https://developer.apple.com/swift-student-challenge/policy/>

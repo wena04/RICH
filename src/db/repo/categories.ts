@@ -1,13 +1,19 @@
-import type { Category, Subcategory } from '@/src/domain/types';
+import type { Category, CategoryKind, Subcategory } from '@/src/domain/types';
+import { mergeCategoryKinds } from '@/src/domain/categoryKind';
 import { newId } from '@/src/utils/id';
 
 import type { AppDb } from '../db';
 
 export async function listCategories(db: AppDb): Promise<Category[]> {
-  const rows = await db.getAllAsync<{ id: string; name: string; icon: string | null }>(
-    'SELECT id, name, icon FROM categories ORDER BY name ASC'
+  const rows = await db.getAllAsync<{
+    id: string;
+    name: string;
+    icon: string | null;
+    kind: CategoryKind;
+  }>(
+    'SELECT id, name, icon, kind FROM categories ORDER BY name ASC'
   );
-  return rows.map((r) => ({ id: r.id, name: r.name, icon: r.icon }));
+  return rows.map((r) => ({ id: r.id, name: r.name, icon: r.icon, kind: r.kind }));
 }
 
 export async function listCategoriesWithSubcategoryCounts(
@@ -17,13 +23,14 @@ export async function listCategoriesWithSubcategoryCounts(
     id: string;
     name: string;
     icon: string | null;
+    kind: CategoryKind;
     sub_cnt: number;
   }>(
     `
-    SELECT c.id, c.name, c.icon, COUNT(s.id) AS sub_cnt
+    SELECT c.id, c.name, c.icon, c.kind, COUNT(s.id) AS sub_cnt
     FROM categories c
     LEFT JOIN subcategories s ON s.category_id = c.id
-    GROUP BY c.id, c.name, c.icon
+    GROUP BY c.id, c.name, c.icon, c.kind
     ORDER BY c.name ASC
     `
   );
@@ -31,41 +38,55 @@ export async function listCategoriesWithSubcategoryCounts(
     id: r.id,
     name: r.name,
     icon: r.icon,
+    kind: r.kind,
     subcategoryCount: r.sub_cnt ?? 0,
   }));
 }
 
 export async function getCategoryByName(db: AppDb, name: string): Promise<Category | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string; icon: string | null }>(
-    'SELECT id, name, icon FROM categories WHERE name = ?',
+  const row = await db.getFirstAsync<{
+    id: string;
+    name: string;
+    icon: string | null;
+    kind: CategoryKind;
+  }>(
+    'SELECT id, name, icon, kind FROM categories WHERE name = ?',
     [name.trim()]
   );
-  return row ? { id: row.id, name: row.name, icon: row.icon } : null;
+  return row ? { id: row.id, name: row.name, icon: row.icon, kind: row.kind } : null;
 }
 
-export async function createCategory(db: AppDb, name: string, icon?: string | null): Promise<Category> {
+export async function createCategory(
+  db: AppDb,
+  name: string,
+  icon?: string | null,
+  kind: CategoryKind = 'both',
+): Promise<Category> {
   const n = name.trim();
   const now = new Date().toISOString();
   const id = newId('cat');
   await db.runAsync(
     `
-    INSERT INTO categories (id, name, icon, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO categories (id, name, icon, kind, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
     `,
-    [id, n, icon ?? null, now, now]
+    [id, n, icon ?? null, kind, now, now]
   );
-  return { id, name: n, icon: icon ?? null };
+  return { id, name: n, icon: icon ?? null, kind };
 }
 
-export async function updateCategory(db: AppDb, input: { id: string; name: string }): Promise<void> {
+export async function updateCategory(
+  db: AppDb,
+  input: { id: string; name: string; kind?: CategoryKind },
+): Promise<void> {
   const now = new Date().toISOString();
   await db.runAsync(
     `
     UPDATE categories
-    SET name = ?, updated_at = ?
+    SET name = ?, kind = COALESCE(?, kind), updated_at = ?
     WHERE id = ?
     `,
-    [input.name.trim(), now, input.id]
+    [input.name.trim(), input.kind ?? null, now, input.id]
   );
 }
 
@@ -89,26 +110,47 @@ export async function deleteCategory(db: AppDb, id: string): Promise<void> {
 }
 
 export async function getCategoryById(db: AppDb, id: string): Promise<Category | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string; icon: string | null }>(
-    'SELECT id, name, icon FROM categories WHERE id = ?',
+  const row = await db.getFirstAsync<{
+    id: string;
+    name: string;
+    icon: string | null;
+    kind: CategoryKind;
+  }>(
+    'SELECT id, name, icon, kind FROM categories WHERE id = ?',
     [id]
   );
-  return row ? { id: row.id, name: row.name, icon: row.icon } : null;
+  return row ? { id: row.id, name: row.name, icon: row.icon, kind: row.kind } : null;
 }
 
-export async function ensureCategory(db: AppDb, name: string, icon?: string | null): Promise<Category> {
+export async function ensureCategory(
+  db: AppDb,
+  name: string,
+  icon?: string | null,
+  kind: CategoryKind = 'both',
+): Promise<Category> {
   const existing = await getCategoryByName(db, name);
   if (existing) {
-    if (icon && !existing.icon) {
+    const nextIcon = icon && !existing.icon ? icon : (existing.icon ?? null);
+    // If imported or newly entered transactions use the same category name on
+    // both sides of the ledger, keep it visible in both composers.
+    const nextKind = mergeCategoryKinds(existing.kind, kind);
+    if (nextIcon !== existing.icon || nextKind !== existing.kind) {
       await db.runAsync(
-        'UPDATE categories SET icon = ?, updated_at = ? WHERE id = ?',
-        [icon, new Date().toISOString(), existing.id],
+        'UPDATE categories SET icon = ?, kind = ?, updated_at = ? WHERE id = ?',
+        [nextIcon, nextKind, new Date().toISOString(), existing.id],
       );
-      return { ...existing, icon };
+      return { ...existing, icon: nextIcon, kind: nextKind };
     }
     return existing;
   }
-  return await createCategory(db, name, icon);
+  return await createCategory(db, name, icon, kind);
+}
+
+export async function listAllSubcategories(db: AppDb): Promise<Subcategory[]> {
+  const rows = await db.getAllAsync<{ id: string; name: string; category_id: string }>(
+    `SELECT id, name, category_id FROM subcategories ORDER BY category_id ASC, name ASC`,
+  );
+  return rows.map((row) => ({ id: row.id, name: row.name, categoryId: row.category_id }));
 }
 
 export async function listSubcategories(db: AppDb, categoryId: string): Promise<Subcategory[]> {
