@@ -160,7 +160,7 @@ const CATEGORY_ICON_BY_NAME: Record<string, string> = {
   烟酒: 'wine',
   汽车罚款: 'minuscircle',
   车贷: 'caryen',
-  配件: 'steering',
+  配件: 'carparts',
   车险: 'carshield',
   车检: 'carsearch',
   管理分类: 'gear',

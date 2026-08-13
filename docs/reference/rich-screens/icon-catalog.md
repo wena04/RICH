@@ -33,7 +33,7 @@ with occasional mint (#3ECDA5) accent detail.
 
 ## Current implementation
 
-- `assets/icons/categories/` contains 113 independently drawn SVG source icons, including a
+- `assets/icons/categories/` contains 114 independently drawn SVG source icons, including a
   separate `handcoin` reward glyph so 打赏 does not reuse the donation artwork.
 - `components/CategoryIcon.tsx` renders the same family through `react-native-svg` and can theme
   the outline and mint detail for idle, selected and inverse states.

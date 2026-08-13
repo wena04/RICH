@@ -19,7 +19,7 @@ export const CATEGORY_ICON_SECTIONS: readonly CategoryIconCatalogSection[] = [
   { title: '娱乐', items: [['游戏','gamepad'],['聚会','party'],['电影','film'],['k歌','mic'],['打赏','handcoin'],['运动','dumbbell'],['旅行','suitcase'],['景区门票','ticket']] },
   { title: '家庭相关', items: [['家人','family'],['父母','parent'],['恋爱','love'],['孩子','baby'],['宠物','paw']] },
   { title: '育儿相关', items: [['育儿','baby'],['奶粉','milkcan'],['奶瓶','babybottle'],['辅食','babyfood'],['纸尿裤','diaper'],['玩具','pinwheel'],['早教','bulb'],['亲子游','parentchild'],['疫苗看病','syringe']] },
-  { title: '汽车维修', items: [['汽车','car'],['停车费','parkpin'],['洗车','carwash'],['过路费','toll'],['汽车罚款','minuscircle'],['维修保养','wrench'],['车贷','caryen'],['配件','steering'],['车险','carshield'],['车检','carsearch']] },
+  { title: '汽车维修', items: [['汽车','car'],['停车费','parkpin'],['洗车','carwash'],['过路费','toll'],['汽车罚款','minuscircle'],['维修保养','wrench'],['车贷','caryen'],['配件','carparts'],['车险','carshield'],['车检','carsearch']] },
   { title: '人情往来', items: [['人情','handshake'],['请客送礼','gift'],['发红包','redpacket'],['礼金','envmoney']] },
   { title: '交通', items: [['公交','bus'],['飞机','plane'],['火车','train'],['地铁','metro'],['打车','taxi'],['自行车','bike'],['轮船','ship']] },
   { title: '住房', items: [['酒店','hotel'],['房租','houseyen'],['房贷','houseloan']] },
