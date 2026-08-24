@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   StyleSheet,
@@ -9,10 +10,17 @@ import {
   TextInput,
   View,
   Text,
+  useWindowDimensions,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
-import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from "@/constants/Colors";
+import {
+  ACCESSIBLE_GREEN,
+  CATEGORY_FRAME_BACKGROUND,
+  CONTROL_BACKGROUND,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "@/constants/Colors";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { getDb } from "@/src/db/db";
 import { createCategory, getCategoryByName } from "@/src/db/repo/categories";
@@ -25,6 +33,10 @@ export default function AddCategoryScreen() {
   const [selected, setSelected] = useState<{ id: string; label: string } | null>(null);
   const [kind, setKind] = useState<CategoryKind>('expense');
   const [saving, setSaving] = useState(false);
+  const { width: viewportWidth } = useWindowDimensions();
+  const gridColumns = viewportWidth < 360 ? 4 : 5;
+  const gridWidth = Math.max(0, Math.min(viewportWidth, 430) - 32);
+  const gridItemWidth = gridWidth / gridColumns;
 
   async function onDone() {
     if (saving || !selected) return;
@@ -41,6 +53,7 @@ export default function AddCategoryScreen() {
       router.back();
     } catch (e) {
       console.error("Failed to add category:", e);
+      Alert.alert('没有保存', e instanceof Error ? e.message : '请检查分类名称和图标。');
     } finally {
       setSaving(false);
     }
@@ -49,12 +62,28 @@ export default function AddCategoryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.head}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="返回"
+        >
           <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
         </Pressable>
         <Text style={styles.title}>添加自定义类目</Text>
-        <Pressable onPress={onDone} disabled={!selected}>
-          <Text style={[styles.done, !selected && styles.doneOff]}>完成</Text>
+        <Pressable
+          onPress={onDone}
+          disabled={!selected || saving}
+          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="保存自定义分类"
+          accessibilityState={{ disabled: !selected || saving }}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color={ACCESSIBLE_GREEN} />
+          ) : (
+            <Text style={[styles.done, !selected && styles.doneOff]}>完成</Text>
+          )}
         </Pressable>
       </View>
 
@@ -68,7 +97,7 @@ export default function AddCategoryScreen() {
 
       <View style={styles.kindSection}>
         <Text style={styles.kindLabel}>用于</Text>
-        <View style={styles.kindToggle}>
+        <View style={styles.kindToggle} accessibilityRole="tablist">
           {([
             ['expense', '支出'],
             ['income', '收入'],
@@ -79,7 +108,11 @@ export default function AddCategoryScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: kind === value }}
               onPress={() => setKind(value)}
-              style={[styles.kindButton, kind === value && styles.kindButtonActive]}
+              style={({ pressed }) => [
+                styles.kindButton,
+                kind === value && styles.kindButtonActive,
+                pressed && kind !== value && styles.kindButtonPressed,
+              ]}
             >
               <Text style={[styles.kindText, kind === value && styles.kindTextActive]}>{label}</Text>
             </Pressable>
@@ -103,13 +136,17 @@ export default function AddCategoryScreen() {
           <View key={title} style={styles.section}>
             <Text style={styles.sectionTitle}>{title}</Text>
             <View style={styles.dash} />
-            <View style={styles.grid}>
+            <View style={[styles.grid, { width: gridWidth }]}>
               {items.map(([label, id], i) => {
                 const active = selected?.id === id && selected?.label === label;
                 return (
                   <Pressable
                     key={label + i}
-                    style={styles.item}
+                    style={({ pressed }) => [
+                      styles.item,
+                      { width: gridItemWidth },
+                      pressed && styles.itemPressed,
+                    ]}
                     onPress={() => setSelected({ id, label })}
                     accessibilityRole="button"
                     accessibilityLabel={`选择${label}图标`}
@@ -143,17 +180,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    minHeight: 56,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
-  back: { padding: 6 },
+  headerAction: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
   title: { fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY },
-  done: { fontSize: 14, fontWeight: "600", color: PRIMARY_GREEN },
+  done: { fontSize: 14, fontWeight: "600", color: ACCESSIBLE_GREEN },
   doneOff: { color: "#B8B8B8" },
   nameInput: {
     paddingHorizontal: 18,
+    minHeight: 54,
     paddingVertical: 14,
     fontSize: 14,
     color: TEXT_PRIMARY,
@@ -170,9 +214,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
   kindLabel: { fontSize: 12, color: TEXT_SECONDARY },
-  kindToggle: { flexDirection: 'row', padding: 2, backgroundColor: '#F1F3F2', borderRadius: 999 },
-  kindButton: { minWidth: 56, paddingHorizontal: 12, paddingVertical: 7, alignItems: 'center', borderRadius: 999 },
+  kindToggle: { flexDirection: 'row', padding: 2, backgroundColor: CONTROL_BACKGROUND, borderRadius: 999 },
+  kindButton: { minWidth: 60, minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
   kindButtonActive: { backgroundColor: '#101A17' },
+  kindButtonPressed: { backgroundColor: '#E4E9E6' },
   kindText: { fontSize: 11, color: TEXT_SECONDARY },
   kindTextActive: { color: '#FFFFFF', fontWeight: '600' },
   libraryIntro: {
@@ -190,13 +235,14 @@ const styles = StyleSheet.create({
   section: { paddingHorizontal: 16, paddingTop: 15 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, letterSpacing: 0.1 },
   dash: { borderBottomWidth: 1, borderBottomColor: "#EEE", borderStyle: "dashed", marginTop: 8, marginBottom: 2 },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  item: { width: `${100 / 5}%`, minHeight: 70, alignItems: "center", paddingVertical: 10 },
+  grid: { flexDirection: "row", flexWrap: "wrap", alignSelf: 'center' },
+  item: { minHeight: 82, alignItems: "center", paddingVertical: 10 },
+  itemPressed: { backgroundColor: CONTROL_BACKGROUND },
   iconWrap: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#F7F8F7",
+    backgroundColor: CATEGORY_FRAME_BACKGROUND,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 5,

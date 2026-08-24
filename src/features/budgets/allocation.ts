@@ -19,3 +19,19 @@ export function unallocatedCategoryLimitCents(
 ): number {
   return Math.max(parentLimitCents - sumChildLimitsCents(childLimitsCents), 0);
 }
+
+/**
+ * Spending outside the explicitly budgeted children still belongs to the
+ * parent envelope. This includes transactions without a subcategory and
+ * transactions assigned to a child that has no child-level budget.
+ */
+export function unallocatedCategorySpentCents(
+  parentSpentCents: number,
+  budgetedChildSpentCents: readonly number[],
+): number {
+  const budgetedChildSpent = budgetedChildSpentCents.reduce(
+    (total, spent) => total + Math.max(0, spent),
+    0,
+  );
+  return Math.max(parentSpentCents - budgetedChildSpent, 0);
+}

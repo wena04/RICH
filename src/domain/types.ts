@@ -44,6 +44,7 @@ export type BudgetCategoryStatus = {
   spentCents: number;
   subcategories: BudgetSubcategoryStatus[];
   unallocatedLimitCents: number;
+  unallocatedSpentCents: number;
 };
 
 export type BudgetSubcategoryStatus = {

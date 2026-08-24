@@ -2,7 +2,7 @@
 
 Living implementation and verification status for Rich记账.
 
-**Last updated:** August 12, 2026
+**Last updated:** August 24, 2026
 
 **Phase:** native release hardening and on-device visual QA
 
@@ -14,6 +14,14 @@ student-friendly category/subcategory starter taxonomy.
 
 Recent work moved the app beyond the earlier MVP model:
 
+- Adopted the approved Rich wordmark/app icon and documented the mint/ink brand system.
+- Completed responsive visual passes for Home, budgets, trends, accounts, category/icon management,
+  the complete ledger, and transaction create/detail/edit/transfer/adjustment flows.
+- Surfaced **我的 → 全部账单**, replacing the hidden English legacy list with a Chinese-first dated
+  ledger and transaction-detail links.
+- Changed new-transaction category selection from mutable names to stable database IDs, preventing
+  renamed or deleted categories from being silently recreated.
+- Made unbudgeted-child and unclassified spending visible inside the parent budget envelope.
 - Added typed `expense | income | both` categories across migration, repositories, management,
   entry, editing, and budget filtering.
 - Added starter child categories for food, transport, learning, housing, entertainment,
@@ -41,15 +49,13 @@ Recent work moved the app beyond the earlier MVP model:
 
 ## Verification
 
-Completed against the current workspace on August 12, 2026:
+Completed against the current workspace on August 24, 2026:
 
 ```text
 TypeScript:       npx tsc --noEmit                         PASS
-Unit tests:       npm test                                 PASS (37/37)
-iOS bundle:       expo export --platform ios               PASS
-Android bundle:   expo export --platform android           PASS
-Expo config:      expo config --type public                PASS
-SDK dependencies: expo install --check (local SDK map)     PASS
+Unit tests:       npm test                                 PASS (43/43)
+Category icons:   npm run icons:check                      PASS (114 SVGs)
+Expo config:      npx expo config --type public            PASS
 Patch hygiene:    git diff --check                         PASS
 ```
 

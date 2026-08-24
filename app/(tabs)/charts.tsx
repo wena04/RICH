@@ -237,6 +237,14 @@ export default function BudgetScreen() {
                   category.limitCents > 0
                     ? Math.round((category.spentCents / category.limitCents) * 100)
                     : 0;
+                const unallocatedPercent =
+                  category.unallocatedLimitCents > 0
+                    ? Math.round(
+                        (category.unallocatedSpentCents / category.unallocatedLimitCents) * 100,
+                      )
+                    : category.unallocatedSpentCents > 0
+                      ? 101
+                      : 0;
                 return (
                   <View
                     key={category.categoryId}
@@ -264,8 +272,8 @@ export default function BudgetScreen() {
                         <Text style={styles.categoryName}>{category.categoryName}</Text>
                         <Text style={styles.categoryMeta}>
                           {category.subcategories.length
-                            ? `${category.subcategories.length} 项子分类额度`
-                            : '查看分类进度'}
+                            ? `${category.subcategories.length} 项子分类额度，其余归未分配`
+                            : '全部支出归入未分配'}
                         </Text>
                       </View>
                       <Text style={[styles.categoryAmount, percent > 100 && styles.overText]}>
@@ -325,12 +333,29 @@ export default function BudgetScreen() {
                             </View>
                           );
                         })}
-                        <View style={styles.unallocatedRow}>
-                          <Text style={styles.unallocatedLabel}>主分类内未分配额度</Text>
-                          <Text style={styles.unallocatedValue}>
-                            ¥{centsToYuan(category.unallocatedLimitCents)}
-                          </Text>
-                        </View>
+                        {category.unallocatedLimitCents > 0 ||
+                        category.unallocatedSpentCents > 0 ? (
+                          <View style={styles.unallocatedRow}>
+                            <View style={styles.subcategoryCopy}>
+                              <Text style={styles.unallocatedLabel}>未分配与未细分</Text>
+                              <ProgressBar
+                                percent={unallocatedPercent}
+                                color={progressColor(unallocatedPercent)}
+                                height={3}
+                                style={styles.subcategoryTrack}
+                              />
+                            </View>
+                            <Text
+                              style={[
+                                styles.unallocatedValue,
+                                unallocatedPercent > 100 && styles.overText,
+                              ]}
+                            >
+                              ¥{centsToYuan(category.unallocatedSpentCents)} / ¥
+                              {centsToYuan(category.unallocatedLimitCents)}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
                     ) : null}
                   </View>
@@ -509,14 +534,20 @@ const styles = StyleSheet.create({
   subcategoryAmount: { fontSize: 9.5, color: TEXT_SECONDARY, fontVariant: ['tabular-nums'] },
   unallocatedRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 8,
     marginTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#C9D7D0',
   },
-  unallocatedLabel: { fontSize: 10, color: TEXT_SECONDARY },
-  unallocatedValue: { fontSize: 10, fontWeight: '600', color: TEXT_PRIMARY },
+  unallocatedLabel: { fontSize: 10, color: TEXT_PRIMARY },
+  unallocatedValue: {
+    fontSize: 9.5,
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+    fontVariant: ['tabular-nums'],
+  },
   noCategories: { padding: 20, textAlign: 'center', fontSize: 12, color: TEXT_SECONDARY },
   setBudgetButton: {
     marginHorizontal: 16,
