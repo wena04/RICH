@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" role="img" aria-labelledby="rich-lockup-mint-title rich-lockup-mint-desc">
+  <title id="rich-lockup-mint-title">Rich记账 original-style localized signature for mint fields</title>
+  <desc id="rich-lockup-mint-desc">The original Rich记账 header treatment in ink for RICH Mint fields.</desc>
+  <text x="30.48" y="44.5" fill="#1A1A1A" font-family="'Avenir Next', Avenir, sans-serif" font-size="40" font-weight="700" font-kerning="normal">Rich</text>
+  <text x="114.82" y="43.5" fill="#1A1A1A" font-family="'PingFang SC', 'Hiragino Sans GB', sans-serif" font-size="36.667" font-weight="600">记账</text>
+</svg>

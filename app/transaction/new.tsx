@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Modal,
@@ -8,7 +8,7 @@ import {
   ScrollView,
   SafeAreaView,
   TextInput,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFocusEffect } from "@react-navigation/native";
@@ -18,6 +18,9 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { DashedDivider, MoneyNumpad } from "@/components/rich";
 import {
+  ACCESSIBLE_GREEN,
+  CATEGORY_FRAME_BACKGROUND,
+  CONTROL_BACKGROUND,
   PRIMARY_GREEN,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -71,6 +74,9 @@ export default function NewTransactionScreen() {
   const [showSubModal, setShowSubModal] = useState(false);
   const [subInput, setSubInput] = useState("");
   const [savingSubcategory, setSavingSubcategory] = useState(false);
+  const [noteFocused, setNoteFocused] = useState(false);
+  const noteInputRef = useRef<TextInput>(null);
+  const { width: viewportWidth } = useWindowDimensions();
 
   useEffect(() => {
     if (typeof initialDateParam === "string" && isIsoDate(initialDateParam)) {
@@ -287,10 +293,12 @@ export default function NewTransactionScreen() {
     !saving;
 
   // Chunk into rows so the subcategory zone can expand under the selected row.
-  const COLUMNS = 5;
+  const categoryColumns = viewportWidth < 360 ? 4 : 5;
+  const categoryGridWidth = Math.min(viewportWidth, 430);
+  const categoryItemWidth = (categoryGridWidth - 32) / categoryColumns;
   const categoryRows: CatCell[][] = [];
-  for (let i = 0; i < displayCategories.length; i += COLUMNS) {
-    categoryRows.push(displayCategories.slice(i, i + COLUMNS));
+  for (let i = 0; i < displayCategories.length; i += categoryColumns) {
+    categoryRows.push(displayCategories.slice(i, i + categoryColumns));
   }
 
   return (
@@ -395,7 +403,7 @@ export default function NewTransactionScreen() {
         style={styles.categoryScroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.categoryGrid}>
+        <View style={[styles.categoryGrid, { width: categoryGridWidth }]}>
           {categoryRows.map((row, rowIdx) => {
             const selIdx = row.findIndex((c) => c.name === selectedCategory);
             const showZone = selIdx !== -1;
@@ -406,7 +414,7 @@ export default function NewTransactionScreen() {
                     cat.manage ? (
                       <Pressable
                         key="__manage"
-                        style={styles.categoryItem}
+                        style={[styles.categoryItem, { width: categoryItemWidth }]}
                         onPress={() => router.push("/categories")}
                         accessibilityRole="button"
                         accessibilityLabel="管理分类"
@@ -424,7 +432,7 @@ export default function NewTransactionScreen() {
                     ) : (
                       <Pressable
                         key={cat.name}
-                        style={styles.categoryItem}
+                        style={[styles.categoryItem, { width: categoryItemWidth }]}
                         onPress={() => onSelectCategory(cat.name)}
                         accessibilityRole="button"
                         accessibilityLabel={`${cat.name}${catsWithSubs.has(cat.name) ? '，有子分类' : ''}`}
@@ -471,8 +479,8 @@ export default function NewTransactionScreen() {
                         styles.subZoneCaret,
                         {
                           left:
-                            selIdx * CATEGORY_ITEM_WIDTH +
-                            CATEGORY_ITEM_WIDTH / 2 -
+                            selIdx * categoryItemWidth +
+                            categoryItemWidth / 2 -
                             8,
                         },
                       ]}
@@ -483,7 +491,7 @@ export default function NewTransactionScreen() {
                     </View>
                     <View style={styles.subGrid}>
                       <Pressable
-                        style={styles.subItem}
+                        style={[styles.subItem, { width: categoryItemWidth }]}
                         accessibilityRole="button"
                         accessibilityState={{ selected: selectedSubId == null }}
                         onPress={() => setSelectedSubId(null)}
@@ -514,7 +522,7 @@ export default function NewTransactionScreen() {
                         return (
                           <Pressable
                             key={s.id}
-                            style={styles.subItem}
+                            style={[styles.subItem, { width: categoryItemWidth }]}
                             onPress={() => setSelectedSubId(active ? null : s.id)}
                             accessibilityRole="button"
                             accessibilityState={{ selected: active }}
@@ -543,7 +551,7 @@ export default function NewTransactionScreen() {
                         );
                       })}
                       <Pressable
-                        style={styles.subItem}
+                        style={[styles.subItem, { width: categoryItemWidth }]}
                         onPress={onAddSubcategory}
                         accessibilityRole="button"
                         accessibilityLabel={`给${selectedCategory}添加子分类`}
@@ -584,12 +592,17 @@ export default function NewTransactionScreen() {
           <View style={styles.noteInput}>
             <FontAwesome name="pencil" size={14} color={TEXT_SECONDARY} />
             <TextInput
+              ref={noteInputRef}
               style={styles.noteTextInput}
               value={note}
               onChangeText={(v) => setNote(v.slice(0, 100))}
+              onFocus={() => setNoteFocused(true)}
+              onBlur={() => setNoteFocused(false)}
               placeholder="备注..."
               placeholderTextColor={TEXT_SECONDARY}
               maxLength={100}
+              returnKeyType="done"
+              blurOnSubmit
             />
           </View>
         </View>
@@ -633,30 +646,48 @@ export default function NewTransactionScreen() {
         </Modal>
 
         {/* Custom numpad */}
-        <View style={styles.numpad}>
-          <MoneyNumpad
-            onDigit={handleNumPress}
-            onBackspace={handleBackspace}
-            operators={[
-              { label: "+", accessibilityLabel: "加", onPress: () => handleOperator("+") },
-              { label: "−", accessibilityLabel: "减", onPress: () => handleOperator("-") },
-            ]}
-            onConfirm={onSave}
-            confirmDisabled={!canSaveTransaction}
-            confirmLabel={saving ? "..." : "确定"}
-          />
-        </View>
+        {noteFocused ? (
+          <View style={styles.noteEditingBar}>
+            <Text style={styles.noteEditingHint}>正在编辑备注</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="完成备注"
+              onPress={() => noteInputRef.current?.blur()}
+              style={styles.noteDoneButton}
+            >
+              <Text style={styles.noteDoneText}>完成</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.numpad}>
+            <MoneyNumpad
+              onDigit={handleNumPress}
+              onBackspace={handleBackspace}
+              operators={[
+                { label: "+", accessibilityLabel: "加", onPress: () => handleOperator("+") },
+                { label: "−", accessibilityLabel: "减", onPress: () => handleOperator("-") },
+              ]}
+              onConfirm={onSave}
+              confirmDisabled={!canSaveTransaction}
+              confirmLabel={saving ? "..." : "确定"}
+            />
+          </View>
+        )}
       </View>
 
       <Modal visible={showSubModal} transparent animationType="fade" onRequestClose={() => setShowSubModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Pressable onPress={() => setShowSubModal(false)}>
+              <Pressable style={styles.modalAction} onPress={() => setShowSubModal(false)}>
                 <Text style={styles.modalCancel}>取消</Text>
               </Pressable>
               <Text style={styles.modalTitle}>添加子类</Text>
-              <Pressable onPress={onSaveSubcategory} disabled={!subInput.trim() || savingSubcategory}>
+              <Pressable
+                style={styles.modalAction}
+                onPress={onSaveSubcategory}
+                disabled={!subInput.trim() || savingSubcategory}
+              >
                 <Text style={[styles.modalSave, (!subInput.trim() || savingSubcategory) && styles.modalSaveDisabled]}>
                   保存
                 </Text>
@@ -680,9 +711,6 @@ export default function NewTransactionScreen() {
   );
 }
 
-const { width } = Dimensions.get("window");
-const CATEGORY_ITEM_WIDTH = (width - 32) / 5;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -692,13 +720,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 6,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
   backButton: {
-    padding: 8,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   typeToggle: {
     flexDirection: "row",
@@ -708,8 +739,10 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   typeButton: {
+    minHeight: 36,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 18,
   },
   typeButtonActive: {
@@ -725,7 +758,9 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     marginLeft: "auto",
-    padding: 8,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 8,
   },
   dateText: {
     fontSize: 14,
@@ -767,9 +802,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#D7E6DE',
   },
   selectionEyebrow: {
-    fontSize: 9.5,
-    fontWeight: '700',
-    color: PRIMARY_GREEN,
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: ACCESSIBLE_GREEN,
     marginRight: 12,
   },
   selectionValue: { flex: 1, fontSize: 11.5, fontWeight: '600', color: TEXT_PRIMARY },
@@ -778,6 +813,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   categoryGrid: {
+    alignSelf: "center",
     paddingHorizontal: 16,
     paddingBottom: 16,
     backgroundColor: "#FFFFFF",
@@ -786,7 +822,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   categoryItem: {
-    width: CATEGORY_ITEM_WIDTH,
     alignItems: "center",
     paddingVertical: 12,
   },
@@ -794,7 +829,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F7F8F7",
+    backgroundColor: CATEGORY_FRAME_BACKGROUND,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
@@ -828,7 +863,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   categoryName: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: "#4E5350",
     textAlign: "center",
   },
@@ -851,6 +886,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   accountSelector: {
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     paddingRight: 16,
@@ -873,6 +909,7 @@ const styles = StyleSheet.create({
   },
   noteInput: {
     flex: 1,
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 16,
@@ -923,8 +960,26 @@ const styles = StyleSheet.create({
   accountSheetName: { flex: 1, fontSize: 15, color: TEXT_PRIMARY },
   accountSheetBal: { width: 84, textAlign: "right", fontSize: 14, color: TEXT_PRIMARY },
   numpad: {
+    backgroundColor: CONTROL_BACKGROUND,
+  },
+  noteEditingBar: {
+    minHeight: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
     backgroundColor: "#F8F8F8",
   },
+  noteEditingHint: { fontSize: 12, color: TEXT_SECONDARY },
+  noteDoneButton: {
+    minWidth: 72,
+    minHeight: 44,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: TEXT_PRIMARY,
+  },
+  noteDoneText: { fontSize: 13, fontWeight: "600", color: "#FFFFFF" },
   subZone: {
     position: "relative",
     backgroundColor: "#F4F6F5",
@@ -942,8 +997,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 4,
   },
-  subZoneTitle: { fontSize: 11, fontWeight: '700', color: TEXT_PRIMARY },
-  subZoneHint: { fontSize: 9, color: TEXT_SECONDARY },
+  subZoneTitle: { fontSize: 11.5, fontWeight: '600', color: TEXT_PRIMARY },
+  subZoneHint: { fontSize: 10.5, color: TEXT_SECONDARY },
   subZoneCaret: {
     position: "absolute",
     top: -7,
@@ -961,7 +1016,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   subItem: {
-    width: CATEGORY_ITEM_WIDTH,
     alignItems: "center",
     paddingVertical: 8,
   },
@@ -980,7 +1034,7 @@ const styles = StyleSheet.create({
     borderColor: "#1A1A1A",
   },
   subItemName: {
-    fontSize: 10,
+    fontSize: 11,
     color: TEXT_SECONDARY,
     textAlign: "center",
   },
@@ -1012,9 +1066,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E5E5E5",
   },
+  modalAction: { minWidth: 52, minHeight: 44, alignItems: "center", justifyContent: "center" },
   modalCancel: { fontSize: 13, color: TEXT_SECONDARY },
   modalTitle: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
-  modalSave: { fontSize: 13, fontWeight: "600", color: PRIMARY_GREEN },
+  modalSave: { fontSize: 13, fontWeight: "600", color: ACCESSIBLE_GREEN },
   modalSaveDisabled: { color: "#B0B0B0" },
   modalHint: { fontSize: 11, color: TEXT_SECONDARY, paddingHorizontal: 18, paddingTop: 16 },
   modalInput: {

@@ -1,6 +1,13 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+} from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Svg, { Path } from 'react-native-svg';
 
@@ -73,21 +80,42 @@ export default function BudgetScreen() {
   const [balance, setBalance] = useState(0);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState('');
+  const loadRequestRef = useRef(0);
 
   const refresh = useCallback(async () => {
-    const db = await getDb();
-    const [totals, budget] = await Promise.all([
-      getMonthlyTotals(db, { monthsBack: 1, endMonthInclusive: month }),
-      getBudgetSummary(db, month),
-    ]);
-    const current = totals[totals.length - 1];
-    setBalance((current?.incomeCents ?? 0) - (current?.expenseCents ?? 0));
-    setSummary(budget);
+    const requestId = ++loadRequestRef.current;
+    setLoadState('loading');
+    setLoadError('');
+    setSummary(null);
+    setBalance(0);
+    setExpandedCategoryId(null);
+    try {
+      const db = await getDb();
+      const [totals, budget] = await Promise.all([
+        getMonthlyTotals(db, { monthsBack: 1, endMonthInclusive: month }),
+        getBudgetSummary(db, month),
+      ]);
+      if (requestId !== loadRequestRef.current) return;
+      const current = totals[totals.length - 1];
+      setBalance((current?.incomeCents ?? 0) - (current?.expenseCents ?? 0));
+      setSummary(budget);
+      setLoadState('ready');
+    } catch (error) {
+      console.error('Failed to load budget summary:', error);
+      if (requestId !== loadRequestRef.current) return;
+      setLoadError('请重试；也可以切换月份继续查看。');
+      setLoadState('error');
+    }
   }, [month]);
 
   useFocusEffect(
     useCallback(() => {
-      refresh();
+      void refresh();
+      return () => {
+        loadRequestRef.current += 1;
+      };
     }, [refresh]),
   );
 
@@ -96,7 +124,16 @@ export default function BudgetScreen() {
   const totalSpent = summary?.totalSpentCents ?? 0;
   const totalPercent = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
   const remaining = totalLimit - totalSpent;
-  const showMonthControls = hasBudget || month !== currentMonth();
+
+  function changeMonth(delta: number) {
+    loadRequestRef.current += 1;
+    setLoadState('loading');
+    setLoadError('');
+    setSummary(null);
+    setBalance(0);
+    setExpandedCategoryId(null);
+    setMonth((value) => addMonths(value, delta));
+  }
 
   function openEditor() {
     router.push({ pathname: '/budget/edit', params: { period: month } });
@@ -113,12 +150,16 @@ export default function BudgetScreen() {
       <View style={styles.summaryCard}>
         <Pressable style={styles.summaryLeft} onPress={openEditor}>
           <Text style={styles.planLabel}>计划清单</Text>
-          <Text style={styles.planAmount}>¥ {centsToYuan(totalLimit)}</Text>
+          <Text style={styles.planAmount}>
+            ¥ {loadState === 'ready' ? centsToYuan(totalLimit) : '—'}
+          </Text>
         </Pressable>
         <View style={styles.summaryRight}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>结余</Text>
-            <Text style={styles.summaryValue}>¥ {centsToYuan(balance)}</Text>
+            <Text style={styles.summaryValue}>
+              ¥ {loadState === 'ready' ? centsToYuan(balance) : '—'}
+            </Text>
           </View>
           <Pressable
             style={[styles.summaryRow, styles.summaryDivider]}
@@ -130,19 +171,38 @@ export default function BudgetScreen() {
         </View>
       </View>
 
-      {showMonthControls ? (
-        <MonthStepper
-          label={monthLabel(month)}
-          onPrevious={() => setMonth((value) => addMonths(value, -1))}
-          onNext={() => setMonth((value) => addMonths(value, 1))}
-          style={styles.monthRow}
-        />
-      ) : (
-        <View style={styles.headerGap} />
-      )}
+      <MonthStepper
+        label={monthLabel(month)}
+        onPrevious={() => changeMonth(-1)}
+        onNext={() => changeMonth(1)}
+        style={styles.monthRow}
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {hasBudget && summary ? (
+        {loadState === 'loading' ? (
+          <View style={styles.statePanel}>
+            <ActivityIndicator size="small" color={PRIMARY_GREEN} />
+            <Text style={styles.stateTitle}>正在载入{monthLabel(month)}预算</Text>
+            <Text style={styles.stateBody}>正在核对预算与本月支出</Text>
+          </View>
+        ) : loadState === 'error' ? (
+          <View style={styles.statePanel}>
+            <View style={styles.stateMark}>
+              <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
+            </View>
+            <Text style={styles.stateTitle}>没有载入{monthLabel(month)}预算</Text>
+            <Text style={styles.stateBody}>{loadError}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`重新载入${monthLabel(month)}预算`}
+              onPress={() => void refresh()}
+              style={styles.retryButton}
+            >
+              <FontAwesome name="refresh" size={12} color="#FFFFFF" />
+              <Text style={styles.retryText}>重新载入</Text>
+            </Pressable>
+          </View>
+        ) : hasBudget && summary ? (
           <>
             <View style={styles.overallCard}>
               <Text style={styles.cardLabel}>本月总预算</Text>
@@ -338,9 +398,45 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: PRIMARY_GREEN,
   },
-  headerGap: { height: 30, backgroundColor: PRIMARY_GREEN },
   scroll: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { paddingVertical: 14, paddingBottom: 40 },
+  content: { flexGrow: 1, paddingVertical: 14, paddingBottom: 40 },
+  statePanel: {
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginTop: 26,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    backgroundColor: '#F5F7F5',
+    borderLeftWidth: 3,
+    borderLeftColor: PRIMARY_GREEN,
+  },
+  stateMark: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#DFF2EA',
+  },
+  stateTitle: { marginTop: 13, fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  stateBody: {
+    marginTop: 5,
+    fontSize: 11.5,
+    lineHeight: 18,
+    color: TEXT_SECONDARY,
+    textAlign: 'center',
+  },
+  retryButton: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 18,
+    paddingHorizontal: 22,
+    backgroundColor: '#101A17',
+  },
+  retryText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
   overallCard: { marginHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 3, padding: 16 },
   cardLabel: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   totalLine: { flexDirection: 'row', alignItems: 'baseline', marginTop: 8 },

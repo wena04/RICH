@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Pressable, SafeAreaView, StatusBar, ScrollView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { ScreenHeader } from '@/components/rich';
+import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 
@@ -88,7 +88,7 @@ export default function MoreScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appName}>Rich记账 MVP</Text>
+          <RichBrandName size={16} style={styles.appName} />
           <Text style={styles.appVersion}>本地存储 · 隐私优先</Text>
         </View>
 
@@ -147,8 +147,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   appName: {
-    fontSize: 16,
-    fontWeight: '600',
     color: TEXT_PRIMARY,
   },
   appVersion: {

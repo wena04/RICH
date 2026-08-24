@@ -1,7 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   SafeAreaView,
@@ -76,6 +77,9 @@ export default function BudgetEditScreen() {
   const [subcategoryLimits, setSubcategoryLimits] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState('');
+  const loadRequestRef = useRef(0);
 
   const orderedCategories = useMemo(() => {
     const order = new Map(DEFAULT_CATEGORIES.map((category, index) => [category.name, index]));
@@ -114,44 +118,62 @@ export default function BudgetEditScreen() {
   );
 
   const load = useCallback(async () => {
-    const db = await getDb();
-    const [allCategories, allSubcategories, budget] = await Promise.all([
-      listCategories(db),
-      listAllSubcategories(db),
-      getBudgetForPeriod(db, period),
-    ]);
-    setCategories(allCategories);
-    setSubcategories(allSubcategories);
+    const requestId = ++loadRequestRef.current;
+    setLoadState('loading');
+    setLoadError('');
+    try {
+      const db = await getDb();
+      const [allCategories, allSubcategories, budget] = await Promise.all([
+        listCategories(db),
+        listAllSubcategories(db),
+        getBudgetForPeriod(db, period),
+      ]);
+      let nextTotalInput = '';
+      let nextCategoryLimits: Record<string, string> = {};
+      let nextSubcategoryLimits: Record<string, string> = {};
+      let nextExpanded = new Set<string>();
 
-    if (!budget) {
-      setTotalInput('');
-      setCategoryLimits({});
-      setSubcategoryLimits({});
-      return;
+      if (budget) {
+        const [parentRows, childRows] = await Promise.all([
+          listBudgetCategories(db, budget.id),
+          listBudgetSubcategories(db, budget.id),
+        ]);
+        nextTotalInput = budget.totalCents == null ? '' : inputFromCents(budget.totalCents);
+        nextCategoryLimits = Object.fromEntries(
+          parentRows.map((row) => [row.categoryId, inputFromCents(row.limitCents)]),
+        );
+        nextSubcategoryLimits = Object.fromEntries(
+          childRows.map((row) => [row.subcategoryId, inputFromCents(row.limitCents)]),
+        );
+        const budgetedSubcategoryIds = new Set(childRows.map((row) => row.subcategoryId));
+        nextExpanded = new Set(
+          allSubcategories
+            .filter((subcategory) => budgetedSubcategoryIds.has(subcategory.id))
+            .map((subcategory) => subcategory.categoryId),
+        );
+      }
+
+      if (requestId !== loadRequestRef.current) return;
+      setCategories(allCategories);
+      setSubcategories(allSubcategories);
+      setTotalInput(nextTotalInput);
+      setCategoryLimits(nextCategoryLimits);
+      setSubcategoryLimits(nextSubcategoryLimits);
+      setExpanded(nextExpanded);
+      setLoadState('ready');
+    } catch (error) {
+      console.error('Failed to load budget editor:', error);
+      if (requestId !== loadRequestRef.current) return;
+      setLoadError('请重试；若仍无法载入，请返回后重新打开。');
+      setLoadState('error');
     }
-
-    setTotalInput(budget.totalCents == null ? '' : inputFromCents(budget.totalCents));
-    const [parentRows, childRows] = await Promise.all([
-      listBudgetCategories(db, budget.id),
-      listBudgetSubcategories(db, budget.id),
-    ]);
-    setCategoryLimits(
-      Object.fromEntries(parentRows.map((row) => [row.categoryId, inputFromCents(row.limitCents)])),
-    );
-    setSubcategoryLimits(
-      Object.fromEntries(childRows.map((row) => [row.subcategoryId, inputFromCents(row.limitCents)])),
-    );
-    setExpanded(
-      new Set(
-        allSubcategories
-          .filter((subcategory) => childRows.some((row) => row.subcategoryId === subcategory.id))
-          .map((subcategory) => subcategory.categoryId),
-      ),
-    );
   }, [period]);
 
   useEffect(() => {
-    load();
+    void load();
+    return () => {
+      loadRequestRef.current += 1;
+    };
   }, [load]);
 
   function toggleExpanded(categoryId: string) {
@@ -164,7 +186,7 @@ export default function BudgetEditScreen() {
   }
 
   async function onSave() {
-    if (saving) return;
+    if (saving || loadState !== 'ready') return;
     const totalCents = parseYuanToCents(totalInput);
     if (totalInput.trim() && (totalCents == null || totalCents <= 0)) {
       Alert.alert('检查总预算', '总预算需大于 0，最多保留两位小数；不设置时请留空。');
@@ -247,6 +269,8 @@ export default function BudgetEditScreen() {
     }
   }
 
+  const saveDisabled = saving || loadState !== 'ready';
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
@@ -259,23 +283,54 @@ export default function BudgetEditScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="保存预算"
-            disabled={saving}
+            accessibilityState={{ disabled: saveDisabled }}
+            disabled={saveDisabled}
             hitSlop={8}
             onPress={onSave}
           >
-            <Text style={[styles.saveText, saving && styles.disabledText]}>
+            <Text style={[styles.saveText, saveDisabled && styles.disabledText]}>
               {saving ? '保存中' : '保存'}
             </Text>
           </Pressable>
         }
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      {loadState !== 'ready' ? (
+        <View style={styles.stateCanvas}>
+          <View style={styles.stateCard}>
+            {loadState === 'loading' ? (
+              <>
+                <ActivityIndicator size="small" color={PRIMARY_GREEN} />
+                <Text style={styles.stateTitle}>正在载入预算</Text>
+                <Text style={styles.stateBody}>正在整理总额与分类额度</Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.stateMark}>
+                  <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
+                </View>
+                <Text style={styles.stateTitle}>预算没有载入</Text>
+                <Text style={styles.stateBody}>{loadError}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="重新载入预算"
+                  onPress={() => void load()}
+                  style={styles.retryButton}
+                >
+                  <FontAwesome name="refresh" size={12} color="#FFFFFF" />
+                  <Text style={styles.retryText}>重新载入</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.totalCard}>
           <View style={styles.totalCopy}>
             <Text style={styles.eyebrow}>本月总预算</Text>
@@ -404,13 +459,56 @@ export default function BudgetEditScreen() {
             );
           })}
         </View>
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
+  stateCanvas: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+    paddingTop: 34,
+    backgroundColor: '#F5F7F5',
+  },
+  stateCard: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    backgroundColor: '#FFFFFF',
+    borderLeftWidth: 3,
+    borderLeftColor: PRIMARY_GREEN,
+  },
+  stateMark: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#DFF2EA',
+  },
+  stateTitle: { marginTop: 13, fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  stateBody: {
+    marginTop: 5,
+    fontSize: 11.5,
+    lineHeight: 18,
+    color: TEXT_SECONDARY,
+    textAlign: 'center',
+  },
+  retryButton: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 18,
+    paddingHorizontal: 22,
+    backgroundColor: '#101A17',
+  },
+  retryText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
   scroll: { flex: 1, backgroundColor: '#F5F7F5' },
   content: { padding: 16, paddingBottom: 44 },
   saveText: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '700' },

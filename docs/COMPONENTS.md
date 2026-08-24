@@ -4,6 +4,8 @@ This document is the implementation contract for reusable UI. It is based on the
 RICH screenshots in `RICH Items/`, the browser mockups in `docs/mockups.html`, and the current
 React Native implementation. Reuse these parts before adding one-off screen styles.
 
+Brand identity, naming, voice, logo, and external-use rules live in [BRAND_GUIDE.md](BRAND_GUIDE.md).
+
 ## 1. Visual foundations
 
 ### Color tokens
@@ -57,6 +59,17 @@ Color use is deliberately restrained:
 - Transaction rows use whitespace rather than solid separators.
 
 ## 2. Reusable primitives
+
+### `RichBrandName`
+
+Source: `components/rich/RichBrandName.tsx`
+
+- Reproduces the original `Rich记账` header: Avenir Next Bold (`700`) for `Rich`, followed without
+  an inserted space by PingFang SC Semibold (`600`) at 91.7% of the Latin size.
+- The home header uses a 40 px Latin size, matching the archived screenshot. About and secondary
+  product-identification surfaces may use smaller sizes through the `size` property.
+- Keep the ordinary lowercase-i dot. Do not add a separate spot, monogram, stacked construction,
+  or substitute rounded display font.
 
 ### `ScreenHeader`
 
@@ -126,7 +139,7 @@ owned by each flow; the component owns only presentation and input events.
 
 Source: `components/CategoryIcon.tsx`
 
-- 111 custom `react-native-svg` icons.
+- 114 custom `react-native-svg` icons.
 - Outline color `#1A1A1A`; detail/accent color `#3ECDA5`.
 - Prefer a stored icon ID. Category-name lookup is a fallback for migrated/seeded records.
 - Standard sizes: 16 px in compact ledger rows, 20-26 px in grids/cards.

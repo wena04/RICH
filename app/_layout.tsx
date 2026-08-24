@@ -1,11 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { CARD_BACKGROUND } from '@/constants/Colors';
 import { initDb } from '@/src/db';
 
 export {
@@ -67,29 +68,53 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="trends" options={{ headerShown: false }} />
-        <Stack.Screen name="accounts" options={{ headerShown: false }} />
-        <Stack.Screen name="import-export" options={{ headerShown: false }} />
-        <Stack.Screen name="about" options={{ headerShown: false }} />
-        <Stack.Screen name="privacy" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/edit/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/adjust" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
-        <Stack.Screen name="categories" options={{ headerShown: false }} />
-        <Stack.Screen name="categories/add" options={{ headerShown: false }} />
-        <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="transaction/new"
-          options={{ presentation: 'modal', headerShown: false }}
-        />
-      </Stack>
-    </ThemeProvider>
+    <View style={styles.previewShell}>
+      <View style={styles.appFrame}>
+        <ThemeProvider value={DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="trends" options={{ headerShown: false }} />
+            <Stack.Screen name="accounts" options={{ headerShown: false }} />
+            <Stack.Screen name="import-export" options={{ headerShown: false }} />
+            <Stack.Screen name="about" options={{ headerShown: false }} />
+            <Stack.Screen name="privacy" options={{ headerShown: false }} />
+            <Stack.Screen name="transaction/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="transaction/edit/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="transaction/adjust" options={{ headerShown: false }} />
+            <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
+            <Stack.Screen name="categories" options={{ headerShown: false }} />
+            <Stack.Screen name="categories/add" options={{ headerShown: false }} />
+            <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="transaction/new"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+          </Stack>
+        </ThemeProvider>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  previewShell: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: Platform.OS === 'web' ? '#EEF2F0' : CARD_BACKGROUND,
+  },
+  appFrame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 430 : undefined,
+    backgroundColor: CARD_BACKGROUND,
+    ...(Platform.OS === 'web'
+      ? {
+          shadowColor: '#101A17',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.12,
+          shadowRadius: 24,
+        }
+      : null),
+  },
+});

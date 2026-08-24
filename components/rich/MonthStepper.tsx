@@ -9,8 +9,8 @@ import {
   type StyleProp,
 } from 'react-native';
 
-import { TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
-import { RICH_SIZE } from '@/constants/Design';
+import { CONTROL_BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import { RICH_RADIUS, RICH_SIZE, RICH_TYPE } from '@/constants/Design';
 
 type MonthStepperProps = {
   label: string;
@@ -85,11 +85,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pill: {
-    borderRadius: 16,
-    backgroundColor: '#F0F0F0',
+    borderRadius: RICH_RADIUS.pill,
+    backgroundColor: CONTROL_BACKGROUND,
   },
   label: {
-    fontSize: 13,
+    ...RICH_TYPE.body,
     fontWeight: '600',
     color: TEXT_PRIMARY,
     textAlign: 'center',
