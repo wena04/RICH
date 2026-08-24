@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" role="img" aria-labelledby="rich-mark-title rich-mark-desc">
+  <title id="rich-mark-title">Rich square mark</title>
+  <desc id="rich-mark-desc">The complete original-style Rich wordmark centered in a square canvas.</desc>
+  <g transform="translate(2 20) scale(.76)">
+    <text x="-2.17" y="30.67" fill="#1A1A1A" font-family="'Avenir Next', Avenir, sans-serif" font-size="40" font-weight="700" font-kerning="normal">Rich</text>
+  </g>
+</svg>

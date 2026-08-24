@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" role="img" aria-labelledby="rich-brand-sheet-title rich-brand-sheet-desc">
+  <title id="rich-brand-sheet-title">RICH 记账 brand system overview</title>
+  <desc id="rich-brand-sheet-desc">A visual reference for the original-style Rich wordmark, mint and ink palette, typography, ledger geometry, two-tone icons, voice, and internal working status.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
+      .logo { font-family: "Avenir Next", Avenir, sans-serif; font-weight: 700; }
+      .logo-cn { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; font-weight: 600; }
+      .eyebrow { font-size: 15px; font-weight: 700; letter-spacing: 2.2px; }
+      .small { font-size: 15px; font-weight: 500; }
+      .caption { font-size: 13px; font-weight: 500; }
+      .section { font-size: 21px; font-weight: 700; }
+    </style>
+    <pattern id="ledger-dash" width="16" height="2" patternUnits="userSpaceOnUse">
+      <path d="M0 1H8" stroke="#D8D8D8" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="1100" fill="#F4F4F4"/>
+
+  <!-- Identity thesis: mint field + ledger panel -->
+  <rect width="1600" height="360" fill="#3ECDA5"/>
+  <text x="80" y="64" class="sans eyebrow" fill="#1A1A1A">RICH BRAND SYSTEM · 01</text>
+  <text x="80" y="220" class="logo" fill="#1A1A1A" font-size="180">Rich</text>
+  <text x="459.5" y="215.5" class="logo-cn" fill="#1A1A1A" font-size="165">记账</text>
+  <text x="80" y="267" class="sans" fill="#1A1A1A" font-size="34" font-weight="650">把每一笔钱，变成看得见的选择。</text>
+  <text x="80" y="309" class="sans" fill="#14745B" font-size="19" font-weight="600">Turn every amount into a visible choice.</text>
+
+  <g transform="translate(1040 60)">
+    <rect width="480" height="240" rx="3" fill="#FFFFFF"/>
+    <text x="30" y="40" class="sans eyebrow" fill="#666666">MONTH 08 · STUDENT PLAN</text>
+    <text x="30" y="108" class="sans" fill="#1A1A1A" font-size="52" font-weight="650" style="font-variant-numeric:tabular-nums">¥ 600.00</text>
+    <rect x="30" y="132" width="420" height="2" fill="url(#ledger-dash)"/>
+    <text x="30" y="172" class="sans small" fill="#666666">餐饮 › 买菜</text>
+    <text x="450" y="172" class="sans small" fill="#1A1A1A" text-anchor="end">¥80 / ¥120</text>
+    <rect x="30" y="195" width="420" height="8" rx="4" fill="#E5E5E5"/>
+    <rect x="30" y="195" width="280" height="8" rx="4" fill="#3ECDA5"/>
+  </g>
+  <text x="1040" y="333" class="sans eyebrow" fill="#14745B">PRIVATE · AMOUNT-FIRST · CALENDAR-FIRST</text>
+
+  <!-- Palette -->
+  <text x="80" y="414" class="sans section" fill="#1A1A1A">01 / Core palette</text>
+  <text x="80" y="442" class="sans caption" fill="#666666">Mint identifies the product. Ink carries the money.</text>
+
+  <g transform="translate(80 470)">
+    <g>
+      <rect width="132" height="76" rx="3" fill="#3ECDA5"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">RICH Mint</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#3ECDA5</text>
+    </g>
+    <g transform="translate(154 0)">
+      <rect width="132" height="76" rx="3" fill="#1A1A1A"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">RICH Ink</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#1A1A1A</text>
+    </g>
+    <g transform="translate(308 0)">
+      <rect width="132" height="76" rx="3" fill="#FFFFFF" stroke="#E5E5E5"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">Ledger White</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#FFFFFF</text>
+    </g>
+    <g transform="translate(462 0)">
+      <rect width="132" height="76" rx="3" fill="#F5F6F7" stroke="#E5E5E5"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">Ledger Paper</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#F5F6F7</text>
+    </g>
+    <g transform="translate(616 0)">
+      <rect width="132" height="76" rx="3" fill="#B5EAD7"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">Entry Mint</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#B5EAD7</text>
+    </g>
+    <g transform="translate(770 0)">
+      <rect width="132" height="76" rx="3" fill="#FF6B6B"/>
+      <text x="0" y="102" class="sans small" fill="#1A1A1A">Coral</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#FF6B6B</text>
+    </g>
+  </g>
+
+  <!-- Logo behavior -->
+  <text x="1060" y="414" class="sans section" fill="#1A1A1A">02 / Square mark behavior</text>
+  <text x="1060" y="442" class="sans caption" fill="#666666">Original Avenir Next Bold header treatment; no added symbol.</text>
+  <g transform="translate(1060 470)">
+    <rect width="138" height="128" rx="3" fill="#FFFFFF" stroke="#E5E5E5"/>
+    <text x="69" y="80" class="logo" fill="#1A1A1A" text-anchor="middle" font-size="52">Rich</text>
+  </g>
+  <g transform="translate(1212 470)">
+    <rect width="138" height="128" rx="3" fill="#3ECDA5"/>
+    <text x="69" y="80" class="logo" fill="#1A1A1A" text-anchor="middle" font-size="52">Rich</text>
+  </g>
+  <g transform="translate(1364 470)">
+    <rect width="138" height="128" rx="3" fill="#1A1A1A"/>
+    <text x="69" y="80" class="logo" fill="#FFFFFF" text-anchor="middle" font-size="52">Rich</text>
+  </g>
+
+  <!-- Type and numerals -->
+  <rect x="80" y="652" width="660" height="288" rx="3" fill="#FFFFFF"/>
+  <text x="112" y="700" class="sans section" fill="#1A1A1A">03 / Native type</text>
+  <text x="112" y="730" class="sans caption" fill="#666666">SF Pro + PingFang SC · clear hierarchy · tabular money</text>
+  <text x="112" y="800" class="sans" fill="#1A1A1A" font-size="52" font-weight="700" letter-spacing="-1.2">RICH 记账</text>
+  <text x="112" y="852" class="sans" fill="#1A1A1A" font-size="30" font-weight="600">预算要具体，语气要平静。</text>
+  <text x="112" y="902" class="sans" fill="#14745B" font-size="34" font-weight="600" style="font-variant-numeric:tabular-nums">¥12,480.50</text>
+  <text x="402" y="899" class="sans small" fill="#666666">Aligned amounts use tabular figures.</text>
+
+  <!-- Signature elements -->
+  <rect x="766" y="652" width="754" height="288" rx="3" fill="#FFFFFF"/>
+  <text x="798" y="700" class="sans section" fill="#1A1A1A">04 / Ledger signature</text>
+  <text x="798" y="730" class="sans caption" fill="#666666">Use structure as identity; decoration stays quiet.</text>
+
+  <g transform="translate(800 762)">
+    <rect width="146" height="130" rx="3" fill="#F5F6F7"/>
+    <text x="16" y="30" class="sans caption" fill="#666666">LEDGER RULE</text>
+    <rect x="16" y="64" width="114" height="2" fill="url(#ledger-dash)"/>
+    <path d="M16 88H130" stroke="#E5E5E5"/>
+  </g>
+
+  <g transform="translate(964 762)">
+    <rect width="146" height="130" rx="3" fill="#F5F6F7"/>
+    <text x="16" y="30" class="sans caption" fill="#666666">TWO-TONE ICON</text>
+    <circle cx="73" cy="82" r="30" fill="#FFFFFF"/>
+    <path d="M58 76H88L84 94H62Z M64 76C65 68 69 64 73 64C77 64 81 68 82 76" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M69 76C69 71 71 68 73 67C76 69 77 72 77 76" fill="none" stroke="#3ECDA5" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(1128 762)">
+    <rect width="146" height="130" rx="3" fill="#F5F6F7"/>
+    <text x="16" y="30" class="sans caption" fill="#666666">PRIMARY ACTION</text>
+    <circle cx="73" cy="83" r="31" fill="#1A1A1A"/>
+    <path d="M73 67V99M57 83H89" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(1292 762)">
+    <rect width="196" height="130" rx="3" fill="#F5F6F7"/>
+    <text x="16" y="30" class="sans caption" fill="#666666">CALENDAR BAND</text>
+    <rect x="0" y="59" width="170" height="44" rx="22" fill="#B5EAD7"/>
+    <text x="26" y="87" class="sans small" fill="#1A1A1A" text-anchor="middle">15</text>
+    <text x="73" y="87" class="sans small" fill="#1A1A1A" text-anchor="middle">16</text>
+    <text x="120" y="87" class="sans small" fill="#1A1A1A" text-anchor="middle">17</text>
+    <circle cx="170" cy="81" r="21" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+    <circle cx="170" cy="95" r="2.6" fill="#1A1A1A"/>
+  </g>
+
+  <!-- Voice and release status -->
+  <g transform="translate(80 974)">
+    <text x="0" y="22" class="sans eyebrow" fill="#1A1A1A">VOICE</text>
+    <text x="102" y="22" class="sans small" fill="#666666">CALM</text>
+    <circle cx="167" cy="17" r="2.5" fill="#3ECDA5"/>
+    <text x="184" y="22" class="sans small" fill="#666666">DIRECT</text>
+    <circle cx="257" cy="17" r="2.5" fill="#3ECDA5"/>
+    <text x="274" y="22" class="sans small" fill="#666666">SPECIFIC</text>
+    <circle cx="366" cy="17" r="2.5" fill="#3ECDA5"/>
+    <text x="383" y="22" class="sans small" fill="#666666">PRIVATE</text>
+    <text x="0" y="61" class="sans" fill="#1A1A1A" font-size="21" font-weight="600">本月已用 82%，还剩 ¥180。</text>
+    <text x="310" y="61" class="sans small" fill="#666666">Describe the state. Never shame the choice.</text>
+  </g>
+
+  <rect x="1040" y="970" width="480" height="86" rx="3" fill="#1A1A1A"/>
+  <circle cx="1070" cy="997" r="8" fill="#3ECDA5"/>
+  <text x="1090" y="1002" class="sans eyebrow" fill="#FFFFFF">INTERNAL WORKING IDENTITY</text>
+  <text x="1070" y="1033" class="sans caption" fill="#BFC9C4">Name and design ownership clearance required before public release.</text>
+
+  <text x="80" y="1074" class="sans caption" fill="#999999">RICH 记账 · Brand system v1.2 · August 2026</text>
+  <text x="1520" y="1074" class="sans caption" fill="#999999" text-anchor="end">assets/brand/rich-brand-sheet.svg</text>
+</svg>

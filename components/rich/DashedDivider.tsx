@@ -1,5 +1,8 @@
 import { StyleSheet, View, type ViewStyle, type StyleProp } from 'react-native';
 
+import { DASHED_RULE_COLOR } from '@/constants/Colors';
+import { RICH_SPACING } from '@/constants/Design';
+
 type DashedDividerProps = {
   color?: string;
   dashWidth?: number;
@@ -8,9 +11,9 @@ type DashedDividerProps = {
 };
 
 export function DashedDivider({
-  color = '#D8D8D8',
-  dashWidth = 4,
-  gap = 4,
+  color = DASHED_RULE_COLOR,
+  dashWidth = RICH_SPACING.xxs,
+  gap = RICH_SPACING.xxs,
   style,
 }: DashedDividerProps) {
   return (
@@ -29,7 +32,7 @@ export function DashedDivider({
 
 const styles = StyleSheet.create({
   clip: {
-    width: '100%',
+    alignSelf: 'stretch',
     height: 1,
     overflow: 'hidden',
   },

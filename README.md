@@ -1,6 +1,6 @@
-# Rich记账
+# RICH 记账
 
-Offline-first personal finance app for iPhone, built with React Native and Expo. Rich记账 keeps the
+Offline-first personal finance app for iPhone, built with React Native and Expo. RICH 记账 keeps the
 ledger in local SQLite and focuses on fast entry, clear category hierarchy, and user-controlled
 backup and restore.
 
@@ -83,6 +83,7 @@ docs/                   Product, technical, release, and research notes
 
 | Document | Purpose |
 | --- | --- |
+| [Brand guide](docs/BRAND_GUIDE.md) | Canonical identity, naming, voice, logo, color, type, and marketing rules |
 | [Product](docs/PRODUCT.md) | Current UX and product rules |
 | [Features](docs/FEATURES.md) | Implemented surface, data model, and routes |
 | [Technical](docs/TECHNICAL.md) | Architecture and data formats |

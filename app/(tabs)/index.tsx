@@ -13,7 +13,14 @@ import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
-import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from "@/constants/Colors";
+import {
+  CONTROL_PRESSED_BACKGROUND,
+  ENTRY_GREEN,
+  INCOME_TEXT_GREEN,
+  PRIMARY_GREEN,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "@/constants/Colors";
 import { getDb } from "@/src/db/db";
 import {
   listTransactions,
@@ -21,14 +28,9 @@ import {
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { DashedDivider, MonthStepper } from "@/components/rich";
+import { DashedDivider, MonthStepper, RichBrandName } from "@/components/rich";
 
-// ---- Design tokens (matched to mockup) ----
-const ENTRY_GREEN = "#B5EAD7"; // light highlight for days with entries
-const INCOME_GREEN = "#34C77B";
-const GAP_GRAY = "#ECECEC";
-
-const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
 const MONTH_NAMES_CN = [
   "1月", "2月", "3月", "4月", "5月", "6月",
   "7月", "8月", "9月", "10月", "11月", "12月",
@@ -210,15 +212,22 @@ export default function HomeScreen() {
       {/* Green header */}
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <Text style={styles.brand}>Rich记账</Text>
+          <RichBrandName size={40} />
           <Pressable
             style={styles.brandDd}
             onPress={() => router.push("/accounts")}
+            accessibilityRole="button"
+            accessibilityLabel="查看账户"
           >
             <FontAwesome name="chevron-down" size={11} color={TEXT_PRIMARY} />
           </Pressable>
         </View>
-        <Pressable style={styles.avatar} onPress={() => router.push("/more")}>
+        <Pressable
+          style={styles.avatar}
+          onPress={() => router.push("/more")}
+          accessibilityRole="button"
+          accessibilityLabel="更多设置"
+        >
           <FontAwesome name="user-o" size={16} color={TEXT_PRIMARY} />
         </Pressable>
       </View>
@@ -236,7 +245,7 @@ export default function HomeScreen() {
               onPrevious={() => changeMonth(-1)}
               onNext={() => changeMonth(1)}
               variant="pill"
-              buttonSize={24}
+              buttonSize={44}
               labelMinWidth={66}
               labelStyle={styles.monthPillText}
             />
@@ -352,7 +361,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.txAmt,
-                        t.type === "income" && { color: INCOME_GREEN },
+                        t.type === "income" && { color: INCOME_TEXT_GREEN },
                       ]}
                     >
                       {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
@@ -431,7 +440,7 @@ export default function HomeScreen() {
                         <Text
                           style={[
                             styles.txAmt,
-                            t.type === "income" && { color: INCOME_GREEN },
+                            t.type === "income" && { color: INCOME_TEXT_GREEN },
                           ]}
                         >
                           {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
@@ -475,11 +484,10 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY_GREEN,
   },
   brandRow: { flexDirection: "row", alignItems: "center" },
-  brand: { fontSize: 28, fontWeight: "800", color: TEXT_PRIMARY },
   brandDd: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: TEXT_PRIMARY,
     alignItems: "center",
@@ -487,9 +495,9 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -521,7 +529,7 @@ const styles = StyleSheet.create({
     paddingLeft: 14,
   },
   totLabel: { fontSize: 11, color: TEXT_SECONDARY, marginBottom: 3 },
-  totValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY },
+  totValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
   weekRow: { flexDirection: "row", marginBottom: 8 },
   weekLabel: {
@@ -625,7 +633,7 @@ const styles = StyleSheet.create({
   },
   emptyActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
-  gapBand: { height: 14, backgroundColor: GAP_GRAY },
+  gapBand: { height: 14, backgroundColor: CONTROL_PRESSED_BACKGROUND },
   dateHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -640,8 +648,8 @@ const styles = StyleSheet.create({
   },
   dateLabel: { fontSize: 15, color: TEXT_SECONDARY },
   dayTotals: { alignItems: "flex-end" },
-  dayExpense: { fontSize: 13, color: TEXT_SECONDARY },
-  dayIncome: { fontSize: 13, color: INCOME_GREEN, marginTop: 2 },
+  dayExpense: { fontSize: 13, color: TEXT_SECONDARY, fontVariant: ["tabular-nums"] },
+  dayIncome: { fontSize: 13, color: INCOME_TEXT_GREEN, marginTop: 2, fontVariant: ["tabular-nums"] },
 
   txRow: {
     flexDirection: "row",
@@ -661,7 +669,7 @@ const styles = StyleSheet.create({
   txInfo: { flex: 1 },
   txTitle: { fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY },
   txSub: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 3 },
-  txAmt: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
+  txAmt: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
   sheetOverlay: {
     flex: 1,

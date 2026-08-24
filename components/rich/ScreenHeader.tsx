@@ -10,7 +10,12 @@ import {
   type StyleProp,
 } from 'react-native';
 
-import { TEXT_PRIMARY } from '@/constants/Colors';
+import {
+  BORDER_COLOR,
+  CARD_BACKGROUND,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from '@/constants/Colors';
 import { RICH_SIZE, RICH_SPACING, RICH_TYPE } from '@/constants/Design';
 
 type ScreenHeaderProps = {
@@ -30,12 +35,14 @@ export function ScreenHeader({
   onBack,
   right,
   subtitle,
-  backgroundColor = '#FFFFFF',
+  backgroundColor = CARD_BACKGROUND,
   borderBottom = false,
   style,
   titleStyle,
   actionWidth = RICH_SIZE.headerAction,
 }: ScreenHeaderProps) {
+  const actionSlotWidth = Math.max(actionWidth, RICH_SIZE.minimumTouchTarget);
+
   return (
     <View
       style={[
@@ -51,17 +58,23 @@ export function ScreenHeader({
           accessibilityLabel="返回"
           hitSlop={8}
           onPress={onBack}
-          style={[styles.action, { width: actionWidth }]}
+          style={[styles.action, { width: actionSlotWidth }]}
         >
           <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
         </Pressable>
       ) : (
-        <View style={[styles.action, { width: actionWidth }]} />
+        <View style={[styles.action, { width: actionSlotWidth }]} />
       )}
 
       <View
         pointerEvents="none"
-        style={[styles.copy, { left: actionWidth + RICH_SPACING.md, right: actionWidth + RICH_SPACING.md }]}
+        style={[
+          styles.copy,
+          {
+            left: actionSlotWidth + RICH_SPACING.md,
+            right: actionSlotWidth + RICH_SPACING.md,
+          },
+        ]}
       >
         <Text numberOfLines={1} style={[styles.title, titleStyle]}>
           {title}
@@ -73,7 +86,7 @@ export function ScreenHeader({
         ) : null}
       </View>
 
-      <View style={[styles.action, { width: actionWidth }]}>{right}</View>
+      <View style={[styles.action, { width: actionSlotWidth }]}>{right}</View>
     </View>
   );
 }
@@ -88,10 +101,10 @@ const styles = StyleSheet.create({
   },
   borderBottom: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5E5',
+    borderBottomColor: BORDER_COLOR,
   },
   action: {
-    height: RICH_SIZE.headerAction,
+    height: RICH_SIZE.minimumTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -107,8 +120,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 2,
-    fontSize: 10.5,
-    color: '#666666',
+    ...RICH_TYPE.caption,
+    color: TEXT_SECONDARY,
     textAlign: 'center',
   },
 });

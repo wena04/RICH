@@ -245,45 +245,58 @@ export default function CategoriesScreen() {
         <Text style={styles.introHint}>点开分类即可整理第二层</Text>
       </View>
 
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={styles.scrollBody}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Category List */}
         {visibleCategories.map((category) => (
           <View key={category.id} style={styles.categorySection}>
-            <Pressable 
-              style={styles.categoryRow}
-              onPress={() => toggleExpand(category.id)}
-            >
-              <Pressable 
-                style={styles.expandButton}
+            <View style={styles.categoryRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${expandedCategoryId === category.id ? '收起' : '展开'}${category.name}子分类`}
+                accessibilityHint={`包含 ${category.subcategoryCount} 个子分类`}
+                accessibilityState={{ expanded: expandedCategoryId === category.id }}
+                style={({ pressed }) => [
+                  styles.expandControl,
+                  pressed && styles.expandControlPressed,
+                ]}
                 onPress={() => toggleExpand(category.id)}
               >
-                <FontAwesome 
-                  name={expandedCategoryId === category.id ? 'caret-down' : 'caret-right'} 
-                  size={16} 
-                  color={TEXT_SECONDARY} 
-                />
+                <View style={styles.expandIndicator}>
+                  <FontAwesome
+                    name={expandedCategoryId === category.id ? 'caret-down' : 'caret-right'}
+                    size={16}
+                    color={TEXT_SECONDARY}
+                  />
+                </View>
+
+                <View style={styles.categoryIcon}>
+                  <CategoryIcon
+                    id={category.icon ?? undefined}
+                    name={category.name}
+                    size={22}
+                  />
+                </View>
+
+                <Text style={styles.categoryName}>{category.name}</Text>
+                <View style={styles.categoryMetaPill}>
+                  <Text style={styles.categoryMetaText}>{category.subcategoryCount} 个子类</Text>
+                </View>
               </Pressable>
-              
-              <View style={styles.categoryIcon}>
-                <CategoryIcon
-                  id={category.icon ?? undefined}
-                  name={category.name}
-                  size={22}
-                />
-              </View>
-              
-              <Text style={styles.categoryName}>{category.name}</Text>
-              <View style={styles.categoryMetaPill}>
-                <Text style={styles.categoryMetaText}>{category.subcategoryCount} 个子类</Text>
-              </View>
-              
-              <Pressable 
-                style={styles.menuButton}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`编辑${category.name}`}
+                accessibilityHint="修改分类名称、用途或删除分类"
+                style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}
                 onPress={() => openEditCategory(category)}
               >
                 <FontAwesome name="ellipsis-h" size={16} color={TEXT_SECONDARY} />
               </Pressable>
-            </Pressable>
+            </View>
 
             {/* Subcategories */}
             {expandedCategoryId === category.id && (
@@ -293,6 +306,8 @@ export default function CategoriesScreen() {
                     key={sub.id}
                     style={styles.subcategoryRow}
                     onPress={() => openEditSubcategory(sub)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`编辑子分类${sub.name}`}
                   >
                     <View style={styles.subcategoryIndent} />
                     <View style={styles.subcategoryIcon}>
@@ -312,9 +327,15 @@ export default function CategoriesScreen() {
                     onChangeText={setNewSubcategoryName}
                     placeholder="添加子分类..."
                     placeholderTextColor={TEXT_SECONDARY}
+                    maxLength={20}
                   />
                   {newSubcategoryName.trim() && (
-                    <Pressable onPress={onCreateSubcategory}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`添加子分类${newSubcategoryName.trim()}`}
+                      style={styles.addSubcategoryButton}
+                      onPress={onCreateSubcategory}
+                    >
                       <FontAwesome name="plus-circle" size={20} color={PRIMARY_GREEN} />
                     </Pressable>
                   )}
@@ -323,14 +344,19 @@ export default function CategoriesScreen() {
             )}
           </View>
         ))}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Add Category Button — opens the full icon picker */}
-      <Pressable style={styles.addButton} onPress={() => router.push('/categories/add')}>
-        <Text style={styles.addButtonText}>+ 添加自定义</Text>
-      </Pressable>
+      {/* Non-overlapping footer action — opens the full icon picker */}
+      <View style={styles.actionFooter}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="添加自定义分类"
+          style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+          onPress={() => router.push('/categories/add')}
+        >
+          <Text style={styles.addButtonText}>+ 添加自定义</Text>
+        </Pressable>
+      </View>
 
       {/* Edit Category Modal */}
       <Modal visible={showEditModal} animationType="slide" transparent>
@@ -419,7 +445,7 @@ export default function CategoriesScreen() {
                   onChangeText={setEditSubcategoryName}
                   style={styles.input}
                   placeholderTextColor={TEXT_SECONDARY}
-                  maxLength={6}
+                  maxLength={20}
                 />
               </View>
 
@@ -442,6 +468,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollBody: {
+    paddingBottom: 8,
   },
   filterBar: {
     flexDirection: 'row',
@@ -473,13 +502,24 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingLeft: 16,
+    paddingRight: 10,
+    backgroundColor: '#FFFFFF',
   },
-  expandButton: {
+  expandControl: {
+    flex: 1,
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  expandControlPressed: {
+    backgroundColor: '#F7F8F7',
+  },
+  expandIndicator: {
     width: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   categoryIcon: {
     width: 40,
@@ -506,10 +546,14 @@ const styles = StyleSheet.create({
   },
   categoryMetaText: { fontSize: 9.5, color: TEXT_SECONDARY },
   menuButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  menuButtonPressed: {
+    backgroundColor: '#F1F4F2',
   },
   subcategoryList: {
     backgroundColor: '#FAFAFA',
@@ -550,15 +594,31 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
     padding: 0,
   },
+  addSubcategoryButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionFooter: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E5E5',
+  },
   addButton: {
-    position: 'absolute',
-    bottom: 32,
-    left: '15%',
-    right: '15%',
+    width: '70%',
+    minHeight: 48,
+    alignSelf: 'center',
     backgroundColor: '#1A1A1A',
-    paddingVertical: 16,
     borderRadius: 0,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonPressed: {
+    opacity: 0.82,
   },
   addButtonText: {
     color: '#FFFFFF',

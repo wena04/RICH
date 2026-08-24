@@ -1,6 +1,13 @@
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { TEXT_PRIMARY } from '@/constants/Colors';
+import {
+  ACTION_BACKGROUND,
+  ACTION_FOREGROUND,
+  CONTROL_DISABLED_BACKGROUND,
+  CONTROL_PRESSED_BACKGROUND,
+  KEYPAD_BACKGROUND,
+  TEXT_PRIMARY,
+} from '@/constants/Colors';
 
 type NumpadOperator = {
   label: string;
@@ -116,18 +123,23 @@ export function MoneyNumpad({
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', backgroundColor: '#F8F8F8' },
+  container: { flexDirection: 'row', backgroundColor: KEYPAD_BACKGROUND },
   grid: { flex: 3 },
   row: { flexDirection: 'row' },
   key: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  pressed: { backgroundColor: '#ECECEC' },
+  pressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
   keyText: { fontSize: 22, fontWeight: '500', color: TEXT_PRIMARY },
   backspaceText: { fontSize: 23, fontWeight: '500', color: TEXT_PRIMARY },
   operations: { flex: 1 },
   operator: { alignItems: 'center', justifyContent: 'center' },
-  operatorText: { fontSize: 28, fontWeight: '500', color: '#000000' },
-  confirm: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000' },
-  confirmDisabled: { backgroundColor: '#777777' },
+  operatorText: { fontSize: 28, fontWeight: '500', color: TEXT_PRIMARY },
+  confirm: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: ACTION_BACKGROUND,
+  },
+  confirmDisabled: { backgroundColor: CONTROL_DISABLED_BACKGROUND },
   confirmPressed: { opacity: 0.82 },
-  confirmText: { fontSize: 17, fontWeight: '500', color: '#FFFFFF' },
+  confirmText: { fontSize: 17, fontWeight: '500', color: ACTION_FOREGROUND },
 });

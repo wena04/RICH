@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="rich-app-icon-title rich-app-icon-desc">
+  <title id="rich-app-icon-title">Rich original-style app icon master</title>
+  <desc id="rich-app-icon-desc">The complete original-style Rich wordmark centered on a flat mint square, with no added symbol or decorative spot.</desc>
+  <rect width="1024" height="1024" fill="#3ECDA5"/>
+  <g transform="translate(127.2 358.1) scale(9.62)">
+    <text x="-2.17" y="30.67" fill="#1A1A1A" font-family="'Avenir Next', Avenir, sans-serif" font-size="40" font-weight="700" font-kerning="normal">Rich</text>
+  </g>
+</svg>

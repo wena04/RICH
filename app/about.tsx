@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-import { ScreenHeader } from '@/components/rich';
+import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 
 export default function AboutScreen() {
@@ -12,7 +12,7 @@ export default function AboutScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
       <ScreenHeader title="关于应用" onBack={() => router.back()} backgroundColor={PRIMARY_GREEN} />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.brand}>Rich记账</Text>
+        <RichBrandName size={24} />
         <Text style={styles.version}>版本 1.0.0</Text>
 
         <View style={styles.section}>
@@ -36,7 +36,6 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F4F4' },
   content: { padding: 20, paddingBottom: 40 },
-  brand: { fontSize: 24, fontWeight: '700', color: TEXT_PRIMARY },
   version: { marginTop: 4, marginBottom: 24, fontSize: 12, color: TEXT_SECONDARY },
   section: {
     marginBottom: 12,
