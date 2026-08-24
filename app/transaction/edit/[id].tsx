@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -17,12 +18,20 @@ import { CategoryIcon } from '@/components/CategoryIcon';
 import { DatePickerModal } from '@/components/DatePickerModal';
 import { ScreenHeader } from '@/components/rich';
 import {
-  EXPENSE_RED,
+  ACTION_BACKGROUND,
+  ACTION_FOREGROUND,
+  BORDER_COLOR,
+  CARD_BACKGROUND,
+  CATEGORY_FRAME_BACKGROUND,
+  CONTROL_BACKGROUND,
+  DESTRUCTIVE_TEXT,
+  LEDGER_PAPER,
   PRIMARY_GREEN,
   TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from '@/constants/Colors';
+import { RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from '@/constants/Design';
 import { getDb } from '@/src/db/db';
 import { listAccounts } from '@/src/db/repo/accounts';
 import { listAllSubcategories, listCategories } from '@/src/db/repo/categories';
@@ -40,6 +49,8 @@ function screenTitle(type: TransactionType): string {
 export default function EditTransactionScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { width: viewportWidth } = useWindowDimensions();
+  const compactLayout = viewportWidth <= 340;
 
   const [loaded, setLoaded] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
@@ -208,8 +219,8 @@ export default function EditTransactionScreen() {
             accessibilityRole="button"
             accessibilityLabel="保存修改"
             disabled={saving}
-            hitSlop={8}
             onPress={onSave}
+            style={styles.headerAction}
           >
             <Text style={[styles.saveText, saving && styles.saveTextDisabled]}>
               {saving ? '保存中' : '保存'}
@@ -222,6 +233,8 @@ export default function EditTransactionScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.typeToggle}>
@@ -233,9 +246,14 @@ export default function EditTransactionScreen() {
             <Pressable
               key={value}
               accessibilityRole="tab"
+              accessibilityLabel={label}
               accessibilityState={{ selected: type === value }}
               onPress={() => selectType(value)}
-              style={[styles.typeButton, type === value && styles.typeButtonActive]}
+              style={({ pressed }) => [
+                styles.typeButton,
+                type === value && styles.typeButtonActive,
+                pressed && styles.controlPressed,
+              ]}
             >
               <Text style={[styles.typeText, type === value && styles.typeTextActive]}>{label}</Text>
             </Pressable>
@@ -251,7 +269,7 @@ export default function EditTransactionScreen() {
               accessibilityRole="button"
               accessibilityLabel={`日期，${formatIsoDateCN(date)}`}
               onPress={() => setShowDatePicker(true)}
-              style={styles.dateButton}
+              style={({ pressed }) => [styles.dateButton, pressed && styles.controlPressed]}
             >
               <Text style={styles.dateText}>{formatIsoDateCN(date)}</Text>
               <FontAwesome name="chevron-down" size={9} color={TEXT_SECONDARY} />
@@ -267,7 +285,8 @@ export default function EditTransactionScreen() {
               keyboardType={type === 'balance_adjustment' ? 'numbers-and-punctuation' : 'decimal-pad'}
               placeholder="0.00"
               placeholderTextColor="#B7BDBA"
-              style={styles.amountInput}
+              selectionColor={PRIMARY_GREEN}
+              style={[styles.amountInput, compactLayout && styles.amountInputCompact]}
             />
           </View>
         </View>
@@ -276,7 +295,9 @@ export default function EditTransactionScreen() {
           <>
             <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>主分类</Text>
-              <Text style={styles.sectionValue}>{selectedCategory?.name ?? '请选择'}</Text>
+              <Text numberOfLines={1} style={styles.sectionValue}>
+                {selectedCategory?.name ?? '请选择'}
+              </Text>
             </View>
             <ScrollView
               horizontal
@@ -289,12 +310,17 @@ export default function EditTransactionScreen() {
                   <Pressable
                     key={category.id}
                     accessibilityRole="button"
+                    accessibilityLabel={`主分类${category.name}`}
                     accessibilityState={{ selected: active }}
                     onPress={() => {
                       setCategoryId(category.id);
                       setSubcategoryId(null);
                     }}
-                    style={[styles.categoryChip, active && styles.categoryChipActive]}
+                    style={({ pressed }) => [
+                      styles.categoryChip,
+                      active && styles.categoryChipActive,
+                      pressed && styles.controlPressed,
+                    ]}
                   >
                     <View style={[styles.categoryIcon, active && styles.categoryIconActive]}>
                       <CategoryIcon
@@ -304,7 +330,10 @@ export default function EditTransactionScreen() {
                         color={active ? '#181A19' : '#858B88'}
                       />
                     </View>
-                    <Text style={[styles.categoryText, active && styles.categoryTextActive]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.categoryText, active && styles.categoryTextActive]}
+                    >
                       {category.name}
                     </Text>
                   </Pressable>
@@ -317,16 +346,21 @@ export default function EditTransactionScreen() {
                 <View style={styles.subcategoryRail} />
                 <View style={styles.sectionHeading}>
                   <Text style={styles.sectionTitle}>子分类</Text>
-                  <Text style={styles.sectionValue}>
+                  <Text numberOfLines={1} style={styles.sectionValue}>
                     {selectedSubcategory?.name ?? '不细分'}
                   </Text>
                 </View>
                 <View style={styles.subcategoryWrap}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="不使用子分类"
                     accessibilityState={{ selected: subcategoryId == null }}
                     onPress={() => setSubcategoryId(null)}
-                    style={[styles.subcategoryChip, subcategoryId == null && styles.subcategoryChipActive]}
+                    style={({ pressed }) => [
+                      styles.subcategoryChip,
+                      subcategoryId == null && styles.subcategoryChipActive,
+                      pressed && styles.controlPressed,
+                    ]}
                   >
                     <Text
                       style={[
@@ -343,11 +377,19 @@ export default function EditTransactionScreen() {
                       <Pressable
                         key={subcategory.id}
                         accessibilityRole="button"
+                        accessibilityLabel={`子分类${subcategory.name}`}
                         accessibilityState={{ selected: active }}
                         onPress={() => setSubcategoryId(active ? null : subcategory.id)}
-                        style={[styles.subcategoryChip, active && styles.subcategoryChipActive]}
+                        style={({ pressed }) => [
+                          styles.subcategoryChip,
+                          active && styles.subcategoryChipActive,
+                          pressed && styles.controlPressed,
+                        ]}
                       >
-                        <Text style={[styles.subcategoryText, active && styles.subcategoryTextActive]}>
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.subcategoryText, active && styles.subcategoryTextActive]}
+                        >
                           {subcategory.name}
                         </Text>
                       </Pressable>
@@ -355,7 +397,12 @@ export default function EditTransactionScreen() {
                   })}
                 </View>
                 {!visibleSubcategories.length ? (
-                  <Pressable onPress={() => router.push('/categories')} style={styles.manageLink}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`给${selectedCategory?.name ?? '这个分类'}添加子分类`}
+                    onPress={() => router.push('/categories')}
+                    style={({ pressed }) => [styles.manageLink, pressed && styles.controlPressed]}
+                  >
                     <Text style={styles.manageLinkText}>这个分类还没有子分类 · 去添加</Text>
                   </Pressable>
                 ) : null}
@@ -371,7 +418,7 @@ export default function EditTransactionScreen() {
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionTitle}>账户</Text>
-          <Text style={styles.sectionValue}>
+          <Text numberOfLines={1} style={styles.sectionValue}>
             {accounts.find((account) => account.id === accountId)?.name ?? '请选择'}
           </Text>
         </View>
@@ -382,16 +429,24 @@ export default function EditTransactionScreen() {
               <Pressable
                 key={account.id}
                 accessibilityRole="button"
+                accessibilityLabel={`账户${account.name}`}
                 accessibilityState={{ selected: active }}
                 onPress={() => setAccountId(account.id)}
-                style={[styles.accountChip, active && styles.accountChipActive]}
+                style={({ pressed }) => [
+                  styles.accountChip,
+                  active && styles.accountChipActive,
+                  pressed && styles.controlPressed,
+                ]}
               >
                 <FontAwesome
                   name={account.type === 'cash' ? 'money' : 'bank'}
                   size={12}
                   color={active ? '#FFFFFF' : TEXT_SECONDARY}
                 />
-                <Text style={[styles.accountText, active && styles.accountTextActive]}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.accountText, active && styles.accountTextActive]}
+                >
                   {account.name}
                 </Text>
               </Pressable>
@@ -408,7 +463,13 @@ export default function EditTransactionScreen() {
             accessibilityLabel="备注"
             value={note}
             onChangeText={(value) => setNote(value.slice(0, 100))}
-            placeholder="这笔钱花在了哪里？"
+            placeholder={
+              type === 'income'
+                ? '这笔收入来自哪里？'
+                : type === 'balance_adjustment'
+                  ? '补充这次调整的说明'
+                  : '这笔钱花在了哪里？'
+            }
             placeholderTextColor="#A8AFAC"
             multiline
             style={styles.noteInput}
@@ -419,9 +480,9 @@ export default function EditTransactionScreen() {
           accessibilityRole="button"
           accessibilityLabel="删除这笔记录"
           onPress={onDelete}
-          style={styles.deleteButton}
+          style={({ pressed }) => [styles.deleteButton, pressed && styles.controlPressed]}
         >
-          <FontAwesome name="trash-o" size={14} color={EXPENSE_RED} />
+          <FontAwesome name="trash-o" size={14} color={DESTRUCTIVE_TEXT} />
           <Text style={styles.deleteText}>删除这笔记录</Text>
         </Pressable>
       </ScrollView>
@@ -439,53 +500,184 @@ export default function EditTransactionScreen() {
 const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: PRIMARY_GREEN },
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
-  scroll: { flex: 1, backgroundColor: '#F5F7F5' },
-  content: { padding: 16, paddingBottom: 40 },
-  saveText: { fontSize: 14, fontWeight: '700', color: TEXT_PRIMARY },
+  scroll: { flex: 1, backgroundColor: LEDGER_PAPER },
+  content: {
+    width: '100%',
+    maxWidth: 430,
+    alignSelf: 'center',
+    padding: RICH_SPACING.md,
+    paddingBottom: 40,
+  },
+  headerAction: {
+    width: RICH_SIZE.minimumTouchTarget,
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveText: { ...RICH_TYPE.body, fontWeight: '700', color: TEXT_PRIMARY },
   saveTextDisabled: { opacity: 0.45 },
-  typeToggle: { flexDirection: 'row', padding: 3, backgroundColor: '#E9EEEB', borderRadius: 999 },
-  typeButton: { flex: 1, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  typeButtonActive: { backgroundColor: '#101A17' },
-  typeText: { fontSize: 11.5, color: TEXT_SECONDARY },
-  typeTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  amountCard: { marginTop: 14, padding: 18, backgroundColor: '#FFFFFF', borderRadius: 3 },
+  controlPressed: { opacity: 0.76 },
+  typeToggle: {
+    flexDirection: 'row',
+    padding: 3,
+    backgroundColor: CONTROL_BACKGROUND,
+    borderRadius: RICH_RADIUS.pill,
+  },
+  typeButton: {
+    flex: 1,
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    paddingHorizontal: RICH_SPACING.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: RICH_RADIUS.pill,
+  },
+  typeButtonActive: { backgroundColor: ACTION_BACKGROUND },
+  typeText: { ...RICH_TYPE.label, color: TEXT_SECONDARY },
+  typeTextActive: { color: ACTION_FOREGROUND, fontWeight: '700' },
+  amountCard: {
+    marginTop: 14,
+    padding: 18,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RICH_RADIUS.card,
+  },
   amountHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  amountLabel: { fontSize: 11, fontWeight: '700', color: TEXT_SECONDARY },
-  dateButton: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, backgroundColor: '#F1F4F2', borderRadius: 999 },
-  dateText: { fontSize: 11, fontWeight: '600', color: TEXT_PRIMARY },
+  amountLabel: { ...RICH_TYPE.label, fontWeight: '700', color: TEXT_SECONDARY },
+  dateButton: {
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: RICH_SPACING.sm,
+    backgroundColor: CONTROL_BACKGROUND,
+    borderRadius: RICH_RADIUS.pill,
+  },
+  dateText: { ...RICH_TYPE.label, fontWeight: '600', color: TEXT_PRIMARY },
   amountLine: { flexDirection: 'row', alignItems: 'baseline', marginTop: 12 },
   currency: { fontSize: 23, fontWeight: '600', color: PRIMARY_GREEN, marginRight: 4 },
-  amountInput: { flex: 1, paddingVertical: 0, fontSize: 40, fontWeight: '300', color: TEXT_PRIMARY, fontVariant: ['tabular-nums'] },
-  sectionHeading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: TEXT_PRIMARY },
-  sectionValue: { fontSize: 10.5, color: TEXT_SECONDARY },
-  chipScroll: { gap: 8, paddingRight: 16 },
-  categoryChip: { minWidth: 72, alignItems: 'center', paddingHorizontal: 10, paddingVertical: 9, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E9E6', borderRadius: 3 },
+  amountInput: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 0,
+    fontSize: 40,
+    fontWeight: '300',
+    color: TEXT_PRIMARY,
+    fontVariant: ['tabular-nums'],
+  },
+  amountInputCompact: { fontSize: 34 },
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 22,
+    marginBottom: 10,
+  },
+  sectionTitle: { ...RICH_TYPE.sectionTitle, fontWeight: '700', color: TEXT_PRIMARY },
+  sectionValue: {
+    ...RICH_TYPE.caption,
+    flexShrink: 1,
+    marginLeft: RICH_SPACING.sm,
+    color: TEXT_SECONDARY,
+    textAlign: 'right',
+  },
+  chipScroll: { gap: RICH_SPACING.xs, paddingRight: RICH_SPACING.md },
+  categoryChip: {
+    minWidth: 72,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    backgroundColor: CARD_BACKGROUND,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
+    borderRadius: RICH_RADIUS.card,
+  },
   categoryChipActive: { borderColor: PRIMARY_GREEN, backgroundColor: '#ECF9F3' },
-  categoryIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F8F7' },
-  categoryIconActive: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#1A1A1A' },
-  categoryText: { marginTop: 5, fontSize: 10.5, color: TEXT_SECONDARY },
+  categoryIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CATEGORY_FRAME_BACKGROUND,
+  },
+  categoryIconActive: {
+    backgroundColor: CARD_BACKGROUND,
+    borderWidth: 1.5,
+    borderColor: TEXT_PRIMARY,
+  },
+  categoryText: { ...RICH_TYPE.caption, marginTop: 5, color: TEXT_SECONDARY },
   categoryTextActive: { color: TEXT_PRIMARY, fontWeight: '700' },
   subcategorySection: { position: 'relative', marginTop: 14, paddingLeft: 18, paddingBottom: 2 },
   subcategoryRail: { position: 'absolute', left: 4, top: 0, bottom: 0, width: 2, backgroundColor: PRIMARY_GREEN },
-  subcategoryWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  subcategoryChip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 13, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DFE5E1', borderRadius: 999 },
-  subcategoryChipActive: { backgroundColor: '#101A17', borderColor: '#101A17' },
-  subcategoryText: { fontSize: 11, color: TEXT_SECONDARY },
-  subcategoryTextActive: { color: '#FFFFFF', fontWeight: '600' },
-  manageLink: { minHeight: 40, justifyContent: 'center' },
-  manageLinkText: { fontSize: 10.5, color: PRIMARY_GREEN },
-  adjustmentNote: { flexDirection: 'row', gap: 9, alignItems: 'center', marginTop: 16, padding: 14, backgroundColor: '#EAF7F1', borderRadius: 3 },
-  adjustmentText: { flex: 1, fontSize: 11.5, color: TEXT_SECONDARY },
-  accountWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  accountChip: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, backgroundColor: '#FFFFFF', borderRadius: 999, borderWidth: 1, borderColor: '#DFE5E1' },
-  accountChipActive: { backgroundColor: '#101A17', borderColor: '#101A17' },
-  accountText: { fontSize: 11.5, color: TEXT_SECONDARY },
-  accountTextActive: { color: '#FFFFFF', fontWeight: '600' },
-  noteCard: { marginTop: 22, padding: 14, backgroundColor: '#FFFFFF', borderRadius: 3 },
+  subcategoryWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: RICH_SPACING.xs },
+  subcategoryChip: {
+    maxWidth: '100%',
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    justifyContent: 'center',
+    paddingHorizontal: 13,
+    backgroundColor: CARD_BACKGROUND,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
+    borderRadius: RICH_RADIUS.pill,
+  },
+  subcategoryChipActive: { backgroundColor: ACTION_BACKGROUND, borderColor: ACTION_BACKGROUND },
+  subcategoryText: { ...RICH_TYPE.label, flexShrink: 1, color: TEXT_SECONDARY },
+  subcategoryTextActive: { color: ACTION_FOREGROUND, fontWeight: '600' },
+  manageLink: { minHeight: RICH_SIZE.minimumTouchTarget, justifyContent: 'center' },
+  manageLinkText: { ...RICH_TYPE.caption, color: PRIMARY_GREEN },
+  adjustmentNote: {
+    flexDirection: 'row',
+    gap: 9,
+    alignItems: 'center',
+    marginTop: RICH_SPACING.md,
+    padding: 14,
+    backgroundColor: '#EAF7F1',
+    borderRadius: RICH_RADIUS.card,
+  },
+  adjustmentText: { ...RICH_TYPE.label, flex: 1, color: TEXT_SECONDARY },
+  accountWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: RICH_SPACING.xs },
+  accountChip: {
+    maxWidth: '100%',
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 13,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RICH_RADIUS.pill,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
+  },
+  accountChipActive: { backgroundColor: ACTION_BACKGROUND, borderColor: ACTION_BACKGROUND },
+  accountText: { ...RICH_TYPE.label, flexShrink: 1, color: TEXT_SECONDARY },
+  accountTextActive: { color: ACTION_FOREGROUND, fontWeight: '600' },
+  noteCard: {
+    marginTop: 22,
+    padding: 14,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RICH_RADIUS.card,
+  },
   noteHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  noteCount: { fontSize: 9.5, color: TEXT_MUTED },
-  noteInput: { minHeight: 70, marginTop: 8, padding: 0, fontSize: 13, lineHeight: 19, color: TEXT_PRIMARY, textAlignVertical: 'top' },
-  deleteButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 22, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F0C9C5', borderRadius: 3 },
-  deleteText: { fontSize: 12.5, fontWeight: '600', color: EXPENSE_RED },
+  noteCount: { ...RICH_TYPE.caption, color: TEXT_MUTED },
+  noteInput: {
+    minHeight: 70,
+    marginTop: RICH_SPACING.xs,
+    padding: 0,
+    ...RICH_TYPE.body,
+    lineHeight: 19,
+    color: TEXT_PRIMARY,
+    textAlignVertical: 'top',
+  },
+  deleteButton: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: RICH_SPACING.xs,
+    marginTop: 22,
+    backgroundColor: CARD_BACKGROUND,
+    borderWidth: 1,
+    borderColor: '#F0C9C5',
+    borderRadius: RICH_RADIUS.card,
+  },
+  deleteText: { fontSize: 12.5, fontWeight: '600', color: DESTRUCTIVE_TEXT },
 });

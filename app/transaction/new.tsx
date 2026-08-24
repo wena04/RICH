@@ -32,8 +32,6 @@ import {
   type AccountWithBalance,
 } from "@/src/db/repo/accounts";
 import {
-  ensureCategory,
-  getCategoryByName,
   listCategories,
   listCategoriesWithSubcategoryCounts,
   listSubcategories,
@@ -56,7 +54,7 @@ export default function NewTransactionScreen() {
   const [type, setType] = useState<"expense" | "income">("expense");
   const [amountStr, setAmountStr] = useState("0");
   const [date, setDate] = useState(isoDateToday());
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [accountId, setAccountId] = useState<string>("");
   const [selectedAccountName, setSelectedAccountName] = useState<string>("");
@@ -66,7 +64,7 @@ export default function NewTransactionScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
-  // Category names that have subcategories (for the "…" badge).
+  // Stable category ids that have subcategories (for the "…" badge).
   const [catsWithSubs, setCatsWithSubs] = useState<Set<string>>(new Set());
   const [pendingValue, setPendingValue] = useState<number | null>(null);
   const [pendingOp, setPendingOp] = useState<"+" | "-" | null>(null);
@@ -76,6 +74,7 @@ export default function NewTransactionScreen() {
   const [savingSubcategory, setSavingSubcategory] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const noteInputRef = useRef<TextInput>(null);
+  const categoryLoadRequestRef = useRef(0);
   const { width: viewportWidth } = useWindowDimensions();
 
   useEffect(() => {
@@ -104,10 +103,17 @@ export default function NewTransactionScreen() {
       // Load existing categories + which ones have subcategories (for the "…" badge)
       const cats = await listCategories(db);
       setCategories(cats);
+      setSelectedCategoryId((current) => {
+        if (!current || cats.some((category) => category.id === current)) return current;
+        categoryLoadRequestRef.current += 1;
+        setSubcategories([]);
+        setSelectedSubId(null);
+        return null;
+      });
       const withCounts = await listCategoriesWithSubcategoryCounts(db);
       setCatsWithSubs(
         new Set(
-          withCounts.filter((c) => c.subcategoryCount > 0).map((c) => c.name),
+          withCounts.filter((c) => c.subcategoryCount > 0).map((c) => c.id),
         ),
       );
     } catch (error) {
@@ -121,22 +127,25 @@ export default function NewTransactionScreen() {
     }, [loadChoices]),
   );
 
-  // When a category is tapped, load its subcategories (if it exists in the DB yet).
-  async function onSelectCategory(name: string) {
-    setSelectedCategory(name);
+  // Category ids remain stable across renames and prevent stale names from
+  // recreating categories after returning from the management screen.
+  async function onSelectCategory(category: Category) {
+    const requestId = ++categoryLoadRequestRef.current;
+    setSelectedCategoryId(category.id);
     setSelectedSubId(null);
     try {
       const db = await getDb();
-      const existing = await getCategoryByName(db, name);
-      setSubcategories(existing ? await listSubcategories(db, existing.id) : []);
+      const rows = await listSubcategories(db, category.id);
+      if (requestId === categoryLoadRequestRef.current) setSubcategories(rows);
     } catch {
-      setSubcategories([]);
+      if (requestId === categoryLoadRequestRef.current) setSubcategories([]);
     }
   }
 
-  function iconForCategory(name: string): string | null {
-    return categories.find((category) => category.name === name)?.icon ?? null;
-  }
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category.id === selectedCategoryId) ?? null,
+    [categories, selectedCategoryId],
+  );
 
   function onAddSubcategory() {
     if (!selectedCategory) return;
@@ -150,16 +159,10 @@ export default function NewTransactionScreen() {
     setSavingSubcategory(true);
     try {
       const db = await getDb();
-      const cat = await ensureCategory(
-        db,
-        selectedCategory,
-        iconForCategory(selectedCategory),
-        type,
-      );
-      const sub = await ensureSubcategory(db, cat.id, name);
-      setSubcategories(await listSubcategories(db, cat.id));
+      const sub = await ensureSubcategory(db, selectedCategory.id, name);
+      setSubcategories(await listSubcategories(db, selectedCategory.id));
       setSelectedSubId(sub.id);
-      setCatsWithSubs((current) => new Set(current).add(selectedCategory));
+      setCatsWithSubs((current) => new Set(current).add(selectedCategory.id));
       setShowSubModal(false);
       setSubInput("");
     } finally {
@@ -214,18 +217,12 @@ export default function NewTransactionScreen() {
     const total = evalPending(parseFloat(amountStr) || 0);
     const cents = Math.round(total * 100);
     if (isNaN(cents) || cents <= 0) return;
-    if (!selectedCategory) return;
+    if (!selectedCategoryId) return;
     if (!accountId) return;
 
     setSaving(true);
     try {
       const db = await getDb();
-      const category = await ensureCategory(
-        db,
-        selectedCategory,
-        iconForCategory(selectedCategory),
-        type,
-      );
 
       const subcategoryId =
         selectedSubId && subcategories.some((s) => s.id === selectedSubId)
@@ -238,7 +235,7 @@ export default function NewTransactionScreen() {
         amountCents: cents,
         date,
         accountId,
-        categoryId: category.id,
+        categoryId: selectedCategoryId,
         subcategoryId,
         note: note.trim() ? note.trim().slice(0, 100) : null,
       });
@@ -254,14 +251,15 @@ export default function NewTransactionScreen() {
 
   function onSelectType(nextType: "expense" | "income") {
     if (nextType === type) return;
+    categoryLoadRequestRef.current += 1;
     setType(nextType);
-    setSelectedCategory(null);
+    setSelectedCategoryId(null);
     setSubcategories([]);
     setSelectedSubId(null);
   }
 
   // All categories to display (default + user created), plus the 管理分类 tile.
-  type CatCell = { name: string; iconId?: string | null; manage?: boolean };
+  type CatCell = { id: string; name: string; iconId?: string | null; manage?: boolean };
   const defaultOrder = useMemo(
     () =>
       new Map(
@@ -282,13 +280,13 @@ export default function NewTransactionScreen() {
             ? left.name.localeCompare(right.name, 'zh-CN')
             : leftOrder - rightOrder;
         })
-        .map((category) => ({ name: category.name, iconId: category.icon })),
-      { name: '管理分类', manage: true },
+        .map((category) => ({ id: category.id, name: category.name, iconId: category.icon })),
+      { id: '__manage', name: '管理分类', manage: true },
     ],
     [categories, defaultOrder, type],
   );
   const canSaveTransaction =
-    Boolean(selectedCategory && accountId) &&
+    Boolean(selectedCategoryId && accountId) &&
     evalPending(parseFloat(amountStr) || 0) > 0 &&
     !saving;
 
@@ -390,7 +388,7 @@ export default function NewTransactionScreen() {
         <View style={styles.selectionPath}>
           <Text style={styles.selectionEyebrow}>{type === 'expense' ? '支出分类' : '收入分类'}</Text>
           <Text style={styles.selectionValue} numberOfLines={1}>
-            {selectedCategory}
+            {selectedCategory.name}
             {selectedSubId
               ? `  ›  ${subcategories.find((subcategory) => subcategory.id === selectedSubId)?.name ?? ''}`
               : '  ›  不细分'}
@@ -405,7 +403,7 @@ export default function NewTransactionScreen() {
       >
         <View style={[styles.categoryGrid, { width: categoryGridWidth }]}>
           {categoryRows.map((row, rowIdx) => {
-            const selIdx = row.findIndex((c) => c.name === selectedCategory);
+            const selIdx = row.findIndex((c) => c.id === selectedCategoryId);
             const showZone = selIdx !== -1;
             return (
               <View key={rowIdx}>
@@ -431,17 +429,20 @@ export default function NewTransactionScreen() {
                       </Pressable>
                     ) : (
                       <Pressable
-                        key={cat.name}
+                        key={cat.id}
                         style={[styles.categoryItem, { width: categoryItemWidth }]}
-                        onPress={() => onSelectCategory(cat.name)}
+                        onPress={() => {
+                          const category = categories.find((item) => item.id === cat.id);
+                          if (category) onSelectCategory(category);
+                        }}
                         accessibilityRole="button"
-                        accessibilityLabel={`${cat.name}${catsWithSubs.has(cat.name) ? '，有子分类' : ''}`}
-                        accessibilityState={{ selected: selectedCategory === cat.name }}
+                        accessibilityLabel={`${cat.name}${catsWithSubs.has(cat.id) ? '，有子分类' : ''}`}
+                        accessibilityState={{ selected: selectedCategoryId === cat.id }}
                       >
                         <View
                           style={[
                             styles.categoryIcon,
-                            selectedCategory === cat.name &&
+                            selectedCategoryId === cat.id &&
                               styles.categoryIconSelected,
                           ]}
                         >
@@ -449,9 +450,9 @@ export default function NewTransactionScreen() {
                             id={cat.iconId ?? undefined}
                             name={cat.name}
                             size={27}
-                            color={selectedCategory === cat.name ? '#181A19' : '#858B88'}
+                            color={selectedCategoryId === cat.id ? '#181A19' : '#858B88'}
                           />
-                          {catsWithSubs.has(cat.name) && (
+                          {catsWithSubs.has(cat.id) && (
                             <View style={styles.catBadge}>
                               <Text style={styles.catBadgeText}>⋯</Text>
                             </View>
@@ -460,7 +461,7 @@ export default function NewTransactionScreen() {
                         <Text
                           style={[
                             styles.categoryName,
-                            selectedCategory === cat.name &&
+                            selectedCategoryId === cat.id &&
                               styles.categoryNameSelected,
                           ]}
                         >
@@ -486,7 +487,9 @@ export default function NewTransactionScreen() {
                       ]}
                     />
                     <View style={styles.subZoneHeader}>
-                      <Text style={styles.subZoneTitle}>{selectedCategory} · 子分类</Text>
+                      <Text style={styles.subZoneTitle}>
+                        {selectedCategory?.name ?? row[selIdx]?.name ?? ''} · 子分类
+                      </Text>
                       <Text style={styles.subZoneHint}>可选，下一次仍可修改</Text>
                     </View>
                     <View style={styles.subGrid}>
@@ -554,7 +557,7 @@ export default function NewTransactionScreen() {
                         style={[styles.subItem, { width: categoryItemWidth }]}
                         onPress={onAddSubcategory}
                         accessibilityRole="button"
-                        accessibilityLabel={`给${selectedCategory}添加子分类`}
+                        accessibilityLabel={`给${selectedCategory?.name ?? row[selIdx]?.name ?? ''}添加子分类`}
                       >
                         <View style={[styles.subItemIcon, styles.subAddIcon]}>
                           <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
@@ -693,7 +696,7 @@ export default function NewTransactionScreen() {
                 </Text>
               </Pressable>
             </View>
-            <Text style={styles.modalHint}>为「{selectedCategory}」添加一个子分类</Text>
+            <Text style={styles.modalHint}>为「{selectedCategory?.name ?? ''}」添加一个子分类</Text>
             <TextInput
               autoFocus
               value={subInput}
@@ -735,15 +738,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginLeft: 16,
     backgroundColor: "#F5F5F5",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 2,
   },
   typeButton: {
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 18,
+    borderRadius: 22,
   },
   typeButtonActive: {
     backgroundColor: "#FFFFFF",

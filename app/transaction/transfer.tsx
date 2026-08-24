@@ -2,6 +2,8 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   SafeAreaView,
@@ -13,14 +15,27 @@ import {
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
-import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from "@/constants/Colors";
+import {
+  BORDER_COLOR,
+  CARD_BACKGROUND,
+  CONTROL_BACKGROUND,
+  CONTROL_PRESSED_BACKGROUND,
+  DASHED_RULE_COLOR,
+  KEYPAD_BACKGROUND,
+  PRIMARY_GREEN,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "@/constants/Colors";
+import { RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from "@/constants/Design";
 import { DatePickerModal } from "@/components/DatePickerModal";
+import { DashedDivider, MoneyNumpad, ScreenHeader } from "@/components/rich";
 import { getDb } from "@/src/db/db";
 import { listAccounts } from "@/src/db/repo/accounts";
 import { createTransaction } from "@/src/db/repo/transactions";
 import type { Account } from "@/src/domain/types";
-import { isoDateToday } from "@/src/utils/date";
+import { formatIsoDateCN, isoDateToday } from "@/src/utils/date";
 import { newId } from "@/src/utils/id";
+import { centsToYuan } from "@/src/utils/money";
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -35,6 +50,7 @@ export default function TransferScreen() {
   const [saving, setSaving] = useState(false);
   const [pendingValue, setPendingValue] = useState<number | null>(null);
   const [pendingOp, setPendingOp] = useState<"+" | "-" | null>(null);
+  const [noteFocused, setNoteFocused] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -118,43 +134,70 @@ export default function TransferScreen() {
   }
 
   const evaluatedAmount = evaluate(parseFloat(amountStr) || 0);
-  const canConfirm =
+  const canConfirm = Boolean(
     Number.isFinite(evaluatedAmount) &&
     Number.isSafeInteger(Math.round(evaluatedAmount * 100)) &&
     evaluatedAmount > 0 &&
     fromId &&
     toId &&
-    fromId !== toId;
+    fromId !== toId,
+  );
 
   function Selector({ which }: { which: "from" | "to" }) {
     const id = which === "from" ? fromId : toId;
     const label = which === "from" ? "选择转出账户" : "选择转入账户";
+    const eyebrow = which === "from" ? "转出账户" : "转入账户";
     const name = nameOf(id);
     return (
-      <View>
+      <View style={styles.selectorGroup}>
+        <Text style={styles.selectorEyebrow}>{eyebrow}</Text>
         <Pressable
-          style={styles.sel}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}，当前${name ?? '未选择'}`}
+          accessibilityState={{ expanded: picking === which }}
+          style={({ pressed }) => [styles.sel, pressed && styles.controlPressed]}
           onPress={() => setPicking(picking === which ? null : which)}
         >
-          <View style={styles.selDot} />
-          <Text style={[styles.selLabel, name && styles.selLabelActive]}>
+          <View style={styles.selIcon}>
+            <FontAwesome name="bank" size={13} color={TEXT_SECONDARY} />
+          </View>
+          <Text numberOfLines={1} style={[styles.selLabel, name && styles.selLabelActive]}>
             {name ?? label}
           </Text>
-          <FontAwesome name="caret-down" size={14} color={TEXT_SECONDARY} />
+          <FontAwesome
+            name={picking === which ? "caret-up" : "caret-down"}
+            size={14}
+            color={TEXT_SECONDARY}
+          />
         </Pressable>
         {picking === which && (
           <View style={styles.dropdown}>
             {accounts.map((a) => (
               <Pressable
                 key={a.id}
-                style={styles.option}
+                accessibilityRole="button"
+                accessibilityLabel={`${which === 'from' ? '选择转出账户' : '选择转入账户'}${a.name}`}
+                accessibilityState={{ selected: a.id === id }}
+                style={({ pressed }) => [
+                  styles.option,
+                  a.id === id && styles.optionSelected,
+                  pressed && styles.controlPressed,
+                ]}
                 onPress={() => {
                   if (which === "from") setFromId(a.id);
                   else setToId(a.id);
                   setPicking(null);
                 }}
               >
-                <Text style={styles.optionText}>{a.name}</Text>
+                <FontAwesome
+                  name={a.type === "cash" ? "money" : "bank"}
+                  size={13}
+                  color={TEXT_SECONDARY}
+                />
+                <Text numberOfLines={1} style={styles.optionText}>{a.name}</Text>
+                {a.id === id ? (
+                  <FontAwesome name="check" size={12} color={PRIMARY_GREEN} />
+                ) : null}
               </Pressable>
             ))}
           </View>
@@ -163,24 +206,32 @@ export default function TransferScreen() {
     );
   }
 
-  const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
   const dateLabel =
     date === isoDateToday()
       ? "今天"
-      : `${parseInt(date.split("-")[1])}月${parseInt(date.split("-")[2])}日`;
+      : formatIsoDateCN(date);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
-        </Pressable>
-        <Pressable style={styles.datePill} onPress={() => setShowDatePicker(true)}>
-          <Text style={styles.dateText}>{dateLabel} ▼</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="账户转账"
+        onBack={() => router.back()}
+        backgroundColor={PRIMARY_GREEN}
+        actionWidth={96}
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`选择转账日期，当前${dateLabel}`}
+            style={({ pressed }) => [styles.dateButton, pressed && styles.controlPressed]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text numberOfLines={1} style={styles.dateText}>{dateLabel}</Text>
+            <FontAwesome name="chevron-down" size={9} color={TEXT_SECONDARY} />
+          </Pressable>
+        }
+      />
 
       <DatePickerModal
         visible={showDatePicker}
@@ -189,166 +240,214 @@ export default function TransferScreen() {
         onClose={() => setShowDatePicker(false)}
       />
 
-      <View style={styles.amountBox}>
-        <Text style={styles.amount}>
-          ¥{amountStr}
-          <Text style={styles.cursor}>|</Text>
-        </Text>
-      </View>
-      <View style={styles.dashRow}>
-        {Array.from({ length: 60 }).map((_, i) => (
-          <View key={i} style={styles.dash} />
-        ))}
-      </View>
-
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.mid}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.keyboardArea}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Selector which="from" />
-        <View style={styles.arrow}>
-          <FontAwesome name="angle-double-down" size={18} color={TEXT_SECONDARY} />
+        <View style={styles.amountBox}>
+          <Text style={styles.amountLabel}>转账金额</Text>
+          <Text
+            accessibilityLabel={`转账金额 ${amountStr} 元`}
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+            numberOfLines={1}
+            style={styles.amount}
+          >
+            ¥{amountStr}
+            <Text style={styles.cursor}>|</Text>
+          </Text>
+          {pendingOp && pendingValue != null ? (
+            <Text style={styles.pendingText}>
+              ¥{centsToYuan(Math.round(pendingValue * 100))} {pendingOp} 当前输入
+            </Text>
+          ) : null}
         </View>
-        <Selector which="to" />
-      </ScrollView>
+        <DashedDivider color={DASHED_RULE_COLOR} style={styles.amountDivider} />
 
-      <View style={styles.pad}>
-        <View style={styles.noteRow}>
-          <FontAwesome name="pencil" size={14} color={TEXT_SECONDARY} />
-          <TextInput
-            style={styles.noteInput}
-            value={note}
-            onChangeText={(v) => setNote(v.slice(0, 100))}
-            placeholder="添加备注"
-            placeholderTextColor={TEXT_SECONDARY}
-          />
-        </View>
-        <View style={styles.padGridWrap}>
-          <View style={styles.padGrid}>
-            {KEYS.map((k) => (
-              <Pressable key={k} style={styles.key} onPress={() => press(k)}>
-                <Text style={styles.keyText}>{k}</Text>
-              </Pressable>
-            ))}
-            <Pressable style={styles.key} onPress={backspace}>
-              <FontAwesome name="long-arrow-left" size={20} color={TEXT_PRIMARY} />
-            </Pressable>
-            <Pressable style={styles.key} onPress={() => press("0")}>
-              <Text style={styles.keyText}>0</Text>
-            </Pressable>
-            <Pressable style={styles.key} onPress={() => press(".")}>
-              <Text style={styles.keyText}>.</Text>
-            </Pressable>
+        <ScrollView
+          style={styles.midScroll}
+          contentContainerStyle={styles.mid}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
+        >
+          <Selector which="from" />
+          <View style={styles.arrow}>
+            <FontAwesome name="angle-double-down" size={18} color={TEXT_SECONDARY} />
           </View>
-          <View style={styles.ops}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="加"
-              style={styles.opKey}
-              onPress={() => handleOperator('+')}
-            >
-              <Text style={styles.opText}>+</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="减"
-              style={styles.opKey}
-              onPress={() => handleOperator('-')}
-            >
-              <Text style={styles.opText}>−</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.confirm, !canConfirm && styles.confirmOff]}
-              onPress={onConfirm}
-              disabled={!canConfirm || saving}
-            >
-              <Text style={styles.confirmText}>{saving ? "..." : "确定"}</Text>
-            </Pressable>
+          <Selector which="to" />
+        </ScrollView>
+
+        <View style={styles.pad}>
+          <View style={styles.noteRow}>
+            <FontAwesome name="pencil" size={14} color={TEXT_SECONDARY} />
+            <TextInput
+              accessibilityLabel="转账备注"
+              style={styles.noteInput}
+              value={note}
+              onChangeText={setNote}
+              onFocus={() => setNoteFocused(true)}
+              onBlur={() => setNoteFocused(false)}
+              onSubmitEditing={() => setNoteFocused(false)}
+              placeholder="添加备注（可选）"
+              placeholderTextColor={TEXT_SECONDARY}
+              maxLength={100}
+              returnKeyType="done"
+            />
+            <Text style={styles.noteCount}>{note.length}/100</Text>
           </View>
+          {!noteFocused ? (
+            <View style={styles.numpadWrap}>
+              <MoneyNumpad
+                onDigit={press}
+                onBackspace={backspace}
+                operators={[
+                  { label: "+", accessibilityLabel: "加", onPress: () => handleOperator("+") },
+                  { label: "−", accessibilityLabel: "减", onPress: () => handleOperator("-") },
+                ]}
+                onConfirm={onConfirm}
+                confirmDisabled={!canConfirm || saving}
+                confirmLabel={saving ? "保存中" : "确定"}
+                keyHeight={52}
+              />
+            </View>
+          ) : null}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
-  header: {
+  container: { flex: 1, backgroundColor: CARD_BACKGROUND },
+  keyboardArea: { flex: 1, backgroundColor: CARD_BACKGROUND },
+  controlPressed: { opacity: 0.76 },
+  dateButton: {
+    maxWidth: 96,
+    minHeight: RICH_SIZE.minimumTouchTarget,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: "center",
+    gap: RICH_SPACING.xxs,
+    paddingHorizontal: RICH_SPACING.xs,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RICH_RADIUS.pill,
   },
-  back: { padding: 6 },
-  datePill: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  dateText: { ...RICH_TYPE.label, flexShrink: 1, fontWeight: "600", color: TEXT_PRIMARY },
+  amountBox: {
+    width: "100%",
+    maxWidth: 430,
+    alignSelf: "center",
+    paddingHorizontal: RICH_SPACING.xl,
+    paddingTop: RICH_SPACING.md,
+    paddingBottom: RICH_SPACING.xs,
   },
-  dateText: { fontSize: 14, color: TEXT_PRIMARY },
-  amountBox: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 },
-  amount: { fontSize: 42, fontWeight: "300", color: TEXT_PRIMARY, letterSpacing: -1 },
+  amountLabel: { ...RICH_TYPE.label, fontWeight: "600", color: TEXT_SECONDARY },
+  amount: {
+    ...RICH_TYPE.amount,
+    marginTop: RICH_SPACING.xxs,
+    fontSize: 42,
+    fontWeight: "300",
+    color: TEXT_PRIMARY,
+    letterSpacing: -1,
+  },
   cursor: { color: PRIMARY_GREEN },
-  dashRow: { flexDirection: "row", overflow: "hidden", height: 1, marginHorizontal: 18, marginBottom: 6 },
-  dash: { width: 5, height: 1, backgroundColor: "#D8D8D8", marginRight: 4 },
-  mid: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 16, gap: 4 },
+  pendingText: {
+    ...RICH_TYPE.caption,
+    marginTop: RICH_SPACING.xxs,
+    color: TEXT_SECONDARY,
+    fontVariant: ["tabular-nums"],
+  },
+  amountDivider: {
+    marginHorizontal: 18,
+    marginBottom: RICH_SPACING.xxs,
+  },
+  midScroll: { flex: 1 },
+  mid: {
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: 430,
+    alignSelf: "center",
+    justifyContent: "center",
+    paddingHorizontal: RICH_SPACING.md,
+    paddingVertical: RICH_SPACING.sm,
+  },
+  selectorGroup: { gap: RICH_SPACING.xxs },
+  selectorEyebrow: {
+    ...RICH_TYPE.caption,
+    marginLeft: RICH_SPACING.sm,
+    color: TEXT_SECONDARY,
+  },
   sel: {
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F2F2F4",
-    borderRadius: 28,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    backgroundColor: CONTROL_BACKGROUND,
+    borderRadius: RICH_RADIUS.pill,
+    paddingHorizontal: RICH_SPACING.md,
   },
-  selDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#D8D8D8",
-    marginRight: 12,
+  selIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: CARD_BACKGROUND,
+    marginRight: RICH_SPACING.sm,
   },
-  selLabel: { flex: 1, fontSize: 15, color: TEXT_SECONDARY },
+  selLabel: { flex: 1, minWidth: 0, fontSize: 15, color: TEXT_SECONDARY },
   selLabelActive: { color: TEXT_PRIMARY, fontWeight: "600" },
-  arrow: { alignItems: "center", paddingVertical: 8 },
+  arrow: { alignItems: "center", paddingVertical: RICH_SPACING.xs },
   dropdown: {
-    marginTop: 4,
-    marginHorizontal: 8,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    marginTop: RICH_SPACING.xxs,
+    marginHorizontal: RICH_SPACING.xs,
+    backgroundColor: CARD_BACKGROUND,
+    borderRadius: RICH_RADIUS.control,
     borderWidth: 1,
-    borderColor: "#EEE",
+    borderColor: BORDER_COLOR,
+    overflow: "hidden",
   },
-  option: { paddingVertical: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: "#F5F5F5" },
-  optionText: { fontSize: 14, color: TEXT_PRIMARY },
-  pad: { backgroundColor: "#F8F8F8", paddingBottom: 20 },
-  noteRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
-  noteInput: { minWidth: 120, fontSize: 13, color: TEXT_PRIMARY, padding: 0, textAlign: "center" },
-  padGridWrap: { flexDirection: "row" },
-  padGrid: { flex: 3, flexDirection: "row", flexWrap: "wrap" },
-  key: {
-    width: "33.333%",
-    height: 52,
-    justifyContent: "center",
+  option: {
+    minHeight: RICH_SIZE.minimumTouchTarget,
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
+    gap: RICH_SPACING.sm,
+    paddingHorizontal: RICH_SPACING.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: BORDER_COLOR,
   },
-  keyText: { fontSize: 22, color: TEXT_PRIMARY },
-  ops: { flex: 1 },
-  opKey: {
-    height: 52,
-    justifyContent: "center",
+  optionSelected: {
+    backgroundColor: CONTROL_PRESSED_BACKGROUND,
+  },
+  optionText: {
+    ...RICH_TYPE.body,
+    flex: 1,
+    minWidth: 0,
+    color: TEXT_PRIMARY,
+  },
+  pad: {
+    backgroundColor: KEYPAD_BACKGROUND,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: BORDER_COLOR,
+  },
+  noteRow: {
+    width: "100%",
+    maxWidth: 430,
+    minHeight: 52,
+    alignSelf: "center",
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    borderWidth: 0.5,
-    borderColor: "#E5E5E5",
+    gap: RICH_SPACING.xs,
+    paddingHorizontal: RICH_SPACING.md,
   },
-  opText: { fontSize: 24, color: TEXT_PRIMARY },
-  confirm: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#1A1A1A" },
-  confirmOff: { backgroundColor: "#999999" },
-  confirmText: { fontSize: 18, color: "#FFFFFF", fontWeight: "600" },
+  noteInput: {
+    ...RICH_TYPE.body,
+    flex: 1,
+    minWidth: 0,
+    color: TEXT_PRIMARY,
+    paddingVertical: 0,
+  },
+  noteCount: { ...RICH_TYPE.caption, color: TEXT_SECONDARY, fontVariant: ["tabular-nums"] },
+  numpadWrap: { width: "100%", maxWidth: 430, alignSelf: "center" },
 });

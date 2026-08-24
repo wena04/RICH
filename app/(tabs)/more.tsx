@@ -14,7 +14,12 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, onPress }: MenuItemProps) {
   return (
-    <Pressable style={styles.menuItem} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+      onPress={onPress}
+    >
       <FontAwesome name={icon as any} size={18} color={TEXT_SECONDARY} style={styles.menuIcon} />
       <Text style={styles.menuLabel}>{label}</Text>
       <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
@@ -37,6 +42,11 @@ export default function MoreScreen() {
           <Text style={styles.sectionTitle}>设置</Text>
           
           <View style={styles.menuGroup}>
+            <MenuItem
+              icon="list-alt"
+              label="全部账单"
+              onPress={() => router.push('/transactions')}
+            />
             <MenuItem 
               icon="bank" 
               label="账户管理" 
@@ -125,6 +135,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   menuItem: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -132,6 +143,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
   },
+  menuItemPressed: { backgroundColor: '#F2F5F3' },
   menuIcon: {
     width: 24,
     marginRight: 12,

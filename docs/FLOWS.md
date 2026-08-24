@@ -224,6 +224,7 @@ CSV v1 import (needs target account) / export, CSV v2 export, DB file export/imp
                     └ + 添加子类 ─► iOS Alert.prompt only
 
   (tabs)/more (我的)
+     ├ 全部账单 ─► (tabs)/transactions ── rows ─► transaction/[id]
      ├ 账户管理 ─► accounts
      ├ 分类管理 ─► categories ── + 添加自定义 ─► [Add-cat modal] (name only, no icon)
      ├ 导出数据 ─► import-export
@@ -231,8 +232,6 @@ CSV v1 import (needs target account) / export, CSV v2 export, DB file export/imp
      ├ 关于应用 ─► no-op
      └ 隐私政策 ─► no-op
 
-  ORPHAN (routable, no UI entry point):
-     (tabs)/transactions ── rows ─► transaction/[id], "Add" ─► transaction/new
 ```
 
 ---
@@ -264,11 +263,9 @@ CSV v1 import (needs target account) / export, CSV v2 export, DB file export/imp
 13. **创建预算 flow / budget screens** — do not exist (alert only).
 14. **所属预算/计划 linkage** on transactions — no data model wiring, alert only.
 
-**Reachable in code but no UI entry point (orphan):**
-15. `app/(tabs)/transactions.tsx` — a full working transaction list (`href: null`, hidden
-    tab). No button navigates to it; home uses its own inline list instead.
-
 **Recently closed gaps (now working):**
+- **全部账单** — the hidden ledger route is now reachable from 我的, uses Chinese copy, and links
+  each dated row to transaction detail.
 - **账户转账** — real screen at `app/transaction/transfer.tsx`, reached from 资产管理; creates
   two `balance_adjustment` entries.
 - **目标资产** — persisted in `app_meta`, edited via a cross-platform Modal (no longer iOS-only).
@@ -290,7 +287,5 @@ CSV v1 import (needs target account) / export, CSV v2 export, DB file export/imp
 5. **Give Android a subcategory-add path** on the Add screen (the iOS-only prompt makes the
    "+ 添加子类" tile invisible on Android).
 6. **Wire 关于应用 / 隐私政策** (even to a simple static screen or the existing docs).
-7. **Resolve the orphan:** either surface `(tabs)/transactions` (e.g. a "全部账单" entry)
-   or delete it.
-8. **Tidy the Transfer numpad:** its +/− keys are dead views — either remove them or give
+7. **Tidy the Transfer numpad:** its +/− keys are dead views — either remove them or give
    them the same real arithmetic the Add screen now has, for consistency.

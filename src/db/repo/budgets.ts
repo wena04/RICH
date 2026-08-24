@@ -9,7 +9,10 @@ import {
   getExpenseCategoryTotalsForMonth,
   getExpenseSubcategoryTotalsForMonth,
 } from '@/src/features/charts/aggregations';
-import { unallocatedCategoryLimitCents } from '@/src/features/budgets/allocation';
+import {
+  unallocatedCategoryLimitCents,
+  unallocatedCategorySpentCents,
+} from '@/src/features/budgets/allocation';
 import { newId } from '@/src/utils/id';
 
 import type { AppDb } from '../db';
@@ -247,16 +250,21 @@ export async function getBudgetSummary(db: AppDb, period: string): Promise<Budge
         spentCents:
           childSpentByCategory.get(limit.category_id)?.get(child.subcategory_id) ?? 0,
       }));
+    const spentCents = spentMap.get(limit.category_id) ?? 0;
     return {
       categoryId: limit.category_id,
       categoryName: limit.category_name,
       categoryIcon: limit.category_icon,
       limitCents: limit.limit_cents,
-      spentCents: spentMap.get(limit.category_id) ?? 0,
+      spentCents,
       subcategories: children,
       unallocatedLimitCents: unallocatedCategoryLimitCents(
         limit.limit_cents,
         children.map((child) => child.limitCents),
+      ),
+      unallocatedSpentCents: unallocatedCategorySpentCents(
+        spentCents,
+        children.map((child) => child.spentCents),
       ),
     };
   });

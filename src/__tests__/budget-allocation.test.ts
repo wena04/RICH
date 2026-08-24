@@ -5,6 +5,7 @@ import {
   effectiveCategoryLimitCents,
   sumChildLimitsCents,
   unallocatedCategoryLimitCents,
+  unallocatedCategorySpentCents,
 } from '../features/budgets/allocation';
 
 describe('hierarchical budget allocation', () => {
@@ -27,5 +28,13 @@ describe('hierarchical budget allocation', () => {
   it('never lets malformed negative limits reduce the allocation', () => {
     assert.equal(sumChildLimitsCents([30_000, -10_000]), 30_000);
     assert.equal(unallocatedCategoryLimitCents(20_000, [30_000]), 0);
+  });
+
+  it('keeps uncategorized and unbudgeted-child spending visible', () => {
+    assert.equal(unallocatedCategorySpentCents(80_000, [30_000, 20_000]), 30_000);
+  });
+
+  it('never reports negative unallocated spending for inconsistent data', () => {
+    assert.equal(unallocatedCategorySpentCents(20_000, [30_000]), 0);
   });
 });

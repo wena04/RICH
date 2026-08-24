@@ -97,7 +97,8 @@ the wrong parent category.
 | `/about`, `/privacy` | Product and privacy information |
 | `/(tabs)/more` | 我的, reached from Home |
 
-`/(tabs)/transactions` remains a routable legacy list but is intentionally hidden from the tab bar.
+`/(tabs)/transactions` is intentionally hidden from the two-tab bar but is reachable through
+**我的 → 全部账单**. It provides the complete dated ledger and links into transaction details.
 
 ## Current limitations
 
