@@ -75,10 +75,12 @@ On app startup:
 | id          | TEXT PK | UUID with `sub_` prefix         |
 | category_id | TEXT FK | Required, references categories |
 | name        | TEXT    | Required                        |
+| icon        | TEXT    | Optional original icon id (migration v10); NULL falls back to a name-derived icon |
 | created_at  | TEXT    | ISO timestamp                   |
 | updated_at  | TEXT    | ISO timestamp                   |
 
-Constraint: `(category_id, name)` unique
+Constraint: `(category_id, name)` unique. The original app stored an icon per subcategory
+(`RecordCategory.plist` → `subItems[].iconName`); subcategories list in creation order.
 
 #### `transactions`
 

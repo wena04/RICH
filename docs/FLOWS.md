@@ -70,12 +70,10 @@ Only **two** visible tabs + a center FAB. `more` and `transactions` have no tab 
 | Avatar (top-right) | `router.push('/more')` → 我的 screen. |
 | Month ‹ / › arrows | `goPrevMonth` / `goNextMonth` — loads transactions for that month. Real. |
 | Month pill ("6月 ▼") | Display only (navigation via arrows). |
-| Calendar day cell tap | Sets `selectedDate` + toggles `filterDate` — **filters the list to that day**. Tap same day again to clear. |
-| "查看全部" pill (when filtered) | Clears `filterDate` — shows full month again. |
+| Calendar day cell tap | Opens the original **day sheet** over the summary card (dimmed header, floating ✕, that day's group, 添加一笔支出/收入 → `/transaction/new?date=…`). |
 | Transaction row tap | `router.push('/transaction/${t.id}')` → Detail. |
 | "总支出 / 总收入" totals | Display only. |
 
-Note: day-tap filtering is active — the list shows only the selected day when a filter is set.
 
 ### 预算/计划 tab — `app/(tabs)/charts.tsx`
 | Element | Trigger → Result |
@@ -133,10 +131,10 @@ Fully wired to real data; no dead buttons here.
 | Back chevron | `router.back()` (dismisses modal). |
 | 支出 / 收入 toggle | `setType('expense' | 'income')`. Real. (No 余额调整 option here — that lives only in the edit screen.) |
 | Date button ("6月30日 ▼") | Opens `DatePickerModal` — pick any date. Real. |
-| Category tile tap | `onSelectCategory(name)` → selects it + loads subcategories from DB. |
+| Category tile tap | Selects it and opens the full-width subcategory tray under its row (tap again to fold). Black ring marks the selection. |
 | **管理分类** green tile | `router.push('/categories')` → category management. |
-| Subcategory tile tap | `setSelectedSubId(...)` (toggle). |
-| **+ 添加 (add subcategory)** tile | Opens cross-platform Modal → `ensureSubcategory` on save. Works on all platforms. |
+| Subcategory tile tap | `setSelectedSubId(...)` (toggle). Glyph-only tiles, same columns as the categories. |
+| **添加子类** tile (category without subcategories) | `/categories/add?parentId=…` → name + icon from the full library → `createSubcategory(…, icon)`. |
 | Account chip (bottom-left) | Toggles an inline account picker dropdown; tapping an option sets the account. Real. |
 | Note field | Free text, capped 100 chars. Real. |
 | **+ operator key** | `handleOperator('+')` → **real calculator arithmetic.** Stores the running value/op and resets the entry to "0"; the pending op is applied on the next operator press and on 确定. |
@@ -200,10 +198,10 @@ Reached only from the Accounts edit modal's 调整余额.
 | Element | Trigger → Result |
 |---|---|
 | Back | `router.back()`. |
-| Category row / caret | `toggleExpand` → shows subcategories + inline "添加子分类..." input. |
+| Category row / caret | `toggleExpand` → a row of subcategory icons ending with **添加子类**. |
 | Category "⋯" menu | `openEditCategory` → Edit-category modal (rename / delete). |
 | Subcategory row | `openEditSubcategory` → Edit-subcategory modal. |
-| Inline "添加子分类..." + plus-circle | `onCreateSubcategory`. Real. |
+| 添加子类 tile | `/categories/add?parentId=…` (name + icon). |
 | **+ 添加自定义** (bottom) | Opens `/categories/add`, with expense/income/both type and the full source-controlled icon catalog. |
 | Edit modals delete | Guarded by `canDelete…` then confirm. Real. |
 
@@ -250,7 +248,7 @@ destructive confirmation.
                     │ 确定 ─► createTransaction ─► back
                     │ + / − keys ─► real calculator arithmetic
                     │ date ▼ ─► DatePickerModal
-                    └ + 添加子类 ─► cross-platform Modal
+                    └ 添加子类 ─► categories/add?parentId (name + icon)
 
   (tabs)/more (我的)
      ├ 全部账单 ─► (tabs)/transactions ── rows ─► transaction/[id]

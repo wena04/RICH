@@ -120,6 +120,13 @@ Visual QA:               design-qa.md                  PASS
 Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
 ```
 
+## Original-parity pass — November 19, 2026
+
+Owner review found screens that did not match the original. Re-measured every captured screen and
+fixed add entry (subcategory tray on every category, 添加子类 page with icon, ring, spacing, keypad,
+numerals), category management, Home + day sheet, transaction detail, 资产管理, and transfer. See
+`design-qa.md` → "Original-parity pass". Migration v10 adds `subcategories.icon`.
+
 ## Remaining source-parity work
 
 1. ~~Log into the runnable original app through WeChat to capture missing interactions.~~ Dropped

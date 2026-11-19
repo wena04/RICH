@@ -81,6 +81,25 @@
 - Replaced the reconstructed budget example donut with the supplied `icon_budget_progress` artwork.
 - Rechecked Home, add-expense, the full icon picker, and the budget empty state in the browser after a production web export. No P1/P2 visual findings remain in these states.
 
+## Original-parity pass (November 19, 2026)
+
+Re-checked every screen against the original captures (plus a fresh capture of the original
+add-entry tray from the owner's phone), measuring at the same 1179 × 2556 / 3× scale with canvas
+pixel analysis (`/tmp` tooling, not committed). Fixed:
+
+| Screen | Was | Now (matches original) |
+| --- | --- | --- |
+| Add entry | Tray only from "…" badge; inset rounded card; grey labels; no visible selection ring (the original PNG's baked-in circle covered the border); 77pt rows; 80pt keypad rows; regular digits; grey 确定; segmented 支出/收入; plain date | Tray on any category tap, full-width #F7F7F7 band with `icon_tally_arrow` caret, glyph-only items; black labels; ring drawn above the artwork; 86pt rows (orig 86.7); 56pt keypad rows; original rounded numerals (`RichRounded`, OFL subset of the bundled font) and keypad artwork; black 确定; separate pills + 今天 pill |
+| Subcategories | No add path for categories without subcategories; name-only popup; no stored icon | 添加子类 page (name + full icon library), icon stored (migration v10); 自定义 shows a row of subcategory icons + 添加子类 |
+| Home | Bold rows/totals; hyphen minus; 60pt rows; inline day filter with duplicate header; heavy calendar | Regular weights, "−" amounts, "– ¥ x" day totals, 72pt rows; day tap opens the original day sheet; 38pt calendar rows, thin today ring, light weekday labels, compact 6月 pill |
+| Detail | 支出详情 with date/account grid, bold | 支出编辑 card: record row + 所属预算/计划 only |
+| 资产管理 | No rays; red flag marker; bold amounts; outlined 添加; type subtitles; inline 账户转账 | `icon_shine` rays, leader line + edit icon, rounded-numeral total, original account artwork, bare balances, filled 添加 pills, floating 账户转账 |
+| Transfer | Green title bar, field labels, full-width selectors, 0/100 counter | White header with 今天 pill, centered pill selectors, double-arrow artwork, centered 添加备注 |
+
+Known remaining differences: the selected category's interior stays #F7F7F7 (the original shows
+white) because the artwork bakes in its circle; the starter subcategory set differs from the
+owner's personal categories by design (fresh installs get the student starter taxonomy).
+
 ## Budget envelopes (November 18, 2026) — designed, not source-verified
 
 The original populated budget list and create/edit budget pages have no screenshots, and the app
