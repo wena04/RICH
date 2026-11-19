@@ -110,7 +110,7 @@ Completed against the latest pushed workspace on November 18, 2026:
 
 ```text
 TypeScript:              npx tsc --noEmit              PASS
-Unit tests:              npm test                      PASS (43/43)
+Unit tests:              npm test                      PASS (57/57)
 Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
 Original PNG extraction: file/catalog audit            PASS (125 files)
 Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
@@ -121,15 +121,26 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
 
 ## Remaining source-parity work
 
-1. Finish logging into the runnable original app through the user's approved WeChat account, then
-   capture the exact expanded/collapsed subcategory states, selection behavior, category editing,
-   account/date sheets, and other interaction transitions not visible in the supplied screenshots.
-   WeChat approval must be completed by the user whenever macOS requires direct access or a phone
-   confirmation.
-2. Replace the current functional budget editor/model with the original Rich concepts and screens:
-   month budget, special budget, named envelopes, icon/name/description fields, recurrence/cycle
-   configuration, deposit plans, accumulation plans, plan items, archive/reorder behavior, and the
-   original help/onboarding pages.
+1. ~~Log into the runnable original app through WeChat to capture missing interactions.~~ Dropped
+   (November 18, 2026): the owner no longer has access to the original backend/login. Remaining
+   evidence is the reference bundle, screenshots, asset catalog, and backup schema; screens with no
+   evidence are designed to match the existing replica screens and flagged as unverified in
+   `design-qa.md`.
+2. Replace the current category-limit budget editor/model with the original Rich budget/plan model.
+   Evidence found: the add-expense screen has no budget picker; expenses are assigned afterwards via
+   the 支出编辑 row 所属预算/计划. The app bundle has no readable screen text or layouts (encrypted
+   executable, empty storyboards). Slices:
+   - [x] **Slice 1 — data model** (migration v8): `budget_envelopes` (monthly/special, emoji, name,
+     description, first-month amount, archive/order), `budget_envelope_amounts` history,
+     `savings_plans` freezing a monthly budget toward a target, and `transactions.budget_envelope_id`.
+     Pure logic + 14 unit tests; migration and triggers verified against SQLite. See
+     `docs/TECHNICAL.md`.
+   - [ ] Slice 2 — Budget tab populated list, create/edit budget screen, original help/example pages;
+     switch the tab off the v4/v6 tables.
+   - [ ] Slice 3 — 所属预算/计划 assignment on the transaction detail screen.
+   - [ ] Slice 4 — 计划清单: plan list, create plan, freeze progress, completion artwork.
+   - [ ] Slice 5 — archive and drag reorder (original used `JXMovableCellTableView`); then drop the
+     v4/v6 budget tables.
 3. Match and verify the compiled native launch/loading sequence, including load/read/write/success
    states and a recoverable startup-error state. The artwork is available, but the native transition
    still needs device capture and comparison.

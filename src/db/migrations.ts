@@ -200,4 +200,130 @@ export const migrations: Migration[] = [
       `UPDATE categories SET icon = 'piggy' WHERE name = '其他收入' AND (icon IS NULL OR icon = 'grid');`,
     ],
   },
+  {
+    // Original Rich budget/plan model (see docs/TECHNICAL.md "Budget envelopes and savings plans").
+    // The v4/v6 category-limit tables are left in place until the budget UI stops using them.
+    version: 8,
+    statements: [
+      `
+      CREATE TABLE IF NOT EXISTS budget_envelopes (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        description TEXT,
+        start_period TEXT NOT NULL,
+        first_period_amount_cents INTEGER,
+        is_archived INTEGER NOT NULL DEFAULT 0,
+        sort_index INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT,
+        CHECK (kind IN ('monthly','special')),
+        CHECK (length(trim(name)) > 0),
+        CHECK (description IS NULL OR length(description) <= 100),
+        CHECK (start_period GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]'),
+        CHECK (
+          first_period_amount_cents IS NULL
+          OR (kind = 'monthly' AND first_period_amount_cents >= 0)
+        ),
+        CHECK (is_archived IN (0,1))
+      );
+      `,
+      `
+      CREATE TABLE IF NOT EXISTS budget_envelope_amounts (
+        id TEXT PRIMARY KEY,
+        envelope_id TEXT NOT NULL,
+        effective_period TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (envelope_id) REFERENCES budget_envelopes(id) ON DELETE CASCADE,
+        CHECK (amount_cents >= 0),
+        CHECK (effective_period GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]'),
+        UNIQUE (envelope_id, effective_period)
+      );
+      `,
+      `
+      CREATE TABLE IF NOT EXISTS savings_plans (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        description TEXT,
+        source_envelope_id TEXT NOT NULL,
+        target_cents INTEGER NOT NULL,
+        monthly_cents INTEGER NOT NULL,
+        start_period TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        ended_period TEXT,
+        is_archived INTEGER NOT NULL DEFAULT 0,
+        sort_index INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (source_envelope_id) REFERENCES budget_envelopes(id) ON DELETE RESTRICT,
+        CHECK (length(trim(name)) > 0),
+        CHECK (description IS NULL OR length(description) <= 100),
+        CHECK (target_cents > 0),
+        CHECK (monthly_cents > 0 AND monthly_cents <= target_cents),
+        CHECK (start_period GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]'),
+        CHECK (status IN ('active','completed','cancelled')),
+        CHECK (
+          (status = 'active' AND ended_period IS NULL)
+          OR (status != 'active' AND ended_period IS NOT NULL)
+        ),
+        CHECK (is_archived IN (0,1))
+      );
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_savings_plans_monthly_source_insert
+      BEFORE INSERT ON savings_plans
+      BEGIN
+        SELECT CASE
+          WHEN (SELECT kind FROM budget_envelopes WHERE id = NEW.source_envelope_id) != 'monthly'
+          THEN RAISE(ABORT, 'plan_source_must_be_monthly_budget')
+        END;
+      END;
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_savings_plans_monthly_source_update
+      BEFORE UPDATE OF source_envelope_id ON savings_plans
+      BEGIN
+        SELECT CASE
+          WHEN (SELECT kind FROM budget_envelopes WHERE id = NEW.source_envelope_id) != 'monthly'
+          THEN RAISE(ABORT, 'plan_source_must_be_monthly_budget')
+        END;
+      END;
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_budget_envelopes_kind_locked
+      BEFORE UPDATE OF kind ON budget_envelopes
+      WHEN NEW.kind != OLD.kind
+      BEGIN
+        SELECT RAISE(ABORT, 'budget_kind_is_immutable');
+      END;
+      `,
+      `
+      ALTER TABLE transactions
+      ADD COLUMN budget_envelope_id TEXT REFERENCES budget_envelopes(id) ON DELETE SET NULL;
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_transactions_budget_expense_insert
+      BEFORE INSERT ON transactions
+      WHEN NEW.budget_envelope_id IS NOT NULL AND NEW.type != 'expense'
+      BEGIN
+        SELECT RAISE(ABORT, 'budget_assignment_requires_expense');
+      END;
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_transactions_budget_expense_update
+      BEFORE UPDATE OF type, budget_envelope_id ON transactions
+      WHEN NEW.budget_envelope_id IS NOT NULL AND NEW.type != 'expense'
+      BEGIN
+        SELECT RAISE(ABORT, 'budget_assignment_requires_expense');
+      END;
+      `,
+      `CREATE INDEX IF NOT EXISTS idx_transactions_budget_envelope_id ON transactions(budget_envelope_id);`,
+      `CREATE INDEX IF NOT EXISTS idx_budget_envelope_amounts_envelope ON budget_envelope_amounts(envelope_id, effective_period);`,
+      `CREATE INDEX IF NOT EXISTS idx_savings_plans_source ON savings_plans(source_envelope_id);`,
+    ],
+  },
 ];

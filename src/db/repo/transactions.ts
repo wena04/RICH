@@ -134,6 +134,8 @@ export async function updateTransaction(db: AppDb, input: Transaction) {
       category_id = ?,
       subcategory_id = ?,
       note = ?,
+      -- Only expenses can belong to a budget; switching type drops the assignment.
+      budget_envelope_id = CASE WHEN ? = 'expense' THEN budget_envelope_id ELSE NULL END,
       updated_at = ?
     WHERE id = ?
     `,
@@ -145,6 +147,7 @@ export async function updateTransaction(db: AppDb, input: Transaction) {
       input.categoryId,
       input.subcategoryId,
       input.note,
+      input.type,
       now,
       input.id,
     ]

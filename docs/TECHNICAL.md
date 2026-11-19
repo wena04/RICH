@@ -115,6 +115,7 @@ Constraint: `(category_id, name)` unique
 | category_id    | TEXT FK | Required for expense/income         |
 | subcategory_id | TEXT FK | Optional                            |
 | note           | TEXT    | Max 100 chars                       |
+| budget_envelope_id | TEXT FK | Optional 所属预算 (migration v8); expense only, SET NULL on budget delete |
 | created_at     | TEXT    | ISO timestamp                       |
 | updated_at     | TEXT    | ISO timestamp                       |
 
@@ -122,6 +123,53 @@ Invariants:
 
 - `balance_adjustment` must have NULL category/subcategory
 - `subcategory_id` must reference a subcategory of `category_id`
+- `budget_envelope_id` may only be set on `expense` rows (trigger); `updateTransaction` clears it when the type changes
+
+### Budget envelopes and savings plans (migration v8)
+
+Reconstructed from the original Rich 1.1.0 backup schema (`budget`, `budget_log`, `deposit_plan`)
+and the in-app help artwork. In the original, a budget is a **named envelope that expenses are
+explicitly assigned to** from the transaction detail row 所属预算/计划 — it is not derived from
+categories. The v4/v6 category-limit tables above are superseded and remain only until the budget
+UI is switched over.
+
+Logic lives in `src/features/budgets/envelopes.ts` (pure, unit-tested); SQL in `src/db/repo/envelopes.ts`.
+
+#### `budget_envelopes`
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| id | TEXT PK | `env_` prefix |
+| kind | TEXT | `monthly` (月度预算, resets monthly) or `special` (专项预算, one total); immutable |
+| name / icon / description | TEXT | Icon is an emoji; description ≤ 100 chars |
+| start_period | TEXT | `YYYY-MM` first month counted |
+| first_period_amount_cents | INTEGER | Monthly only: optional amount for the first month (original `first_cycle_money`) |
+| is_archived / sort_index | INTEGER | Archive and manual order |
+
+#### `budget_envelope_amounts`
+
+Amount history (original `budget_log`). A monthly budget's amount for month *P* is the latest row
+with `effective_period <= P`, so editing the amount from the current month keeps past months
+unchanged. A special budget has exactly one row: its total. `UNIQUE (envelope_id, effective_period)`.
+
+#### `savings_plans`
+
+Original `deposit_plan`: freezes `monthly_cents` from a **monthly** source budget each month until
+`target_cents` is reached (trigger-enforced). Deposits = `ceil(target / monthly)`; the last deposit
+is the remainder. A month's deposit counts as saved once the month has elapsed, so a new plan shows
+0/N. `status` is `active | completed | cancelled`; ending a plan sets `ended_period` (exclusive),
+which releases the current month's freeze. Deleting a budget that a plan draws on is blocked
+(`ON DELETE RESTRICT`).
+
+#### Derived values
+
+- Envelope available = amount − frozen by plans this month; remaining = available − assigned
+  expenses (this month for monthly, all time for special). Negative remaining = overspent.
+- 结余 = this month's income − expenses (balance adjustments and transfers excluded).
+- 计划清单 total = saved amount across plans that are not cancelled or archived.
+
+Not yet modeled (no evidence beyond empty backup tables): original `plan_item` checklist entries,
+`accumulate_plan`, and assigning an expense to a plan rather than a budget.
 
 ## Export Formats
 
