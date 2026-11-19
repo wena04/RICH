@@ -42,7 +42,7 @@ The replica is not yet complete enough to call state-for-state faithful.
 
 Health: Reference target
 
-![Supplied first-entry Home reference](00-reference-home.png)
+Reference image kept off-repo (contains private data): `~/Desktop/RICH-reference/removed-from-git/audit/00-reference-home.png`.
 
 Target characteristics:
 
@@ -76,7 +76,7 @@ Health: Fair; visually close, behavior and semantics incomplete
 
 Strengths:
 
-- Main hierarchy, green header, summary block, headline, example donut, tagline, CTA, and tabs broadly match `IMG_3425.png`.
+- Main hierarchy, green header, summary block, headline, example donut, tagline, CTA, and tabs broadly match the original `01-budget-empty.png` (off-repo).
 - The screen has explicit loading, error, retry, ready, empty, and populated branches.
 
 Risks:

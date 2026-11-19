@@ -5,7 +5,11 @@ the `docs/mockups.html` mockups and `docs/PROGRESS.md` design-fidelity notes.
 
 ## ⚠️ Privacy: images are git-ignored on purpose
 
-The screenshots live under `original-app/screenshots/` and are **excluded from git** via
+The screenshots now live off-repo in
+`~/Desktop/RICH-reference/RICH-original-reference-bundle/original-interaction-screenshots/`
+(earlier copies that were accidentally committed were purged from git history on 2026-11-18 and
+saved to `~/Desktop/RICH-reference/removed-from-git/`). A local `original-app/screenshots/` copy is
+also **excluded from git** via
 `.gitignore` (`docs/reference/rich-screens/**/screenshots/`), because they contain **real
 financial data** (account names, balances, transaction notes). Keep them locally for
 reference; **do not force-add them** to a repo that may be shared/public.

@@ -72,5 +72,6 @@ Key invariants spread across files:
 ## Conventions
 
 - Keep domain logic out of UI components; validate imports at the boundary (`src/features/importExport/`).
-- `RICH Items/` is checked-in historical reference material (old screenshots + an earlier snapshot of the repo); don't treat it as live code.
+- `RICH Items/RICH-main/` is an old snapshot of the repo kept for reference; don't treat it as live code.
+- Original-app screenshots were purged from git history on 2026-11-18 because they showed real balances and notes. Keep them in `~/Desktop/RICH-reference/` (including `removed-from-git/`) and never re-add them. `docs/mockups.html` uses synthetic sample values only.
 - Do not commit or push unless explicitly asked.

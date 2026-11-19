@@ -2,11 +2,11 @@
 
 ## Comparison target
 
-- Source visual truth:
-  - `RICH Items/IMG_3425.png` — budget/plan empty state
-  - `RICH Items/IMG_3426.png` — populated Home shell
-  - `RICH Items/IMG_3428.png` — selected expense and keypad
-  - `RICH Items/IMG_3431.png` — asset management
+- Source visual truth (private, off-repo in `~/Desktop/RICH-reference/RICH-original-reference-bundle/original-interaction-screenshots/`; removed from git because they contain real financial data):
+  - `01-budget-empty.png` — budget/plan empty state
+  - `02-home-list.png` — populated Home shell
+  - `04-add-expense.png` — selected expense and keypad
+  - `07-assets-accounts.png` — asset management
 - Browser-rendered implementation:
   - `design-qa-assets/home-implementation.png`
   - `design-qa-assets/budget-implementation.png`
