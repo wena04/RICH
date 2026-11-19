@@ -12,7 +12,11 @@ export function initDb(): Promise<void> {
       await migrateDb(db);
       await ensureAtLeastOneAccount(db);
       await ensureStarterTaxonomy(db);
-    })();
+    })().catch((error) => {
+      // Forget the failed attempt so the startup screen's retry runs initialization again.
+      initPromise = null;
+      throw error;
+    });
   }
   return initPromise;
 }

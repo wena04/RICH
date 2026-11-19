@@ -77,6 +77,8 @@ export default function NewTransactionScreen() {
   const [noteFocused, setNoteFocused] = useState(false);
   const noteInputRef = useRef<TextInput>(null);
   const categoryLoadRequestRef = useRef(0);
+  // Distinguish "choices failed to load" from "no categories/accounts".
+  const [choicesError, setChoicesError] = useState(false);
   const { width: viewportWidth } = useWindowDimensions();
 
   useEffect(() => {
@@ -87,6 +89,7 @@ export default function NewTransactionScreen() {
 
   const loadChoices = useCallback(async () => {
     try {
+      setChoicesError(false);
       const db = await getDb();
       const list = await listAccountsWithBalances(db);
       setAccounts(list);
@@ -121,6 +124,7 @@ export default function NewTransactionScreen() {
       );
     } catch (error) {
       console.error('Failed to load transaction choices:', error);
+      setChoicesError(true);
     }
   }, []);
 
@@ -291,6 +295,7 @@ export default function NewTransactionScreen() {
     [categories, defaultOrder, type],
   );
   const canSaveTransaction =
+    !choicesError &&
     Boolean(selectedCategoryId && accountId) &&
     evalPending(parseFloat(amountStr) || 0) > 0 &&
     !saving;
@@ -388,6 +393,21 @@ export default function NewTransactionScreen() {
         ) : null}
       </View>
       <DashedDivider style={styles.amountDivider} />
+
+      {choicesError ? (
+        <View style={styles.choicesError}>
+          <FontAwesome name="exclamation-circle" size={20} color={TEXT_SECONDARY} />
+          <Text style={styles.choicesErrorTitle}>分类和账户没有载入</Text>
+          <Text style={styles.choicesErrorBody}>现在无法保存这笔记录，请重新载入。</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void loadChoices()}
+            style={({ pressed }) => [styles.choicesRetry, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.choicesRetryText}>重新载入</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {/* Category grid */}
       <ScrollView
@@ -719,6 +739,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  choicesError: {
+    alignItems: "center",
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    backgroundColor: "#F5F7F5",
+  },
+  choicesErrorTitle: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
+  choicesErrorBody: { fontSize: 12, color: TEXT_SECONDARY },
+  choicesRetry: {
+    marginTop: 6,
+    minHeight: 40,
+    paddingHorizontal: 22,
+    justifyContent: "center",
+    backgroundColor: "#111111",
+  },
+  choicesRetryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
   typeToggle: {
     flexDirection: "row",
     marginLeft: 16,

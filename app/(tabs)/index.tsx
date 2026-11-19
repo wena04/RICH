@@ -9,6 +9,7 @@ import {
   Text,
   Modal,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -67,6 +68,8 @@ export default function HomeScreen() {
   const [sheetDate, setSheetDate] = useState<string | null>(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
+  // A failed read must not look like an empty month.
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -75,8 +78,10 @@ export default function HomeScreen() {
       const start = fmt(year, month, 1);
       const end = fmt(year, month, getDaysInMonth(year, month));
       setTransactions(all.filter((t) => t.date >= start && t.date <= end));
+      setLoadState("ready");
     } catch (e) {
       console.error("Failed to load transactions:", e);
+      setLoadState("error");
     }
   }, [year, month]);
 
@@ -323,7 +328,27 @@ export default function HomeScreen() {
               </Pressable>
             </View>
           ) : null}
-          {visibleGroups.length === 0 ? (
+          {loadState === "error" ? (
+            <View style={styles.empty}>
+              <FontAwesome name="exclamation-circle" size={22} color={TEXT_SECONDARY} />
+              <Text style={[styles.emptyText, styles.errorTitle]}>没有读取到本月记录</Text>
+              <Text style={styles.errorBody}>记录没有丢失，请重新读取。</Text>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.emptyAction}
+                onPress={() => {
+                  setLoadState("loading");
+                  void loadTransactions();
+                }}
+              >
+                <Text style={styles.emptyActionText}>重新读取</Text>
+              </Pressable>
+            </View>
+          ) : loadState === "loading" && transactions.length === 0 ? (
+            <View style={styles.empty} accessibilityLabel="正在读取本月记录">
+              <ActivityIndicator size="small" color={PRIMARY_GREEN} />
+            </View>
+          ) : visibleGroups.length === 0 ? (
             <View style={styles.empty}>
               {!filterDate ? (
                 <Image
@@ -663,6 +688,8 @@ const styles = StyleSheet.create({
   empty: { paddingVertical: 60, alignItems: "center" },
   emptyIllustration: { width: 80, height: 80, marginBottom: 20 },
   emptyText: { fontSize: 15, color: TEXT_SECONDARY },
+  errorTitle: { marginTop: 12, color: TEXT_PRIMARY, fontWeight: "600" },
+  errorBody: { marginTop: 6, fontSize: 12, color: TEXT_SECONDARY },
   emptyAction: {
     marginTop: 16,
     minWidth: 120,

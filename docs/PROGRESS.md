@@ -162,9 +162,13 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
    The original budget/plan model is now complete. Remaining unknowns, documented rather than
    guessed: original `plan_item` checklist entries and `accumulate_plan` (empty in the backup), and
    assigning an expense to a plan rather than a budget.
-3. Match and verify the compiled native launch/loading sequence, including load/read/write/success
-   states and a recoverable startup-error state. The artwork is available, but the native transition
-   still needs device capture and comparison.
+3. Match and verify the compiled native launch/loading sequence. **Done (November 19, 2026):** a
+   recoverable startup-error screen (`components/rich/StartupError.tsx`, launch artwork + 重新打开)
+   replaces the stuck splash when the database cannot open; failed opens/initialization are no
+   longer cached, so retry re-runs them (on web, retry reloads the page because expo-sqlite's worker
+   keeps a failed WebAssembly module). Home and add-entry now show loading and read-failure states
+   instead of looking empty. Verified in the web export by blocking SQLite's WebAssembly. Still
+   needs device capture: the native splash → app transition.
 4. Capture and compare every reachable route from `docs/FLOWS.md` on target iPhones, including
    small-screen keyboard, safe-area, modal, long-label, and empty/filled states.
 5. Exercise fresh install, schema migration, CSV exchange, database restore, transfer rollback, and

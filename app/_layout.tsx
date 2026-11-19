@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
+import { StartupError } from '@/components/rich/StartupError';
 import { CARD_BACKGROUND } from '@/constants/Colors';
 import { initDb } from '@/src/db';
 
@@ -26,8 +27,9 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
-  const [dbReady, setDbReady] = useState(false);
-  const [dbError, setDbError] = useState<unknown>(null);
+  const [dbState, setDbState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [dbAttempt, setDbAttempt] = useState(0);
+  const [retrying, setRetrying] = useState(false);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -38,30 +40,46 @@ export default function RootLayout() {
     let cancelled = false;
     initDb()
       .then(() => {
-        if (!cancelled) setDbReady(true);
+        if (!cancelled) setDbState('ready');
       })
       .catch((e) => {
-        if (!cancelled) setDbError(e);
+        console.error('Database startup failed:', e);
+        if (!cancelled) setDbState('error');
+      })
+      .finally(() => {
+        if (!cancelled) setRetrying(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dbAttempt]);
 
   useEffect(() => {
-    if (loaded && dbReady) {
+    // Hide the splash once there is something to show: the app, or a recoverable error.
+    if (loaded && dbState !== 'loading') {
       SplashScreen.hideAsync();
     }
-  }, [loaded, dbReady]);
+  }, [loaded, dbState]);
 
-  useEffect(() => {
-    if (dbError) {
-      throw dbError;
-    }
-  }, [dbError]);
-
-  if (!loaded || !dbReady) {
+  if (!loaded || dbState === 'loading') {
     return null;
+  }
+
+  if (dbState === 'error') {
+    return (
+      <StartupError
+        retrying={retrying}
+        onRetry={() => {
+          setRetrying(true);
+          if (Platform.OS === 'web') {
+            // expo-sqlite's web worker keeps a failed WebAssembly module; only a reload recovers.
+            window.location.reload();
+            return;
+          }
+          setDbAttempt((attempt) => attempt + 1);
+        }}
+      />
+    );
   }
 
   return <RootLayoutNav />;

@@ -15,6 +15,14 @@ Date: 2026-09-18
   view hierarchy cannot be recovered from the `.app`/`.ipa`; screenshots or a screen recording of
   those interactive pages remain the reliable visual source for a pixel-exact recreation.
 
+## Post-audit corrections — 2026-11-19
+
+- App startup: database open/migration failures now hide the splash and show a branded, retryable
+  startup-error screen instead of throwing behind a stuck splash.
+- Home: explicit loading state, and read failures show 没有读取到本月记录 + 重新读取 instead of the
+  empty-month illustration.
+- New transaction: choice-read failures show 分类和账户没有载入 + 重新载入 and block saving.
+
 ## Scope
 
 Combined UI, UX, state, and implementation audit of:

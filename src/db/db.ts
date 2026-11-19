@@ -6,7 +6,11 @@ let dbPromise: Promise<AppDb> | null = null;
 
 export function getDb(): Promise<AppDb> {
   if (!dbPromise) {
-    dbPromise = SQLite.openDatabaseAsync('rich.db');
+    dbPromise = SQLite.openDatabaseAsync('rich.db').catch((error) => {
+      // Don't cache a failed open; the next call (e.g. the startup retry) tries again.
+      dbPromise = null;
+      throw error;
+    });
   }
   return dbPromise;
 }
