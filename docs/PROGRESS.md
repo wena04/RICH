@@ -110,7 +110,7 @@ Completed against the latest pushed workspace on November 18, 2026:
 
 ```text
 TypeScript:              npx tsc --noEmit              PASS
-Unit tests:              npm test                      PASS (57/57)
+Unit tests:              npm test                      PASS (65/65)
 Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
 Original PNG extraction: file/catalog audit            PASS (125 files)
 Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
@@ -135,8 +135,12 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
      `savings_plans` freezing a monthly budget toward a target, and `transactions.budget_envelope_id`.
      Pure logic + 14 unit tests; migration and triggers verified against SQLite. See
      `docs/TECHNICAL.md`.
-   - [ ] Slice 2 — Budget tab populated list, create/edit budget screen, original help/example pages;
-     switch the tab off the v4/v6 tables.
+   - [x] **Slice 2 — Budget tab and budget editor**: the tab now reads the v8 model (结余, 计划清单
+     total, `我的预算` list with monthly/special badges, spend/frozen/remaining); new
+     `app/budget/envelope.tsx` create/edit/delete screen; `app/budget/help.tsx` shows the eight
+     original example pages. Verified in the web export; layouts are designed (not source-verified),
+     see `design-qa.md`. The transaction detail row and old `app/budget/edit.tsx` still use the
+     v4/v6 tables until slice 3.
    - [ ] Slice 3 — 所属预算/计划 assignment on the transaction detail screen.
    - [ ] Slice 4 — 计划清单: plan list, create plan, freeze progress, completion artwork.
    - [ ] Slice 5 — archive and drag reorder (original used `JXMovableCellTableView`); then drop the

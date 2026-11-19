@@ -11,15 +11,21 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { CategoryIcon } from '@/components/CategoryIcon';
 import { ProgressBar } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
-import { EXPENSE_RED, PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import {
+  CATEGORY_FRAME_BACKGROUND,
+  EXPENSE_RED,
+  PRIMARY_GREEN,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  WARNING_AMBER,
+} from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
-import { getBudgetSummary } from '@/src/db/repo/budgets';
-import { getMonthlyTotals } from '@/src/features/charts/aggregations';
+import { getBudgetTabSummary } from '@/src/db/repo/envelopes';
+import type { BudgetEnvelopeSummary, BudgetTabSummary } from '@/src/domain/types';
+import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
 import { PieChart } from '@/src/features/charts/PieChart';
-import type { BudgetSummary } from '@/src/domain/types';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
 
@@ -29,6 +35,11 @@ const TREND_DONUT = [
   { value: 38, color: '#7FE0B0' },
 ];
 
+const KIND_BADGE = {
+  monthly: require('../../assets/images/budget/icon_month_budget.png'),
+  special: require('../../assets/images/budget/icon_special_budget.png'),
+};
+
 function monthLabel(period: string): string {
   const [year, month] = period.split('-');
   const now = new Date();
@@ -37,7 +48,7 @@ function monthLabel(period: string): string {
 
 function progressColor(percent: number): string {
   if (percent > 100) return EXPENSE_RED;
-  if (percent >= 80) return '#E2A33A';
+  if (percent >= 80) return WARNING_AMBER;
   return PRIMARY_GREEN;
 }
 
@@ -54,38 +65,85 @@ function BudgetExampleDonut() {
   );
 }
 
+function EnvelopeRow({
+  summary,
+  first,
+  onPress,
+}: {
+  summary: BudgetEnvelopeSummary;
+  first: boolean;
+  onPress: () => void;
+}) {
+  const { envelope, amountCents, availableCents, frozenCents, spentCents, remainingCents } = summary;
+  const percent = envelopeUsedPercent(spentCents, availableCents);
+  const kindLabel = envelope.kind === 'monthly' ? '月度预算' : '专项预算';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.envelopeRow, !first && styles.envelopeDivider, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${envelope.name}，${kindLabel}，${
+        remainingCents >= 0
+          ? `剩余 ${centsToYuan(remainingCents)} 元`
+          : `超支 ${centsToYuan(-remainingCents)} 元`
+      }`}
+      accessibilityHint="编辑预算"
+    >
+      <View style={styles.envelopeIcon}>
+        <Text style={styles.envelopeEmoji}>{envelope.icon}</Text>
+      </View>
+      <View style={styles.envelopeBody}>
+        <View style={styles.envelopeTitleLine}>
+          <Text style={styles.envelopeName} numberOfLines={1}>
+            {envelope.name}
+          </Text>
+          <Image source={KIND_BADGE[envelope.kind]} style={styles.kindBadge} accessible={false} />
+          <Text style={styles.envelopeAmount}>¥{centsToYuan(amountCents)}</Text>
+        </View>
+        <Text style={styles.envelopeDescription} numberOfLines={1}>
+          {envelope.description || (envelope.kind === 'monthly' ? '每月重新开始' : '一次性专项额度')}
+        </Text>
+        <ProgressBar
+          percent={percent}
+          color={progressColor(percent)}
+          height={5}
+          style={styles.envelopeTrack}
+        />
+        <View style={styles.envelopeMeta}>
+          <Text style={styles.metaText}>
+            {envelope.kind === 'monthly' ? '本月已用' : '累计已用'} ¥{centsToYuan(spentCents)}
+            {frozenCents > 0 ? `  ·  冻结 ¥${centsToYuan(frozenCents)}` : ''}
+          </Text>
+          <Text style={[styles.metaText, remainingCents < 0 && styles.overText]}>
+            {remainingCents >= 0
+              ? `剩余 ¥${centsToYuan(remainingCents)}`
+              : `超支 ¥${centsToYuan(-remainingCents)}`}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function BudgetScreen() {
   const router = useRouter();
   const [month] = useState(currentMonth());
-  const [balance, setBalance] = useState(0);
-  const [summary, setSummary] = useState<BudgetSummary | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<BudgetTabSummary | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [loadError, setLoadError] = useState('');
   const loadRequestRef = useRef(0);
 
   const refresh = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
     setLoadState('loading');
-    setLoadError('');
-    setSummary(null);
-    setBalance(0);
-    setExpandedCategoryId(null);
     try {
       const db = await getDb();
-      const [totals, budget] = await Promise.all([
-        getMonthlyTotals(db, { monthsBack: 1, endMonthInclusive: month }),
-        getBudgetSummary(db, month),
-      ]);
+      const next = await getBudgetTabSummary(db, month);
       if (requestId !== loadRequestRef.current) return;
-      const current = totals[totals.length - 1];
-      setBalance((current?.incomeCents ?? 0) - (current?.expenseCents ?? 0));
-      setSummary(budget);
+      setSummary(next);
       setLoadState('ready');
     } catch (error) {
       console.error('Failed to load budget summary:', error);
       if (requestId !== loadRequestRef.current) return;
-      setLoadError('请重试；也可以切换月份继续查看。');
       setLoadState('error');
     }
   }, [month]);
@@ -99,14 +157,19 @@ export default function BudgetScreen() {
     }, [refresh]),
   );
 
-  const hasBudget = Boolean(summary && (summary.totalLimitCents > 0 || summary.categories.length));
-  const totalLimit = summary?.totalLimitCents ?? 0;
-  const totalSpent = summary?.totalSpentCents ?? 0;
-  const totalPercent = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
-  const remaining = totalLimit - totalSpent;
+  const envelopes = summary?.envelopes ?? [];
+  const ready = loadState === 'ready' && summary;
 
-  function openEditor() {
-    router.push({ pathname: '/budget/edit', params: { period: month } });
+  function openCreate() {
+    router.push('/budget/envelope');
+  }
+
+  function openEnvelope(id: string) {
+    router.push({ pathname: '/budget/envelope', params: { id } });
+  }
+
+  function openHelp() {
+    router.push({ pathname: '/budget/help', params: { topic: 'budget' } });
   }
 
   return (
@@ -118,22 +181,24 @@ export default function BudgetScreen() {
       </View>
 
       <View style={styles.summaryCard}>
-        <Pressable style={styles.summaryLeft} onPress={openEditor}>
+        <View style={styles.summaryLeft}>
           <Text style={styles.planLabel}>计划清单</Text>
           <Text style={styles.planAmount}>
-            ¥ {loadState === 'ready' ? centsToYuan(totalLimit) : '—'}
+            ¥ {ready ? centsToYuan(summary.plansSavedCents) : '—'}
           </Text>
-        </Pressable>
+        </View>
         <View style={styles.summaryRight}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>结余</Text>
             <Text style={styles.summaryValue}>
-              ¥ {loadState === 'ready' ? centsToYuan(balance) : '—'}
+              ¥ {ready ? centsToYuan(summary.balanceCents) : '—'}
             </Text>
           </View>
           <Pressable
             style={[styles.summaryRow, styles.summaryDivider]}
             onPress={() => router.push('/trends')}
+            accessibilityRole="button"
+            accessibilityLabel="趋势图"
           >
             <Text style={styles.summaryKey}>趋势图</Text>
             <PieChart size={30} innerRadius={9} data={TREND_DONUT} />
@@ -148,13 +213,13 @@ export default function BudgetScreen() {
             <Text style={styles.stateTitle}>正在载入{monthLabel(month)}预算</Text>
             <Text style={styles.stateBody}>正在核对预算与本月支出</Text>
           </View>
-        ) : loadState === 'error' ? (
+        ) : loadState === 'error' || !summary ? (
           <View style={styles.statePanel}>
             <View style={styles.stateMark}>
               <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
             </View>
             <Text style={styles.stateTitle}>没有载入{monthLabel(month)}预算</Text>
-            <Text style={styles.stateBody}>{loadError}</Text>
+            <Text style={styles.stateBody}>请重试</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`重新载入${monthLabel(month)}预算`}
@@ -165,172 +230,39 @@ export default function BudgetScreen() {
               <Text style={styles.retryText}>重新载入</Text>
             </Pressable>
           </View>
-        ) : hasBudget && summary ? (
+        ) : envelopes.length ? (
           <>
-            <View style={styles.overallCard}>
-              <Text style={styles.cardLabel}>本月总预算</Text>
-              <View style={styles.totalLine}>
-                <Text style={styles.totalSpent}>¥{centsToYuan(totalSpent)}</Text>
-                <Text style={styles.totalLimit}> / ¥{centsToYuan(totalLimit)}</Text>
+            <View style={styles.listHeader}>
+              <View>
+                <Text style={styles.listTitle}>我的预算</Text>
+                <Text style={styles.listMeta}>{monthLabel(month)} · {envelopes.length} 个预算</Text>
               </View>
-              <ProgressBar
-                percent={totalPercent}
-                color={progressColor(totalPercent)}
-                style={styles.progressTrack}
-              />
-              <View style={styles.progressMeta}>
-                <Text style={styles.metaText}>已用 {totalPercent}%</Text>
-                <Text style={[styles.metaText, remaining < 0 && styles.overText]}>
-                  {remaining >= 0
-                    ? `剩余 ¥${centsToYuan(remaining)}`
-                    : `超支 ¥${centsToYuan(Math.abs(remaining))}`}
-                </Text>
-              </View>
+              <Pressable
+                onPress={openCreate}
+                accessibilityRole="button"
+                accessibilityLabel="新预算"
+                hitSlop={6}
+              >
+                <Image
+                  source={require('../../assets/images/budget/icon_budget_create.png')}
+                  style={styles.createPill}
+                  resizeMode="contain"
+                />
+              </Pressable>
             </View>
-
-            <View style={styles.categoryCard}>
-              <View style={styles.categoryHeader}>
-                <Text style={styles.cardLabel}>分类预算</Text>
-                <Pressable onPress={openEditor} hitSlop={8}>
-                  <Text style={styles.editText}>编辑</Text>
-                </Pressable>
-              </View>
-              {summary.categories.map((category, index) => {
-                const percent =
-                  category.limitCents > 0
-                    ? Math.round((category.spentCents / category.limitCents) * 100)
-                    : 0;
-                const unallocatedPercent =
-                  category.unallocatedLimitCents > 0
-                    ? Math.round(
-                        (category.unallocatedSpentCents / category.unallocatedLimitCents) * 100,
-                      )
-                    : category.unallocatedSpentCents > 0
-                      ? 101
-                      : 0;
-                return (
-                  <View
-                    key={category.categoryId}
-                    style={[styles.categoryRow, index > 0 && styles.categoryRowDivider]}
-                  >
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${category.categoryName}，已用 ${percent}%`}
-                      accessibilityState={{ expanded: expandedCategoryId === category.categoryId }}
-                      onPress={() =>
-                        setExpandedCategoryId((current) =>
-                          current === category.categoryId ? null : category.categoryId,
-                        )
-                      }
-                      style={styles.categoryTopLine}
-                    >
-                      <View style={styles.categoryIcon}>
-                        <CategoryIcon
-                          id={category.categoryIcon ?? undefined}
-                          name={category.categoryName}
-                          size={22}
-                        />
-                      </View>
-                      <View style={styles.categoryCopy}>
-                        <Text style={styles.categoryName}>{category.categoryName}</Text>
-                        <Text style={styles.categoryMeta}>
-                          {category.subcategories.length
-                            ? `${category.subcategories.length} 项子分类额度，其余归未分配`
-                            : '全部支出归入未分配'}
-                        </Text>
-                      </View>
-                      <Text style={[styles.categoryAmount, percent > 100 && styles.overText]}>
-                        ¥{centsToYuan(category.spentCents)} / ¥{centsToYuan(category.limitCents)}
-                      </Text>
-                      <FontAwesome
-                        name={
-                          expandedCategoryId === category.categoryId
-                            ? 'chevron-up'
-                            : 'chevron-down'
-                        }
-                        size={10}
-                        color={TEXT_SECONDARY}
-                        style={styles.categoryChevron}
-                      />
-                    </Pressable>
-                    <ProgressBar
-                      percent={percent}
-                      color={progressColor(percent)}
-                      height={5}
-                      style={styles.categoryTrack}
-                    />
-
-                    {expandedCategoryId === category.categoryId ? (
-                      <View style={styles.subcategoryPanel}>
-                        <View style={styles.subcategoryRail} />
-                        {category.subcategories.map((subcategory) => {
-                          const childPercent =
-                            subcategory.limitCents > 0
-                              ? Math.round(
-                                  (subcategory.spentCents / subcategory.limitCents) * 100,
-                                )
-                              : 0;
-                          return (
-                            <View key={subcategory.subcategoryId} style={styles.subcategoryRow}>
-                              <View style={styles.subcategoryNode} />
-                              <View style={styles.subcategoryCopy}>
-                                <Text style={styles.subcategoryName}>
-                                  {subcategory.subcategoryName}
-                                </Text>
-                                <ProgressBar
-                                  percent={childPercent}
-                                  color={progressColor(childPercent)}
-                                  height={3}
-                                  style={styles.subcategoryTrack}
-                                />
-                              </View>
-                              <Text
-                                style={[
-                                  styles.subcategoryAmount,
-                                  childPercent > 100 && styles.overText,
-                                ]}
-                              >
-                                ¥{centsToYuan(subcategory.spentCents)} / ¥
-                                {centsToYuan(subcategory.limitCents)}
-                              </Text>
-                            </View>
-                          );
-                        })}
-                        {category.unallocatedLimitCents > 0 ||
-                        category.unallocatedSpentCents > 0 ? (
-                          <View style={styles.unallocatedRow}>
-                            <View style={styles.subcategoryCopy}>
-                              <Text style={styles.unallocatedLabel}>未分配与未细分</Text>
-                              <ProgressBar
-                                percent={unallocatedPercent}
-                                color={progressColor(unallocatedPercent)}
-                                height={3}
-                                style={styles.subcategoryTrack}
-                              />
-                            </View>
-                            <Text
-                              style={[
-                                styles.unallocatedValue,
-                                unallocatedPercent > 100 && styles.overText,
-                              ]}
-                            >
-                              ¥{centsToYuan(category.unallocatedSpentCents)} / ¥
-                              {centsToYuan(category.unallocatedLimitCents)}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </View>
-                );
-              })}
-              {!summary.categories.length && (
-                <Text style={styles.noCategories}>尚未设置分类预算</Text>
-              )}
+            <View style={styles.envelopeList}>
+              {envelopes.map((item, index) => (
+                <EnvelopeRow
+                  key={item.envelope.id}
+                  summary={item}
+                  first={index === 0}
+                  onPress={() => openEnvelope(item.envelope.id)}
+                />
+              ))}
             </View>
-
-            <Pressable style={styles.setBudgetButton} onPress={openEditor}>
-              <Text style={styles.setBudgetText}>设置分类预算</Text>
+            <Pressable onPress={openHelp} style={styles.helpLink} accessibilityRole="link">
+              <Text style={styles.helpLinkText}>看看别人怎么分预算</Text>
+              <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
             </Pressable>
           </>
         ) : (
@@ -339,7 +271,7 @@ export default function BudgetScreen() {
             <View style={styles.emptyPanel}>
               <BudgetExampleDonut />
               <Text style={styles.tagline}>有预算才能无负担的花钱</Text>
-              <Pressable style={styles.createButton} onPress={openEditor}>
+              <Pressable style={styles.createButton} onPress={openCreate} accessibilityRole="button">
                 <Text style={styles.createButtonText}>+ 创建预算</Text>
               </Pressable>
             </View>
@@ -422,102 +354,60 @@ const styles = StyleSheet.create({
     backgroundColor: '#101A17',
   },
   retryText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
-  overallCard: { marginHorizontal: 16, backgroundColor: '#FFFFFF', borderRadius: 3, padding: 16 },
-  cardLabel: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
-  totalLine: { flexDirection: 'row', alignItems: 'baseline', marginTop: 8 },
-  totalSpent: { fontSize: 22, fontWeight: '600', color: TEXT_PRIMARY },
-  totalLimit: { fontSize: 12, color: TEXT_SECONDARY },
-  progressTrack: { marginTop: 14 },
-  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  metaText: { fontSize: 10.5, color: TEXT_SECONDARY },
-  overText: { color: EXPENSE_RED },
-  categoryCard: { marginHorizontal: 16, marginTop: 12, backgroundColor: '#FFFFFF', borderRadius: 3 },
-  categoryHeader: {
-    minHeight: 48,
+  listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#D8D8D8',
+    paddingHorizontal: 24,
+    paddingBottom: 6,
   },
-  editText: { color: PRIMARY_GREEN, fontSize: 12, fontWeight: '600' },
-  categoryRow: { paddingHorizontal: 16, paddingVertical: 12 },
-  categoryRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#E5E5E5' },
-  categoryTopLine: { flexDirection: 'row', alignItems: 'center' },
-  categoryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  listTitle: { fontSize: 16, fontWeight: '700', color: TEXT_PRIMARY },
+  listMeta: { marginTop: 2, fontSize: 11, color: TEXT_SECONDARY },
+  createPill: { width: 74, height: 40 },
+  envelopeList: { marginHorizontal: 24 },
+  envelopeRow: { flexDirection: 'row', paddingVertical: 16 },
+  envelopeDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E5E5',
+    marginLeft: 0,
+  },
+  pressed: { opacity: 0.7 },
+  envelopeIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4F4F4',
-    marginRight: 10,
+    backgroundColor: CATEGORY_FRAME_BACKGROUND,
+    marginRight: 12,
   },
-  categoryCopy: { flex: 1 },
-  categoryName: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY },
-  categoryMeta: { marginTop: 2, fontSize: 9.5, color: TEXT_SECONDARY },
-  categoryAmount: { fontSize: 11, color: TEXT_SECONDARY },
-  categoryChevron: { marginLeft: 8 },
-  categoryTrack: { marginTop: 9, marginLeft: 42 },
-  subcategoryPanel: {
-    position: 'relative',
-    marginTop: 12,
-    marginLeft: 42,
-    paddingLeft: 18,
-    paddingVertical: 7,
-    paddingRight: 2,
-    backgroundColor: '#F3F8F5',
-  },
-  subcategoryRail: {
-    position: 'absolute',
-    left: 7,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: PRIMARY_GREEN,
-  },
-  subcategoryRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center' },
-  subcategoryNode: {
-    position: 'absolute',
-    left: -15,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: PRIMARY_GREEN,
-    backgroundColor: '#FFFFFF',
-  },
-  subcategoryCopy: { flex: 1, marginRight: 12 },
-  subcategoryName: { fontSize: 11, color: TEXT_PRIMARY },
-  subcategoryTrack: { marginTop: 5 },
-  subcategoryAmount: { fontSize: 9.5, color: TEXT_SECONDARY, fontVariant: ['tabular-nums'] },
-  unallocatedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    marginTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#C9D7D0',
-  },
-  unallocatedLabel: { fontSize: 10, color: TEXT_PRIMARY },
-  unallocatedValue: {
-    fontSize: 9.5,
-    fontWeight: '600',
+  envelopeEmoji: { fontSize: 24 },
+  envelopeBody: { flex: 1 },
+  envelopeTitleLine: { flexDirection: 'row', alignItems: 'center' },
+  envelopeName: { flexShrink: 1, fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  kindBadge: { width: 14, height: 14, marginLeft: 6 },
+  envelopeAmount: {
+    marginLeft: 'auto',
+    paddingLeft: 8,
+    fontSize: 15,
+    fontWeight: '700',
     color: TEXT_PRIMARY,
     fontVariant: ['tabular-nums'],
   },
-  noCategories: { padding: 20, textAlign: 'center', fontSize: 12, color: TEXT_SECONDARY },
-  setBudgetButton: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    backgroundColor: '#111111',
-    borderRadius: 6,
-    paddingVertical: 13,
+  envelopeDescription: { marginTop: 3, fontSize: 12, color: TEXT_SECONDARY },
+  envelopeTrack: { marginTop: 10 },
+  envelopeMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  metaText: { fontSize: 10.5, color: TEXT_SECONDARY, fontVariant: ['tabular-nums'] },
+  overText: { color: EXPENSE_RED },
+  helpLink: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    marginTop: 8,
   },
-  setBudgetText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  helpLinkText: { fontSize: 12, color: TEXT_SECONDARY },
   emptyHeadline: {
     textAlign: 'center',
     fontSize: 18,

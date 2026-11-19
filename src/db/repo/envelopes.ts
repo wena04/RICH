@@ -109,12 +109,19 @@ export async function getEnvelope(db: AppDb, id: string): Promise<BudgetEnvelope
   return row ? toEnvelope(row) : null;
 }
 
-async function listAmountHistories(db: AppDb): Promise<Map<string, BudgetAmountEntry[]>> {
+async function listAmountHistories(
+  db: AppDb,
+  envelopeId?: string,
+): Promise<Map<string, BudgetAmountEntry[]>> {
   const rows = await db.getAllAsync<{
     envelope_id: string;
     effective_period: string;
     amount_cents: number;
-  }>('SELECT envelope_id, effective_period, amount_cents FROM budget_envelope_amounts');
+  }>(
+    `SELECT envelope_id, effective_period, amount_cents FROM budget_envelope_amounts
+     ${envelopeId ? 'WHERE envelope_id = ?' : ''}`,
+    envelopeId ? [envelopeId] : [],
+  );
   const byEnvelope = new Map<string, BudgetAmountEntry[]>();
   for (const row of rows) {
     const list = byEnvelope.get(row.envelope_id) ?? [];
@@ -168,37 +175,48 @@ export async function createEnvelope(db: AppDb, input: CreateEnvelopeInput): Pro
   return id;
 }
 
-export async function updateEnvelopeDetails(
+export async function getEnvelopeAmountHistory(
   db: AppDb,
   id: string,
-  details: { name: string; icon: string; description: string | null },
-): Promise<void> {
-  await db.runAsync(
-    'UPDATE budget_envelopes SET name = ?, icon = ?, description = ?, updated_at = ? WHERE id = ?',
-    [details.name.trim(), details.icon, details.description?.trim() || null, new Date().toISOString(), id],
-  );
+): Promise<BudgetAmountEntry[]> {
+  return (await listAmountHistories(db, id)).get(id) ?? [];
 }
 
+export type UpdateEnvelopeInput = {
+  name: string;
+  icon: string;
+  description: string | null;
+  /** New amount, or undefined to leave it unchanged. */
+  amountCents?: number;
+  /** Month the new amount takes effect (monthly budgets); usually the current month. */
+  effectivePeriod: string;
+};
+
 /**
- * Change a budget's amount. Monthly budgets record the change from `effectivePeriod`
- * onward (earlier months keep their amount). Special budgets have one total, so the
- * change replaces it.
+ * Updates a budget's details and, optionally, its amount in one transaction.
+ * Monthly budgets record an amount change from `effectivePeriod` onward, so earlier
+ * months keep their amount. A special budget has one total, so the change replaces it.
  */
-export async function setEnvelopeAmount(
+export async function updateEnvelope(
   db: AppDb,
   id: string,
-  amountCents: number,
-  effectivePeriod: string,
+  input: UpdateEnvelopeInput,
 ): Promise<void> {
   const envelope = await getEnvelope(db, id);
   if (!envelope) throw new Error('budget_not_found');
   const now = new Date().toISOString();
   await db.withTransactionAsync(async () => {
-    let period = effectivePeriod;
+    await db.runAsync(
+      'UPDATE budget_envelopes SET name = ?, icon = ?, description = ?, updated_at = ? WHERE id = ?',
+      [input.name.trim(), input.icon, input.description?.trim() || null, now, id],
+    );
+    if (input.amountCents === undefined) return;
+
+    let period = input.effectivePeriod;
     if (envelope.kind === 'special') {
       await db.runAsync('DELETE FROM budget_envelope_amounts WHERE envelope_id = ?', [id]);
       period = envelope.startPeriod;
-    } else if (monthsBetween(envelope.startPeriod, effectivePeriod) <= 0) {
+    } else if (monthsBetween(envelope.startPeriod, input.effectivePeriod) <= 0) {
       // Changing the amount in (or before) the first month replaces the first-month override too.
       period = envelope.startPeriod;
       await db.runAsync(
@@ -212,9 +230,8 @@ export async function setEnvelopeAmount(
        ON CONFLICT(envelope_id, effective_period) DO UPDATE SET
          amount_cents = excluded.amount_cents,
          updated_at = excluded.updated_at`,
-      [newId('enva'), id, period, amountCents, now, now],
+      [newId('enva'), id, period, input.amountCents, now, now],
     );
-    await db.runAsync('UPDATE budget_envelopes SET updated_at = ? WHERE id = ?', [now, id]);
   });
 }
 

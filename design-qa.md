@@ -81,6 +81,23 @@
 - Replaced the reconstructed budget example donut with the supplied `icon_budget_progress` artwork.
 - Rechecked Home, add-expense, the full icon picker, and the budget empty state in the browser after a production web export. No P1/P2 visual findings remain in these states.
 
+## Budget envelopes (November 18, 2026) — designed, not source-verified
+
+The original populated budget list and create/edit budget pages have no screenshots, and the app
+bundle exposes no layouts or copy. These screens reuse original artwork and match the replica's
+existing patterns; they are **not** pixel-verified against Rich 1.1.0.
+
+| Screen | Original evidence used | Designed to match |
+| --- | --- | --- |
+| Populated Budget tab (`我的预算` list) | `icon_budget_create` (`+ 新预算` pill), `icon_month_budget` / `icon_special_budget` badges, help-page row layout (emoji · name · amount · description) | Budget tab header/summary card, `ProgressBar` |
+| Create/edit budget (`app/budget/envelope.tsx`) | Budget types and fields from the backup schema; emoji icons from help examples | Add-entry type toggle and large amount line, `添加自定义类目` icon grid, coral delete button from 支出编辑 |
+| Budget/plan examples (`app/budget/help.tsx`) | All eight original help images | Plain header, horizontal paging |
+
+Browser check (production web export, 393 × 852 and 375 × 667): empty state → create monthly →
+create special → populated list → edit amount → reload persists → examples; no console errors.
+Web limitation: React Native Web's `Alert.alert` is a no-op, so the validation alert and delete
+confirmation only appear on native.
+
 ## Open Questions
 
 - The original budget/plan creation, help, archive, recurrence, deposit-plan, and accumulation-plan pages are not covered by supplied screenshots. Their assets and backup schema are available, but the encrypted App Store executable does not expose its Swift source or view hierarchy. These flows remain outside this passed visual-QA scope.
