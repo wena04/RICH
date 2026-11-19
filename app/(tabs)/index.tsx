@@ -14,6 +14,7 @@ import {
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   CONTROL_PRESSED_BACKGROUND,
@@ -67,6 +68,9 @@ export default function HomeScreen() {
   );
   const [sheetDate, setSheetDate] = useState<string | null>(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
+  const insets = useSafeAreaInsets();
+  // The original day sheet slides up over the summary card, below the brand header.
+  const [headerHeight, setHeaderHeight] = useState(96);
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
   // A failed read must not look like an empty month.
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
@@ -175,10 +179,10 @@ export default function HomeScreen() {
         inner = [
           styles.dayBand,
           {
-            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 20,
-            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 20,
-            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 20,
-            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 20,
+            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 15,
+            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 15,
+            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 15,
+            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 15,
           },
         ];
       } else {
@@ -194,9 +198,9 @@ export default function HomeScreen() {
         accessibilityLabel={`${month + 1}月${day}日${entry ? '，有记录' : '，无记录'}`}
         accessibilityState={{ selected: isSelected }}
         onPress={() => {
-          const clearing = filterDate === dateStr;
-          setSelectedDate(clearing ? null : dateStr);
-          setFilterDate(clearing ? null : dateStr);
+          setSelectedDate(dateStr);
+          setSheetDate(dateStr);
+          setShowDaySheet(true);
         }}
       >
         <View style={inner}>
@@ -212,7 +216,10 @@ export default function HomeScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
       {/* Green header */}
-      <View style={styles.header}>
+      <View
+        style={styles.header}
+        onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+      >
         <View style={styles.brandRow}>
           <RichBrandName size={40} />
           <Pressable
@@ -255,6 +262,7 @@ export default function HomeScreen() {
               accessibilityLabel={`${showCalendar ? '收起' : '展开'}${MONTH_NAMES_CN[month]}日历`}
               accessibilityState={{ expanded: showCalendar }}
               onPress={() => setShowCalendar((current) => !current)}
+              hitSlop={9}
               style={({ pressed }) => [
                 styles.monthTrigger,
                 pressed && styles.monthTriggerPressed,
@@ -268,17 +276,18 @@ export default function HomeScreen() {
             <View style={styles.totals}>
               <View style={styles.totItem}>
                 <Text style={styles.totLabel}>总支出</Text>
-                <Text style={styles.totValue}>¥{centsToYuan(monthExpense)}</Text>
+                <Text style={styles.totValue}>¥ {centsToYuan(monthExpense)}</Text>
               </View>
               <View style={[styles.totItem, styles.totDivider]}>
                 <Text style={styles.totLabel}>总收入</Text>
-                <Text style={styles.totValue}>¥{centsToYuan(monthIncome)}</Text>
+                <Text style={styles.totValue}>¥ {centsToYuan(monthIncome)}</Text>
               </View>
             </View>
           </View>
 
           {showCalendar ? (
             <>
+              <View style={styles.calDivider} />
               <View style={styles.weekRow}>
                 {WEEKDAYS.map((w) => (
                   <Text key={w} style={styles.weekLabel}>
@@ -314,20 +323,6 @@ export default function HomeScreen() {
 
         {/* Grouped transaction list */}
         <View style={styles.listArea}>
-          {filterDate ? (
-            <View style={styles.filterBar}>
-              <Text style={styles.filterLabel}>{dateHeaderCN(filterDate)}</Text>
-              <Pressable
-                style={styles.clearFilter}
-                onPress={() => {
-                  setFilterDate(null);
-                  setSelectedDate(null);
-                }}
-              >
-                <Text style={styles.clearFilterText}>查看全部</Text>
-              </Pressable>
-            </View>
-          ) : null}
           {loadState === "error" ? (
             <View style={styles.empty}>
               <FontAwesome name="exclamation-circle" size={22} color={TEXT_SECONDARY} />
@@ -384,9 +379,9 @@ export default function HomeScreen() {
                   <Text style={styles.dateLabel}>{dateHeaderCN(g.date)}</Text>
                   <View style={styles.dayTotals}>
                     <Text style={styles.dayExpense}>
-                      -¥{centsToYuan(g.exp)}
+                      – ¥ {centsToYuan(g.exp)}
                     </Text>
-                    <Text style={styles.dayIncome}>+¥{centsToYuan(g.inc)}</Text>
+                    <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
                   </View>
                 </View>
                 <DashedDivider style={styles.dateDivider} />
@@ -400,7 +395,7 @@ export default function HomeScreen() {
                       <CategoryIcon
                         id={t.category?.icon ?? undefined}
                         name={t.category?.name}
-                        size={20}
+                        size={19}
                       />
                     </View>
                     <View style={styles.txInfo}>
@@ -419,7 +414,7 @@ export default function HomeScreen() {
                         t.type === "income" && { color: INCOME_TEXT_GREEN },
                       ]}
                     >
-                      {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
+                      {t.type === "expense" || t.amountCents < 0 ? "−" : "+"}
                       {centsToYuan(Math.abs(t.amountCents))}
                     </Text>
                   </Pressable>
@@ -436,19 +431,19 @@ export default function HomeScreen() {
             style={styles.sheetBackdrop}
             onPress={() => setShowDaySheet(false)}
           />
-          <View style={styles.sheet}>
-            <View style={styles.sheetTop}>
-              <Pressable
-                style={styles.sheetClose}
-                onPress={() => setShowDaySheet(false)}
-              >
-                <FontAwesome name="close" size={16} color={TEXT_PRIMARY} />
-              </Pressable>
-              <Text style={styles.sheetTitle}>
-                {sheetDate ? dateHeaderCN(sheetDate) : ""}
-              </Text>
-              <View style={{ width: 36 }} />
-            </View>
+          <View style={[styles.sheet, { top: insets.top + headerHeight }]}>
+            <Pressable
+              style={styles.sheetClose}
+              onPress={() => setShowDaySheet(false)}
+              accessibilityRole="button"
+              accessibilityLabel="关闭"
+            >
+              <Image
+                source={require("../../assets/images/ui/icon_close48.png")}
+                style={styles.sheetCloseIcon}
+                accessible={false}
+              />
+            </Pressable>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {(() => {
@@ -465,8 +460,8 @@ export default function HomeScreen() {
                     <View style={styles.dateHeader}>
                       <Text style={styles.dateLabel}>{dateHeaderCN(g.date)}</Text>
                       <View style={styles.dayTotals}>
-                        <Text style={styles.dayExpense}>-¥{centsToYuan(g.exp)}</Text>
-                        <Text style={styles.dayIncome}>+¥{centsToYuan(g.inc)}</Text>
+                        <Text style={styles.dayExpense}>– ¥ {centsToYuan(g.exp)}</Text>
+                        <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
                       </View>
                     </View>
                     <DashedDivider style={styles.dateDivider} />
@@ -483,14 +478,18 @@ export default function HomeScreen() {
                           <CategoryIcon
                             id={t.category?.icon ?? undefined}
                             name={t.category?.name}
-                            size={20}
+                            size={19}
                           />
                         </View>
                         <View style={styles.txInfo}>
                           <Text style={styles.txTitle} numberOfLines={1}>
                             {t.note || t.category?.name || "记录"}
                           </Text>
-                          <Text style={styles.txSub}>{t.category?.name ?? ""}</Text>
+                          <Text style={styles.txSub}>
+                            {t.subcategory?.name
+                              ? `${t.category?.name ?? '分类'} › ${t.subcategory.name}`
+                              : (t.category?.name ?? "")}
+                          </Text>
                         </View>
                         <Text
                           style={[
@@ -498,7 +497,7 @@ export default function HomeScreen() {
                             t.type === "income" && { color: INCOME_TEXT_GREEN },
                           ]}
                         >
-                          {t.type === "expense" || t.amountCents < 0 ? "-" : "+"}
+                          {t.type === "expense" || t.amountCents < 0 ? "−" : "+"}
                           {centsToYuan(Math.abs(t.amountCents))}
                         </Text>
                       </Pressable>
@@ -564,28 +563,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
     borderRadius: 0,
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   calTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
-    paddingHorizontal: 16,
+    minHeight: 40,
+    marginBottom: 8,
+    paddingHorizontal: 12,
   },
   calTopCollapsed: { marginBottom: 0 },
   monthTrigger: {
-    minWidth: 66,
-    minHeight: 44,
+    minWidth: 52,
+    height: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    paddingHorizontal: 12,
-    borderRadius: 22,
-    backgroundColor: '#F7F7F7',
+    gap: 6,
+    paddingHorizontal: 10,
+    borderRadius: 13,
+    backgroundColor: '#F5F5F5',
   },
   monthTriggerPressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
-  monthPillText: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
+  monthPillText: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
   totals: { flexDirection: "row", marginLeft: "auto", alignItems: "center" },
   totItem: { alignItems: "flex-end" },
   totDivider: {
@@ -595,71 +595,70 @@ const styles = StyleSheet.create({
     paddingLeft: 14,
   },
   totLabel: { fontSize: 11, color: TEXT_SECONDARY, marginBottom: 3 },
-  totValue: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
+  totValue: { fontSize: 13.5, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
-  weekRow: { flexDirection: "row", marginBottom: 8 },
+  weekRow: { flexDirection: "row", marginTop: 10, marginBottom: 2 },
   weekLabel: {
     flex: 1,
     textAlign: "center",
     fontSize: 12,
-    fontWeight: "500",
-    color: TEXT_SECONDARY,
+    color: "#BDBDBD",
   },
 
   grid: { flexDirection: "row", flexWrap: "wrap" },
   dayCell: {
     width: `${100 / 7}%`,
-    height: 44,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
   },
-  dayText: { fontSize: 16, color: TEXT_PRIMARY, fontWeight: "500" },
-  adjacentMonthText: { fontSize: 16, color: "#CBCBD3" },
+  dayText: { fontSize: 15, color: "#222222" },
+  adjacentMonthText: { fontSize: 15, color: "#C8C8C8" },
   dayPlain: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
   },
   dayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayBand: {
     width: "100%",
-    height: 40,
+    height: 30,
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayToday: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#333333",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
   },
   daySelected: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: "#E2E2E2",
     alignItems: "center",
     justifyContent: "center",
   },
   todayDot: {
     position: "absolute",
-    bottom: 5,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#333333",
+    bottom: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "#000000",
   },
 
   // List
@@ -702,7 +701,7 @@ const styles = StyleSheet.create({
   },
   emptyActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
-  gapBand: { height: 14, backgroundColor: CONTROL_PRESSED_BACKGROUND },
+  gapBand: { height: 10, backgroundColor: "#F7F7F7" },
   dateHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -717,41 +716,43 @@ const styles = StyleSheet.create({
   },
   dateLabel: { fontSize: 15, color: TEXT_SECONDARY },
   dayTotals: { alignItems: "flex-end" },
-  dayExpense: { fontSize: 13, color: TEXT_SECONDARY, fontVariant: ["tabular-nums"] },
-  dayIncome: { fontSize: 13, color: INCOME_TEXT_GREEN, marginTop: 2, fontVariant: ["tabular-nums"] },
+  dayExpense: { fontSize: 11.5, color: TEXT_SECONDARY, fontVariant: ["tabular-nums"] },
+  dayIncome: { fontSize: 11.5, color: PRIMARY_GREEN, marginTop: 4, fontVariant: ["tabular-nums"] },
 
   txRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 17,
   },
   txIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F7F8F7",
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#F7F7F7",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
   },
   txInfo: { flex: 1 },
-  txTitle: { fontSize: 16, fontWeight: "500", color: TEXT_PRIMARY },
-  txSub: { fontSize: 13, color: TEXT_SECONDARY, marginTop: 3 },
-  txAmt: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
+  txTitle: { fontSize: 15, color: TEXT_PRIMARY },
+  txSub: { fontSize: 13, color: "#888888", marginTop: 6 },
+  txAmt: { fontSize: 17, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
   sheetOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheetBackdrop: { flex: 1 },
+  sheetCloseIcon: { width: 18, height: 18, tintColor: "#FFFFFF" },
+  calDivider: { height: StyleSheet.hairlineWidth, backgroundColor: "#ECECEC", marginHorizontal: 16 },
   sheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: 12,
-    maxHeight: "85%",
+    paddingBottom: 40,
   },
   sheetTop: {
     flexDirection: "row",
@@ -763,23 +764,28 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EFEFEF",
   },
   sheetClose: {
+    position: "absolute",
+    top: -36,
+    right: 8,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F3F3F3",
+    backgroundColor: "rgba(255,255,255,0.35)",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   sheetTitle: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
   sheetEmpty: { paddingVertical: 40, alignItems: "center" },
   sheetAddBtn: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 12,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
-    paddingVertical: 14,
+    alignSelf: "center",
+    width: 207,
+    height: 44,
+    marginTop: 12,
+    backgroundColor: "#F5F6F7",
+    borderRadius: 2,
     alignItems: "center",
+    justifyContent: "center",
   },
-  sheetAddText: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
+  sheetAddText: { fontSize: 15, color: TEXT_PRIMARY },
 });
