@@ -23,44 +23,6 @@ export type Subcategory = {
   name: string;
 };
 
-export type Budget = {
-  id: string;
-  period: string; // YYYY-MM
-  totalCents: number | null;
-};
-
-export type BudgetCategory = {
-  id: string;
-  budgetId: string;
-  categoryId: string;
-  limitCents: number;
-};
-
-export type BudgetCategoryStatus = {
-  categoryId: string;
-  categoryName: string;
-  categoryIcon: string | null;
-  limitCents: number;
-  spentCents: number;
-  subcategories: BudgetSubcategoryStatus[];
-  unallocatedLimitCents: number;
-  unallocatedSpentCents: number;
-};
-
-export type BudgetSubcategoryStatus = {
-  subcategoryId: string;
-  subcategoryName: string;
-  limitCents: number;
-  spentCents: number;
-};
-
-export type BudgetSummary = {
-  budget: Budget;
-  totalLimitCents: number;
-  totalSpentCents: number;
-  categories: BudgetCategoryStatus[];
-};
-
 /**
  * Original Rich budget model: a budget is a named envelope that expenses are
  * explicitly assigned to (所属预算/计划), not a limit derived from categories.
@@ -148,4 +110,6 @@ export type Transaction = {
   categoryId: string | null;
   subcategoryId: string | null;
   note: string | null;
+  /** 所属预算 (expenses only). Read-only here; set via assignTransactionToEnvelope. */
+  budgetEnvelopeId?: string | null;
 };

@@ -18,7 +18,7 @@ derived real data; final on-device pixel review is tracked separately.
   note.
 - Custom calculator keypad with decimal entry, backspace, addition, and subtraction.
 - Inline subcategory selection and creation from the composer.
-- Detail view with date, account, category path, amount, note, and category budget status.
+- Detail view with date, account, category path, amount, note, and 所属预算 assignment.
 - Polished edit UI for type, signed adjustment amount, date, category path, account, note, save,
   delete, and budget linkage.
 - Balance adjustments change an account to a chosen target balance.
@@ -42,16 +42,16 @@ derived real data; final on-device pixel review is tracked separately.
 - Both transfer rows commit in one SQLite transaction and roll back together; they remain outside
   income/expense totals.
 
-### Hierarchical budgets and analytics
+### Budgets (original Rich model) and analytics
 
-- Optional total budget per `YYYY-MM` period.
-- Positive parent category envelopes plus positive child subcategory allocations.
-- Effective parent is the larger of its entered amount and child sum, preventing double counting.
-- Visible unallocated parent remainder and automatic parent increase when children exceed it.
-- Actual category and child spend derived from expense transactions.
-- Total/category/child progress, remaining or overrun state, and threshold colors.
+- Named budgets with an emoji, name, and description: 月度预算 (resets monthly, amount history
+  keeps past months unchanged) or 专项预算 (one total across all time).
+- Expenses are assigned to a budget from the transaction detail row 所属预算/计划; spend is derived
+  from assigned expenses.
+- Savings plans can freeze part of a monthly budget each month (data model only; UI in slice 4).
+- Progress, remaining or overspent state, and threshold colors per budget; 结余 for the month.
+- Original budget and plan example pages.
 - Six-month income/expense trends, category distribution, and subcategory drill-down.
-- Transaction detail links to the applicable month's budget editor.
 
 ### Data ownership and recovery
 
@@ -69,9 +69,10 @@ derived real data; final on-device pixel review is tracked separately.
 | `categories` | Unique name, optional icon, `expense \| income \| both` kind |
 | `subcategories` | Parent-scoped unique name and guarded deletion |
 | `transactions` | Expense, income, or balance adjustment; integer cents; ISO date; account/category links |
-| `budgets` | Unique month and optional total limit |
-| `budget_categories` | Unique budget/parent pair and positive envelope |
-| `budget_subcategories` | Unique budget/child pair and positive allocation |
+| `budget_envelopes` | Monthly/special budget, emoji, name, description, archive/order |
+| `budget_envelope_amounts` | Amount history per budget (effective month) |
+| `savings_plans` | Target, monthly freeze from a monthly budget, status |
+| `budgets`, `budget_categories`, `budget_subcategories` | Legacy category-limit model (v4/v6); unused, dropped in slice 5 |
 | `app_meta` | Last-used account, target asset, and starter-taxonomy marker |
 
 Foreign keys protect referenced rows, and triggers prevent assigning a transaction's subcategory to
@@ -91,7 +92,8 @@ the wrong parent category.
 | `/accounts` | 资产管理 |
 | `/categories` | Typed category/subcategory management |
 | `/categories/add` | Category/icon creator |
-| `/budget/edit` | Hierarchical budget editor |
+| `/budget/envelope` | Create/edit budget |
+| `/budget/help` | Budget/plan examples |
 | `/trends` | 趋势图 |
 | `/import-export` | 数据管理 |
 | `/about`, `/privacy` | Product and privacy information |

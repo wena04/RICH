@@ -25,13 +25,17 @@ import {
 } from '@/constants/Colors';
 import { RICH_RADIUS, RICH_SPACING, RICH_TYPE } from '@/constants/Design';
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { ScreenHeader } from '@/components/rich';
+import { BudgetPickerSheet, ScreenHeader } from '@/components/rich';
 import { getDb } from '@/src/db/db';
-import { getBudgetSummary } from '@/src/db/repo/budgets';
+import {
+  assignTransactionToEnvelope,
+  getEnvelope,
+  getEnvelopeSummaries,
+} from '@/src/db/repo/envelopes';
 import { listAccounts } from '@/src/db/repo/accounts';
 import { getCategoryById, getSubcategoryById } from '@/src/db/repo/categories';
 import { deleteTransaction, getTransaction } from '@/src/db/repo/transactions';
-import type { TransactionType } from '@/src/domain/types';
+import type { BudgetEnvelopeSummary, TransactionType } from '@/src/domain/types';
 import { centsToCurrencyString } from '@/src/utils/money';
 import { formatIsoDateCN } from '@/src/utils/date';
 
@@ -53,15 +57,17 @@ export default function TransactionDetailScreen() {
   const [loaded, setLoaded] = useState(false);
   const [type, setType] = useState<TransactionType>('expense');
   const [amountCents, setAmountCents] = useState(0);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [categoryIcon, setCategoryIcon] = useState<string | null>(null);
   const [subcategoryName, setSubcategoryName] = useState('');
   const [accountName, setAccountName] = useState('');
   const [date, setDate] = useState('');
   const [note, setNote] = useState<string | null>(null);
-  const [period, setPeriod] = useState('');
-  const [budgetStatus, setBudgetStatus] = useState('未设置');
+  const [budgetLabel, setBudgetLabel] = useState('');
+  const [budgetEnvelopeId, setBudgetEnvelopeId] = useState<string | null>(null);
+  const [budgets, setBudgets] = useState<BudgetEnvelopeSummary[]>([]);
+  const [showBudgetPicker, setShowBudgetPicker] = useState(false);
+  const [assigning, setAssigning] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -80,28 +86,26 @@ export default function TransactionDetailScreen() {
       setDate(tx.date);
       const accounts = await listAccounts(db);
       setAccountName(accounts.find((account) => account.id === tx.accountId)?.name ?? '未知账户');
-      setCategoryId(tx.categoryId);
-      const transactionPeriod = tx.date.slice(0, 7);
-      setPeriod(transactionPeriod);
       if (tx.categoryId) {
         const cat = await getCategoryById(db, tx.categoryId);
         setCategoryName(cat?.name ?? '');
         setCategoryIcon(cat?.icon ?? null);
-        if (tx.type === 'expense') {
-          const summary = await getBudgetSummary(db, transactionPeriod);
-          const status = summary?.categories.find((item) => item.categoryId === tx.categoryId);
-          setBudgetStatus(
-            status
-              ? `¥${centsToCurrencyString(status.spentCents)} / ¥${centsToCurrencyString(status.limitCents)}`
-              : '未设置',
-          );
-        } else {
-          setBudgetStatus('不适用');
-        }
       } else {
         setCategoryName('');
         setCategoryIcon(null);
-        setBudgetStatus('不适用');
+      }
+      setBudgetEnvelopeId(tx.budgetEnvelopeId ?? null);
+      if (tx.type === 'expense') {
+        // Remaining amounts are shown for the month the expense belongs to.
+        const [summaries, assigned] = await Promise.all([
+          getEnvelopeSummaries(db, tx.date.slice(0, 7)),
+          tx.budgetEnvelopeId ? getEnvelope(db, tx.budgetEnvelopeId) : Promise.resolve(null),
+        ]);
+        setBudgets(summaries);
+        setBudgetLabel(assigned ? `${assigned.icon} ${assigned.name}` : '未归入');
+      } else {
+        setBudgets([]);
+        setBudgetLabel('不适用');
       }
       if (tx.subcategoryId) {
         const subcategory = await getSubcategoryById(db, tx.subcategoryId);
@@ -137,6 +141,31 @@ export default function TransactionDetailScreen() {
     ]);
   }
 
+  async function onSelectBudget(envelopeId: string | null) {
+    if (envelopeId === budgetEnvelopeId) {
+      setShowBudgetPicker(false);
+      return;
+    }
+    setAssigning(true);
+    try {
+      const db = await getDb();
+      await assignTransactionToEnvelope(db, id, envelopeId);
+      setShowBudgetPicker(false);
+      await load();
+    } catch (error) {
+      console.error('Failed to assign budget:', error);
+      Alert.alert('没有保存', '所属预算没有更新，请稍后再试。');
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  function onCreateBudget() {
+    setShowBudgetPicker(false);
+    router.push('/budget/envelope');
+  }
+
+  const canAssignBudget = type === 'expense';
   const displayAmount = centsToCurrencyString(Math.abs(amountCents));
 
   return (
@@ -227,19 +256,21 @@ export default function TransactionDetailScreen() {
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`查看所属预算，${budgetStatus}`}
-              accessibilityState={{
-                disabled: type !== 'expense' || !categoryId || !period,
-              }}
+              accessibilityLabel={`所属预算，${budgetLabel}`}
+              accessibilityHint={canAssignBudget ? '选择这笔支出归入的预算' : undefined}
+              accessibilityState={{ disabled: !canAssignBudget }}
               style={({ pressed }) => [styles.planRow, pressed && styles.controlPressed]}
-              disabled={type !== 'expense' || !categoryId || !period}
-              onPress={() =>
-                router.push({ pathname: '/budget/edit', params: { period } })
-              }
+              disabled={!canAssignBudget}
+              onPress={() => setShowBudgetPicker(true)}
             >
               <Text style={styles.planLabel}>所属预算/计划</Text>
-              <Text numberOfLines={1} style={styles.planValue}>{budgetStatus}</Text>
-              {type === 'expense' && categoryId ? (
+              <Text
+                numberOfLines={1}
+                style={[styles.planValue, budgetEnvelopeId && styles.planValueAssigned]}
+              >
+                {budgetLabel}
+              </Text>
+              {canAssignBudget ? (
                 <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
               ) : null}
             </Pressable>
@@ -257,6 +288,16 @@ export default function TransactionDetailScreen() {
           </Pressable>
         </ScrollView>
       )}
+
+      <BudgetPickerSheet
+        visible={showBudgetPicker}
+        budgets={budgets}
+        selectedId={budgetEnvelopeId}
+        saving={assigning}
+        onSelect={(envelopeId) => void onSelectBudget(envelopeId)}
+        onCreate={onCreateBudget}
+        onClose={() => setShowBudgetPicker(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -377,6 +418,7 @@ const styles = StyleSheet.create({
     color: TEXT_SECONDARY,
     textAlign: 'right',
   },
+  planValueAssigned: { color: TEXT_PRIMARY, fontWeight: '600' },
   contentSpacer: { flexGrow: 1, minHeight: RICH_SPACING.xl },
   deleteButton: {
     minHeight: 48,

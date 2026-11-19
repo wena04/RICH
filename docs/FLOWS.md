@@ -25,7 +25,8 @@
 | `transaction/edit/[id]` | default | Polished transaction editor. |
 | `transaction/adjust`, `transaction/transfer` | default | Balance and transfer flows. |
 | `categories/add` | default | headerShown: false. Icon picker for custom categories. |
-| `budget/edit` | default | headerShown: false. Budget editor. |
+| `budget/envelope` | default | headerShown: false. Create (no params) or edit (`?id=`) a budget. |
+| `budget/help` | default | headerShown: false. Original example pages (`?topic=budget\|plan`). |
 | `transaction/new` | **modal** | Add screen. |
 
 ### Tab layout — `app/(tabs)/_layout.tsx`
@@ -76,14 +77,22 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 ### 预算/计划 tab — `app/(tabs)/charts.tsx`
 | Element | Trigger → Result |
 |---|---|
-| Month ‹ / › | `setMonth(addMonths(m, ±1))` — reloads budget summary for that month. |
-| 计划清单 card (left) | Shows total budget limit when set; `¥ 0.00` when empty. |
+| 计划清单 card (left) | Display only (plan list arrives in slice 4). Total saved by active/completed plans. |
 | 结余 row | Display only. Shows real current-month (income − expense). |
 | 趋势图 row (right, with mini donut) | `router.push('/trends')` → 趋势图 screen. |
-| Empty-state donut + legend | **Illustrative/hardcoded** when no budget exists. |
-| **+ 创建预算** button | `router.push('/budget/edit?period=…')` → budget editor. |
-| Filled state: category rows | Progress bars per category (spent vs limit). Real data. |
-| **设置分类预算** button | `router.push('/budget/edit?period=…')` → budget editor. |
+| Empty-state donut + legend | Original `icon_budget_progress` artwork when no budget exists. |
+| **+ 创建预算** button | `router.push('/budget/envelope')` → new budget. |
+| 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/envelope?id=…`. |
+| **+ 新预算** pill | `router.push('/budget/envelope')`. |
+| 看看别人怎么分预算 | `/budget/help?topic=budget`. |
+
+### 新建/编辑预算 — `app/budget/envelope.tsx`
+| Element | Trigger → Result |
+|---|---|
+| 月度预算 / 专项预算 toggle | Create only; type is fixed after creation. |
+| 示例 | `/budget/help?topic=budget`. |
+| 保存 | Validates (name ≤ 10, amount > 0, description ≤ 30) → `createEnvelope` / `updateEnvelope` → back. Monthly amount edits apply from this month. |
+| 删除该预算 (edit only) | Confirm → `deleteEnvelope`; assigned expenses become unassigned. Blocked while a plan draws on it. |
 
 ### 趋势图 — `app/trends.tsx`
 | Element | Trigger → Result |
@@ -118,7 +127,7 @@ Fully wired to real data; no dead buttons here.
 |---|---|
 | Back chevron | `router.back()`. |
 | Card row (icon + note/amount + chevron) | `router.push('/transaction/edit/${id}')` → Edit. |
-| **所属预算/计划** row | Shows `¥spent / ¥limit` for that category's monthly budget, or 未设置. Tap → `/budget/edit?period=…`. |
+| **所属预算/计划** row | Expenses only: shows the assigned budget (emoji + name) or 未归入; 不适用 for income/adjustments. Tap → `BudgetPickerSheet` (不归入预算, budgets with that month's remaining, + 新预算) → `assignTransactionToEnvelope`. |
 | Delete button (删除该笔…) | `Alert.alert` confirm → `deleteTransaction` → `router.back()`. Real. |
 
 ### Edit — `app/transaction/edit/[id].tsx`
@@ -210,7 +219,7 @@ destructive confirmation.
         ▼                            │        │ 调整余额 ─► transaction/adjust
   transaction/[id] (Detail)         │        │ 删除 (guarded)
         │  card row ─► transaction/edit/[id] │
-        │  所属预算/计划 ─► budget/edit        │  账户转账 ─► transaction/transfer
+        │  所属预算/计划 ─► [budget sheet]     │  账户转账 ─► transaction/transfer
         │  删除 (confirm) ─► back           │                (2× balance_adjustment)
         │
    [ + FAB ] ─► transaction/new (Add, modal)

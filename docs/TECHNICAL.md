@@ -130,8 +130,8 @@ Invariants:
 Reconstructed from the original Rich 1.1.0 backup schema (`budget`, `budget_log`, `deposit_plan`)
 and the in-app help artwork. In the original, a budget is a **named envelope that expenses are
 explicitly assigned to** from the transaction detail row 所属预算/计划 — it is not derived from
-categories. The v4/v6 category-limit tables above are superseded and remain only until the budget
-UI is switched over.
+categories. The v4/v6 category-limit tables above are superseded and unused by the app; a later
+migration drops them.
 
 Logic lives in `src/features/budgets/envelopes.ts` (pure, unit-tested); SQL in `src/db/repo/envelopes.ts`.
 

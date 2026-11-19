@@ -77,9 +77,12 @@ export async function getTransaction(db: AppDb, id: string): Promise<Transaction
     category_id: string | null;
     subcategory_id: string | null;
     note: string | null;
-  }>('SELECT id, type, amount_cents, date, account_id, category_id, subcategory_id, note FROM transactions WHERE id = ?', [
-    id,
-  ]);
+    budget_envelope_id: string | null;
+  }>(
+    `SELECT id, type, amount_cents, date, account_id, category_id, subcategory_id, note, budget_envelope_id
+     FROM transactions WHERE id = ?`,
+    [id],
+  );
 
   if (!row) return null;
 
@@ -92,6 +95,7 @@ export async function getTransaction(db: AppDb, id: string): Promise<Transaction
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
     note: row.note,
+    budgetEnvelopeId: row.budget_envelope_id,
   };
 }
 

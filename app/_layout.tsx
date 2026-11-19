@@ -85,7 +85,6 @@ function RootLayoutNav() {
             <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
             <Stack.Screen name="categories" options={{ headerShown: false }} />
             <Stack.Screen name="categories/add" options={{ headerShown: false }} />
-            <Stack.Screen name="budget/edit" options={{ headerShown: false }} />
             <Stack.Screen name="budget/envelope" options={{ headerShown: false }} />
             <Stack.Screen name="budget/help" options={{ headerShown: false }} />
             <Stack.Screen
