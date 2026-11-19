@@ -146,24 +146,30 @@ export async function ensureCategory(
   return await createCategory(db, name, icon, kind);
 }
 
+type SubcategoryRow = { id: string; name: string; category_id: string; icon: string | null };
+
+function toSubcategory(row: SubcategoryRow): Subcategory {
+  return { id: row.id, name: row.name, categoryId: row.category_id, icon: row.icon };
+}
+
 export async function listAllSubcategories(db: AppDb): Promise<Subcategory[]> {
-  const rows = await db.getAllAsync<{ id: string; name: string; category_id: string }>(
-    `SELECT id, name, category_id FROM subcategories ORDER BY category_id ASC, name ASC`,
+  const rows = await db.getAllAsync<SubcategoryRow>(
+    `SELECT id, name, category_id, icon FROM subcategories ORDER BY category_id ASC, name ASC`,
   );
-  return rows.map((row) => ({ id: row.id, name: row.name, categoryId: row.category_id }));
+  return rows.map(toSubcategory);
 }
 
 export async function listSubcategories(db: AppDb, categoryId: string): Promise<Subcategory[]> {
-  const rows = await db.getAllAsync<{ id: string; name: string; category_id: string }>(
+  const rows = await db.getAllAsync<SubcategoryRow>(
     `
-    SELECT id, name, category_id
+    SELECT id, name, category_id, icon
     FROM subcategories
     WHERE category_id = ?
-    ORDER BY name ASC
+    ORDER BY created_at ASC, name ASC
     `,
     [categoryId]
   );
-  return rows.map((r) => ({ id: r.id, name: r.name, categoryId: r.category_id }));
+  return rows.map(toSubcategory);
 }
 
 export async function getSubcategoryByName(
@@ -171,60 +177,67 @@ export async function getSubcategoryByName(
   categoryId: string,
   name: string
 ): Promise<Subcategory | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string; category_id: string }>(
+  const row = await db.getFirstAsync<SubcategoryRow>(
     `
-    SELECT id, name, category_id
+    SELECT id, name, category_id, icon
     FROM subcategories
     WHERE category_id = ? AND name = ?
     `,
     [categoryId, name.trim()]
   );
-  return row ? { id: row.id, name: row.name, categoryId: row.category_id } : null;
+  return row ? toSubcategory(row) : null;
 }
 
 export async function getSubcategoryById(db: AppDb, id: string): Promise<Subcategory | null> {
-  const row = await db.getFirstAsync<{ id: string; name: string; category_id: string }>(
+  const row = await db.getFirstAsync<SubcategoryRow>(
     `
-    SELECT id, name, category_id
+    SELECT id, name, category_id, icon
     FROM subcategories
     WHERE id = ?
     `,
     [id]
   );
-  return row ? { id: row.id, name: row.name, categoryId: row.category_id } : null;
+  return row ? toSubcategory(row) : null;
 }
 
 export async function createSubcategory(
   db: AppDb,
   categoryId: string,
-  name: string
+  name: string,
+  icon: string | null = null
 ): Promise<Subcategory> {
   const n = name.trim();
   const now = new Date().toISOString();
   const id = newId('sub');
   await db.runAsync(
     `
-    INSERT INTO subcategories (id, category_id, name, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO subcategories (id, category_id, name, icon, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
     `,
-    [id, categoryId, n, now, now]
+    [id, categoryId, n, icon, now, now]
   );
-  return { id, categoryId, name: n };
+  return { id, categoryId, name: n, icon };
 }
 
 export async function updateSubcategory(
   db: AppDb,
-  input: { id: string; name: string }
+  input: { id: string; name: string; icon?: string | null }
 ): Promise<void> {
   const now = new Date().toISOString();
-  await db.runAsync(
-    `
-    UPDATE subcategories
-    SET name = ?, updated_at = ?
-    WHERE id = ?
-    `,
-    [input.name.trim(), now, input.id]
-  );
+  if (input.icon === undefined) {
+    await db.runAsync('UPDATE subcategories SET name = ?, updated_at = ? WHERE id = ?', [
+      input.name.trim(),
+      now,
+      input.id,
+    ]);
+    return;
+  }
+  await db.runAsync('UPDATE subcategories SET name = ?, icon = ?, updated_at = ? WHERE id = ?', [
+    input.name.trim(),
+    input.icon,
+    now,
+    input.id,
+  ]);
 }
 
 export async function canDeleteSubcategory(db: AppDb, id: string): Promise<boolean> {
@@ -242,9 +255,10 @@ export async function deleteSubcategory(db: AppDb, id: string): Promise<void> {
 export async function ensureSubcategory(
   db: AppDb,
   categoryId: string,
-  name: string
+  name: string,
+  icon: string | null = null
 ): Promise<Subcategory> {
   const existing = await getSubcategoryByName(db, categoryId, name);
   if (existing) return existing;
-  return await createSubcategory(db, categoryId, name);
+  return await createSubcategory(db, categoryId, name, icon);
 }

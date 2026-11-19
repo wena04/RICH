@@ -23,13 +23,24 @@ import {
 } from "@/constants/Colors";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { getDb } from "@/src/db/db";
-import { createCategory, getCategoryByName } from "@/src/db/repo/categories";
+import {
+  createCategory,
+  createSubcategory,
+  getCategoryByName,
+  getSubcategoryByName,
+} from "@/src/db/repo/categories";
 import { CATEGORY_ICON_SECTIONS } from "@/src/domain/categoryIconCatalog";
 import type { CategoryKind } from "@/src/domain/types";
 
 export default function AddCategoryScreen() {
   const router = useRouter();
-  const { type: requestedType } = useLocalSearchParams<{ type?: string }>();
+  // With parentId this screen adds a subcategory (添加子类) to that category, like the original app.
+  const { type: requestedType, parentId, parentName } = useLocalSearchParams<{
+    type?: string;
+    parentId?: string;
+    parentName?: string;
+  }>();
+  const isSubcategory = Boolean(parentId);
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<{ id: string; label: string } | null>(null);
   const kind: CategoryKind = requestedType === 'income' ? 'income' : 'expense';
@@ -45,6 +56,15 @@ export default function AddCategoryScreen() {
     setSaving(true);
     try {
       const db = await getDb();
+      if (parentId) {
+        if (await getSubcategoryByName(db, parentId, finalName)) {
+          Alert.alert('名称已存在', `“${parentName ?? ''}”下已经有“${finalName}”。`);
+          return;
+        }
+        await createSubcategory(db, parentId, finalName, selected.id);
+        router.back();
+        return;
+      }
       const existing = await getCategoryByName(db, finalName);
       if (existing) {
         Alert.alert('名称已存在', `“${finalName}”已经是一个分类。`);
@@ -71,13 +91,13 @@ export default function AddCategoryScreen() {
         >
           <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
         </Pressable>
-        <Text style={styles.title}>添加自定义类目</Text>
+        <Text style={styles.title}>{isSubcategory ? '添加子类' : '添加自定义类目'}</Text>
         <Pressable
           onPress={onDone}
           disabled={!selected || saving}
           style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
-          accessibilityLabel="保存自定义分类"
+          accessibilityLabel={isSubcategory ? '保存子类' : '保存自定义分类'}
           accessibilityState={{ disabled: !selected || saving }}
         >
           {saving ? (
@@ -92,7 +112,11 @@ export default function AddCategoryScreen() {
         style={styles.nameInput}
         value={name}
         onChangeText={(v) => setName(v.slice(0, 6))}
-        placeholder="请输入类目名称（不超过6个字符）"
+        placeholder={
+          isSubcategory
+            ? `请输入「${parentName ?? ''}」的子类名称（不超过6个字符）`
+            : "请输入类目名称（不超过6个字符）"
+        }
         placeholderTextColor={TEXT_SECONDARY}
       />
 

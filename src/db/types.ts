@@ -21,6 +21,7 @@ export type Subcategory = {
   id: string;
   categoryId: string;
   name: string;
+  icon?: string | null; // original icon id; null falls back to a name-derived icon
 };
 
 export type Transaction = {

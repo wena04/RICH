@@ -21,12 +21,12 @@ import {
   TEXT_PRIMARY, 
   TEXT_SECONDARY,
   EXPENSE_RED,
+  CATEGORY_FRAME_BACKGROUND,
 } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
 import {
   canDeleteCategory,
   canDeleteSubcategory,
-  createSubcategory,
   deleteCategory,
   deleteSubcategory,
   listCategoriesWithSubcategoryCounts,
@@ -55,7 +55,6 @@ export default function CategoriesScreen() {
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editCategoryKind, setEditCategoryKind] = useState<CategoryKind>('expense');
   
-  const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
 
@@ -171,19 +170,6 @@ export default function CategoriesScreen() {
     ]);
   }
 
-  async function onCreateSubcategory() {
-    if (!expandedCategoryId) return;
-    const name = newSubcategoryName.trim();
-    if (!name) return;
-    const db = await getDb();
-    try {
-      await createSubcategory(db, expandedCategoryId, name);
-      setNewSubcategoryName('');
-      await refresh();
-    } catch {
-      Alert.alert('无法添加', '这个分类下已经有同名子分类。');
-    }
-  }
 
   async function onSaveSubcategory() {
     if (!editingSubcategory) return;
@@ -278,46 +264,40 @@ export default function CategoriesScreen() {
 
             {/* Subcategories */}
             {expandedCategoryId === category.id && (
+              // Original 自定义 layout: a row of subcategory icons ending with 添加子类.
               <View style={styles.subcategoryList}>
                 {subcategories.map((sub) => (
-                  <Pressable 
+                  <Pressable
                     key={sub.id}
-                    style={styles.subcategoryRow}
+                    style={styles.subcategoryItem}
                     onPress={() => openEditSubcategory(sub)}
                     accessibilityRole="button"
                     accessibilityLabel={`编辑子分类${sub.name}`}
                   >
-                    <View style={styles.subcategoryIndent} />
                     <View style={styles.subcategoryIcon}>
-                      <CategoryIcon name={sub.name} size={18} />
+                      <CategoryIcon id={sub.icon ?? undefined} name={sub.name} size={27} />
                     </View>
-                    <Text style={styles.subcategoryName}>{sub.name}</Text>
-                    <FontAwesome name="ellipsis-h" size={14} color={TEXT_SECONDARY} />
+                    <Text style={styles.subcategoryName} numberOfLines={1}>
+                      {sub.name}
+                    </Text>
                   </Pressable>
                 ))}
-                
-                {/* Add subcategory inline */}
-                <View style={styles.addSubcategoryRow}>
-                  <View style={styles.subcategoryIndent} />
-                  <TextInput
-                    style={styles.addSubInput}
-                    value={newSubcategoryName}
-                    onChangeText={setNewSubcategoryName}
-                    placeholder="添加子分类..."
-                    placeholderTextColor={TEXT_SECONDARY}
-                    maxLength={20}
-                  />
-                  {newSubcategoryName.trim() && (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`添加子分类${newSubcategoryName.trim()}`}
-                      style={styles.addSubcategoryButton}
-                      onPress={onCreateSubcategory}
-                    >
-                      <FontAwesome name="plus-circle" size={20} color={PRIMARY_GREEN} />
-                    </Pressable>
-                  )}
-                </View>
+                <Pressable
+                  style={styles.subcategoryItem}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/categories/add',
+                      params: { parentId: category.id, parentName: category.name, type: filter },
+                    })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`给${category.name}添加子类`}
+                >
+                  <View style={[styles.subcategoryIcon, styles.subcategoryAdd]}>
+                    <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
+                  </View>
+                  <Text style={styles.subcategoryName}>添加子类</Text>
+                </Pressable>
               </View>
             )}
           </View>
@@ -505,9 +485,15 @@ const styles = StyleSheet.create({
   menuButtonPressed: {
     backgroundColor: '#F1F4F2',
   },
+  subcategoryItem: { width: 78, alignItems: 'center', paddingVertical: 8 },
+  subcategoryAdd: { backgroundColor: CATEGORY_FRAME_BACKGROUND },
   subcategoryList: {
-    backgroundColor: '#FAFAFA',
-    paddingBottom: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 40,
+    paddingTop: 4,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
   },
   subcategoryRow: {
     flexDirection: 'row',
@@ -516,21 +502,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   subcategoryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
   },
   subcategoryIndent: {
     width: 72,
   },
   subcategoryName: {
-    flex: 1,
-    fontSize: 14,
+    marginTop: 6,
+    fontSize: 13,
     color: TEXT_PRIMARY,
+    textAlign: 'center',
   },
   addSubcategoryRow: {
     flexDirection: 'row',

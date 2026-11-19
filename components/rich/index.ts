@@ -6,3 +6,4 @@ export { ProgressBar } from './ProgressBar';
 export { RichBrandName } from './RichBrandName';
 export { ScreenHeader } from './ScreenHeader';
 export { BudgetPickerSheet } from './BudgetPickerSheet';
+export { AccountIcon } from './AccountIcon';

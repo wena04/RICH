@@ -335,4 +335,10 @@ export const migrations: Migration[] = [
       `DROP TABLE IF EXISTS budgets;`,
     ],
   },
+  {
+    // Original Rich subcategories carry their own icon (RecordCategory.plist subItems[].iconName).
+    // NULL keeps the existing name-derived icon.
+    version: 10,
+    statements: [`ALTER TABLE subcategories ADD COLUMN icon TEXT;`],
+  },
 ];

@@ -30,6 +30,9 @@ export const RICH_TYPE = {
   },
 } as const;
 
+/** Original Rich rounded bold numerals (digits, ¥, + − . only). */
+export const RICH_NUMERAL_FONT = 'RichRounded';
+
 export const RICH_SIZE = {
   headerAction: 44,
   screenHeader: 64,

@@ -25,6 +25,8 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // Rounded bold numerals from the original app (subset; see assets/fonts/RichRounded-LICENSE.txt).
+    RichRounded: require('../assets/fonts/RichRounded-Bold.ttf'),
     ...FontAwesome.font,
   });
   const [dbState, setDbState] = useState<'loading' | 'ready' | 'error'>('loading');

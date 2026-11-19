@@ -1,9 +1,8 @@
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import {
   ACTION_BACKGROUND,
   ACTION_FOREGROUND,
-  CONTROL_DISABLED_BACKGROUND,
   CONTROL_PRESSED_BACKGROUND,
   KEYPAD_BACKGROUND,
   TEXT_PRIMARY,
@@ -25,6 +24,15 @@ type MoneyNumpadProps = {
   keyHeight?: number;
   style?: StyleProp<ViewStyle>;
 };
+
+import { RICH_NUMERAL_FONT } from '@/constants/Design';
+
+// Original keypad artwork for the operator and delete keys.
+const OPERATOR_ICONS: Record<string, number> = {
+  '+': require('../../assets/images/ui/icon_keyboard_add.png'),
+  '−': require('../../assets/images/ui/icon_keyboard_reduce.png'),
+};
+const DELETE_ICON = require('../../assets/images/ui/icon_keyboard_delete.png');
 
 const DIGIT_ROWS = [
   ['1', '2', '3'],
@@ -67,7 +75,7 @@ export function MoneyNumpad({
             onPress={onBackspace}
             style={({ pressed }) => [styles.key, { height: keyHeight }, pressed && styles.pressed]}
           >
-            <Text style={styles.backspaceText}>⌫</Text>
+            <Image source={DELETE_ICON} style={styles.deleteIcon} resizeMode="contain" accessible={false} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -101,7 +109,16 @@ export function MoneyNumpad({
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.operatorText}>{operator.label}</Text>
+            {OPERATOR_ICONS[operator.label] ? (
+              <Image
+                source={OPERATOR_ICONS[operator.label]}
+                style={styles.operatorIcon}
+                resizeMode="contain"
+                accessible={false}
+              />
+            ) : (
+              <Text style={styles.operatorText}>{operator.label}</Text>
+            )}
           </Pressable>
         ))}
         <Pressable
@@ -109,11 +126,9 @@ export function MoneyNumpad({
           accessibilityLabel={confirmLabel}
           disabled={confirmDisabled}
           onPress={onConfirm}
-          style={({ pressed }) => [
-            styles.confirm,
-            confirmDisabled && styles.confirmDisabled,
-            pressed && !confirmDisabled && styles.confirmPressed,
-          ]}
+          accessibilityState={{ disabled: confirmDisabled }}
+          // The original keeps 确定 black even before an amount is entered.
+          style={({ pressed }) => [styles.confirm, pressed && !confirmDisabled && styles.confirmPressed]}
         >
           <Text style={styles.confirmText}>{confirmLabel}</Text>
         </Pressable>
@@ -128,8 +143,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   key: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
-  keyText: { fontSize: 22, fontWeight: '500', color: TEXT_PRIMARY },
-  backspaceText: { fontSize: 23, fontWeight: '500', color: TEXT_PRIMARY },
+  keyText: { fontFamily: RICH_NUMERAL_FONT, fontSize: 24, color: TEXT_PRIMARY },
+  deleteIcon: { width: 40, height: 40 },
+  operatorIcon: { width: 44, height: 44 },
   operations: { flex: 1 },
   operator: { alignItems: 'center', justifyContent: 'center' },
   operatorText: { fontSize: 28, fontWeight: '500', color: TEXT_PRIMARY },
@@ -139,7 +155,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: ACTION_BACKGROUND,
   },
-  confirmDisabled: { backgroundColor: CONTROL_DISABLED_BACKGROUND },
   confirmPressed: { opacity: 0.82 },
-  confirmText: { fontSize: 17, fontWeight: '500', color: ACTION_FOREGROUND },
+  confirmText: { fontSize: 16, color: ACTION_FOREGROUND },
 });
