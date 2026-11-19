@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, View, Text, useWindowDimensions } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from "@/constants/Colors";
+import { RichChevron } from '@/components/rich/RichChevron';
 
 const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
 const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
@@ -66,7 +66,7 @@ export function DatePickerModal({
               onPress={() => moveMonth(-1)}
               style={styles.nav}
             >
-              <FontAwesome name="chevron-left" size={14} color={TEXT_SECONDARY} />
+              <RichChevron direction="left" tone="muted" />
             </Pressable>
             <Text style={styles.title}>{year}年 {MONTHS[month]}</Text>
             <Pressable
@@ -75,7 +75,7 @@ export function DatePickerModal({
               onPress={() => moveMonth(1)}
               style={styles.nav}
             >
-              <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+              <RichChevron tone="muted" />
             </Pressable>
           </View>
           <View style={styles.wkRow}>

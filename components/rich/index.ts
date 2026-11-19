@@ -7,3 +7,4 @@ export { RichBrandName } from './RichBrandName';
 export { ScreenHeader } from './ScreenHeader';
 export { BudgetPickerSheet } from './BudgetPickerSheet';
 export { AccountIcon } from './AccountIcon';
+export { RichChevron } from './RichChevron';

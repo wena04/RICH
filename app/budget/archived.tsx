@@ -1,7 +1,6 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import {
@@ -133,11 +132,11 @@ export default function ArchivedScreen() {
       <View style={styles.head}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerAction, styles.backAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require('../../assets/images/ui/nav_icon_back_black.png')} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>已归档</Text>
         <View style={styles.headerAction} />
@@ -174,14 +173,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   headerAction: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: 'flex-start' },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
   statePanel: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   stateText: { fontSize: 13, color: TEXT_SECONDARY },
   retryButton: { minHeight: 40, paddingHorizontal: 22, justifyContent: 'center', backgroundColor: '#101A17' },

@@ -1,13 +1,21 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Pressable, SafeAreaView, StatusBar, ScrollView } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import {
+  Image,
+  type ImageSourcePropType,
+  StyleSheet,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+} from 'react-native';
 
 import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 interface MenuItemProps {
-  icon: string;
+  icon: ImageSourcePropType;
   label: string;
   onPress: () => void;
 }
@@ -20,9 +28,9 @@ function MenuItem({ icon, label, onPress }: MenuItemProps) {
       style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
       onPress={onPress}
     >
-      <FontAwesome name={icon as any} size={18} color={TEXT_SECONDARY} style={styles.menuIcon} />
+      <Image source={icon} style={styles.menuIcon} accessible={false} />
       <Text style={styles.menuLabel}>{label}</Text>
-      <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+      <RichChevron tone="muted" />
     </Pressable>
   );
 }
@@ -43,17 +51,17 @@ export default function MoreScreen() {
           
           <View style={styles.menuGroup}>
             <MenuItem
-              icon="list-alt"
+              icon={require('../../assets/images/ui/icon_clipboard_list.png')}
               label="全部账单"
               onPress={() => router.push('/transactions')}
             />
             <MenuItem 
-              icon="bank" 
+              icon={require('../../assets/images/ui/icon_asset_management.png')}
               label="账户管理" 
               onPress={() => router.push('/accounts')} 
             />
             <MenuItem 
-              icon="tags" 
+              icon={require('../../assets/images/ui/icon_sort.png')}
               label="分类管理" 
               onPress={() => router.push('/categories')} 
             />
@@ -66,12 +74,12 @@ export default function MoreScreen() {
           
           <View style={styles.menuGroup}>
             <MenuItem 
-              icon="download" 
+              icon={require('../../assets/images/ui/icon_data_export.png')}
               label="导出数据" 
               onPress={() => router.push('/import-export')} 
             />
             <MenuItem 
-              icon="upload" 
+              icon={require('../../assets/images/ui/icon_clipboard.png')}
               label="导入数据" 
               onPress={() => router.push('/import-export')} 
             />
@@ -84,12 +92,12 @@ export default function MoreScreen() {
           
           <View style={styles.menuGroup}>
             <MenuItem 
-              icon="info-circle" 
+              icon={require('../../assets/images/ui/icon_help_center.png')}
               label="关于应用" 
               onPress={() => router.push('/about')}
             />
             <MenuItem 
-              icon="shield" 
+              icon={require('../../assets/images/ui/icon_agreement.png')}
               label="隐私政策" 
               onPress={() => router.push('/privacy')}
             />
@@ -146,6 +154,7 @@ const styles = StyleSheet.create({
   menuItemPressed: { backgroundColor: '#F2F5F3' },
   menuIcon: {
     width: 24,
+    height: 24,
     marginRight: 12,
   },
   menuLabel: {

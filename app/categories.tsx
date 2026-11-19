@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   Alert, 
+  Image,
   Pressable, 
   StyleSheet, 
   TextInput, 
@@ -11,7 +12,6 @@ import {
   StatusBar,
   Modal,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
@@ -21,7 +21,6 @@ import {
   TEXT_PRIMARY, 
   TEXT_SECONDARY,
   EXPENSE_RED,
-  CATEGORY_FRAME_BACKGROUND,
 } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
 import {
@@ -233,10 +232,14 @@ export default function CategoriesScreen() {
                 onPress={() => toggleExpand(category.id)}
               >
                 <View style={styles.expandIndicator}>
-                  <FontAwesome
-                    name={expandedCategoryId === category.id ? 'caret-down' : 'caret-right'}
-                    size={16}
-                    color={TEXT_SECONDARY}
+                  <Image
+                    source={
+                      expandedCategoryId === category.id
+                        ? require('../assets/images/ui/icon_menu_selected.png')
+                        : require('../assets/images/ui/icon_menu_normal.png')
+                    }
+                    style={styles.expandArt}
+                    accessible={false}
                   />
                 </View>
 
@@ -258,7 +261,11 @@ export default function CategoriesScreen() {
                 style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}
                 onPress={() => openEditCategory(category)}
               >
-                <FontAwesome name="ellipsis-h" size={16} color={TEXT_SECONDARY} />
+                <Image
+                  source={require('../assets/images/category-original/icon_three_dot.png')}
+                  style={styles.menuDots}
+                  accessible={false}
+                />
               </Pressable>
             </View>
 
@@ -293,9 +300,11 @@ export default function CategoriesScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`给${category.name}添加子类`}
                 >
-                  <View style={[styles.subcategoryIcon, styles.subcategoryAdd]}>
-                    <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
-                  </View>
+                  <Image
+                    source={require('../assets/images/ui/icon_add_custom.png')}
+                    style={styles.subcategoryIcon}
+                    accessible={false}
+                  />
                   <Text style={styles.subcategoryName}>添加子类</Text>
                 </Pressable>
               </View>
@@ -486,7 +495,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F4F2',
   },
   subcategoryItem: { width: 78, alignItems: 'center', paddingVertical: 8 },
-  subcategoryAdd: { backgroundColor: CATEGORY_FRAME_BACKGROUND },
+  expandArt: { width: 24, height: 24 },
+  // icon_three_dot is drawn light grey for dark badges; tint it to the secondary text grey here.
+  menuDots: { width: 24, height: 24, tintColor: '#777777' },
   subcategoryList: {
     flexDirection: 'row',
     flexWrap: 'wrap',

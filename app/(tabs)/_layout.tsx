@@ -5,20 +5,16 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
-import {
-  PRIMARY_GREEN,
-  FAB_BACKGROUND,
-  FAB_ICON,
-  TAB_ICON_SELECTED,
-  TEXT_MUTED,
-} from '@/constants/Colors';
-import { RICH_SIZE } from '@/constants/Design';
+import { PRIMARY_GREEN } from '@/constants/Colors';
 
-// Custom Tab Bar Component
+// Original geometry (measured at 3x): 49pt bar plus the safe area, a hairline top border,
+// 40pt tab artwork with 10pt labels, and the 60pt add button rising 13.5pt above the bar.
+const TAB_BAR_HEIGHT = 49;
+
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+
   const isHomeActive = state.index === 0;
   const isChartsActive = state.index === 2;
 
@@ -26,13 +22,9 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     <View
       style={[
         styles.tabBar,
-        {
-          height: RICH_SIZE.tabBar + insets.bottom,
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
+        { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom },
       ]}
     >
-      {/* Home Tab */}
       <Pressable
         style={styles.tab}
         onPress={() => navigation.navigate('index')}
@@ -49,28 +41,24 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           resizeMode="contain"
           style={styles.tabIcon}
         />
-        <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>
-          首页
-        </Text>
-        {isHomeActive ? <View style={styles.activeMarker} /> : null}
+        <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>首页</Text>
       </Pressable>
 
-      {/* Center FAB */}
       <View style={styles.fabContainer}>
         <Pressable
-          style={({ pressed }) => [
-            styles.fab,
-            pressed && styles.fabPressed,
-          ]}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={() => router.push('/transaction/new')}
           accessibilityLabel="记一笔"
           accessibilityRole="button"
         >
-          <Text style={styles.fabPlus}>+</Text>
+          <Image
+            source={require('../../assets/images/ui/tab-add.png')}
+            style={styles.fabImage}
+            accessible={false}
+          />
         </Pressable>
       </View>
 
-      {/* Charts/Budget Tab */}
       <Pressable
         style={styles.tab}
         onPress={() => navigation.navigate('charts')}
@@ -79,14 +67,17 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityState={{ selected: isChartsActive }}
       >
         <Image
-          source={require('../../assets/images/ui/tab-budget.png')}
+          source={
+            isChartsActive
+              ? require('../../assets/images/ui/tab-budget-selected.png')
+              : require('../../assets/images/ui/tab-budget.png')
+          }
           resizeMode="contain"
-          style={[styles.tabIcon, !isChartsActive && styles.tabIconInactive]}
+          style={styles.tabIcon}
         />
         <Text style={[styles.tabLabel, isChartsActive && styles.tabLabelActive]}>
           预算/计划
         </Text>
-        {isChartsActive ? <View style={styles.activeMarker} /> : null}
       </Pressable>
     </View>
   );
@@ -147,57 +138,36 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DDDDDD',
+    borderTopColor: '#C0C0C0',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 10,
   },
+  tabIcon: { width: 40, height: 40, marginTop: -2 },
   tabLabel: {
-    fontSize: 12,
-    color: TEXT_MUTED,
+    marginTop: -3,
+    fontSize: 10,
+    lineHeight: 12,
+    color: '#929292',
   },
   tabLabelActive: {
-    color: TAB_ICON_SELECTED,
+    color: '#000000',
     fontWeight: '600',
   },
-  tabIcon: { width: 28, height: 28 },
-  tabIconInactive: { tintColor: TEXT_MUTED },
-  activeMarker: { width: 18, height: 2, marginTop: -1, backgroundColor: PRIMARY_GREEN },
   fabContainer: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   fab: {
-    width: RICH_SIZE.fab,
-    height: RICH_SIZE.fab,
-    borderRadius: RICH_SIZE.fab / 2,
-    backgroundColor: FAB_BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 10,
+    width: 60,
+    height: 60,
+    marginTop: -14,
   },
+  fabImage: { width: 60, height: 60 },
   fabPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.95 }],
-  },
-  fabPlus: {
-    color: FAB_ICON,
-    fontSize: 30,
-    fontWeight: '300',
-    lineHeight: 32,
   },
 });

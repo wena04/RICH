@@ -35,7 +35,7 @@ export const RICH_NUMERAL_FONT = 'RichRounded';
 
 export const RICH_SIZE = {
   headerAction: 44,
-  screenHeader: 64,
+  screenHeader: 44, // UINavigationBar height; the original screens use the standard bar
   tabBar: 62,
   fab: 58,
   minimumTouchTarget: 44,

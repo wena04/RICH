@@ -1,7 +1,7 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Image,
   ActivityIndicator,
   Pressable,
   SafeAreaView,
@@ -25,7 +25,6 @@ import {
   INCOME_TEXT_GREEN,
   PAGE_BACKGROUND,
   PRIMARY_GREEN,
-  TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
   WARNING_AMBER,
@@ -213,7 +212,7 @@ export default function TrendsScreen() {
         {loadError ? (
           <View accessibilityRole="alert" style={styles.errorBanner}>
             <View style={styles.errorCopy}>
-              <FontAwesome name="exclamation-circle" size={15} color={TEXT_PRIMARY} />
+              <Image source={require('../assets/images/ui/icon_warning.png')} style={styles.errorMark} accessible={false} />
               <Text style={styles.errorText}>{loadError}</Text>
             </View>
             <Pressable
@@ -255,7 +254,7 @@ export default function TrendsScreen() {
           ) : categories.length === 0 ? (
             <View style={styles.stateBlock}>
               <View style={styles.emptyIcon}>
-                <FontAwesome name="pie-chart" size={22} color={TEXT_MUTED} />
+                <Image source={require('../assets/images/budget/icon_trend_chart_small.png')} style={styles.emptyArt} accessible={false} />
               </View>
               <Text style={styles.stateTitle}>本月还没有支出</Text>
               <Text style={styles.stateDetail}>记下一笔支出后，这里会显示分类占比。</Text>
@@ -354,7 +353,7 @@ export default function TrendsScreen() {
           ) : !hasMonthlyData ? (
             <View style={styles.stateBlock}>
               <View style={styles.emptyIcon}>
-                <FontAwesome name="line-chart" size={21} color={TEXT_MUTED} />
+                <Image source={require('../assets/images/ui/icon_chart.png')} style={styles.emptyArt} accessible={false} />
               </View>
               <Text style={styles.stateTitle}>还没有可比较的收支</Text>
               <Text style={styles.stateDetail}>持续记账后，就能看到每个月的变化。</Text>
@@ -581,14 +580,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   emptyIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     marginBottom: RICH_SPACING.xxs,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: RICH_RADIUS.pill,
-    backgroundColor: CONTROL_BACKGROUND,
   },
+  emptyArt: { width: 48, height: 48 },
+  errorMark: { width: 16, height: 16 },
   stateTitle: {
     ...RICH_TYPE.body,
     fontWeight: '600',

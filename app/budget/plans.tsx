@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -27,6 +26,7 @@ import { totalPlanSavingsCents } from '@/src/features/budgets/envelopes';
 import { planStatusText } from '@/src/features/budgets/planForm';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 const PLAN_CLOCK = require('../../assets/images/budget/plan_clock.png');
 const PLAN_CLOCK_FINISH = require('../../assets/images/budget/plan_clock_finish.png');
@@ -127,11 +127,12 @@ export default function PlanListScreen() {
       <View style={styles.head}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerAction,
+            styles.backAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require('../../assets/images/ui/nav_icon_back_black.png')} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>计划清单</Text>
         <Pressable
@@ -175,7 +176,7 @@ export default function PlanListScreen() {
             accessibilityRole="link"
           >
             <Text style={styles.helpLinkText}>看看别人怎么做计划</Text>
-            <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+            <RichChevron tone="muted" />
           </Pressable>
         </ScrollView>
       ) : (
@@ -213,14 +214,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   headerAction: { minWidth: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: 'flex-start' },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
   exampleLink: { fontSize: 14, fontWeight: '600', color: ACCESSIBLE_GREEN },
   statePanel: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   stateText: { fontSize: 13, color: TEXT_SECONDARY },
@@ -260,17 +264,18 @@ const styles = StyleSheet.create({
   statusDone: { color: ACCESSIBLE_GREEN, fontWeight: '600' },
   cardTrack: { marginTop: 10 },
   footer: { paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  // Same treatment as the original 预算 empty state: black 44pt bar, regular 16pt label.
   primaryButton: {
     alignSelf: 'stretch',
-    minHeight: 50,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111111',
+    backgroundColor: '#000000',
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '400' },
   emptyContent: { alignItems: 'center', paddingHorizontal: 32, paddingTop: 40, paddingBottom: 24 },
   emptyArt: { width: 220, height: 182 },
-  emptyTitle: { marginTop: 20, fontSize: 18, fontWeight: '700', color: TEXT_PRIMARY },
+  emptyTitle: { marginTop: 20, fontSize: 20, fontWeight: '500', color: '#000000' },
   emptyBody: {
     marginTop: 8,
     marginBottom: 24,

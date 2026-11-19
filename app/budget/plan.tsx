@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -50,6 +49,7 @@ import {
 } from '@/src/features/budgets/planForm';
 import { centsToYuan, parseCurrencyToCents } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 const EMOJI_COLUMNS = 6;
 
@@ -397,11 +397,12 @@ export default function PlanScreen() {
       <View style={styles.head}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerAction,
+            styles.backAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require('../../assets/images/ui/nav_icon_back_black.png')} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>{isDetail ? '计划详情' : '新建计划'}</Text>
         <Pressable
@@ -469,7 +470,7 @@ export default function PlanScreen() {
                   <Text style={[styles.fieldRowValue, !source && styles.fieldRowPlaceholder]} numberOfLines={1}>
                     {source ? `${source.envelope.icon} ${source.envelope.name}` : '选择月度预算'}
                   </Text>
-                  <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+                  <RichChevron tone="muted" />
                 </Pressable>
 
                 <View style={styles.fieldRow}>
@@ -546,14 +547,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   headerAction: { minWidth: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: 'flex-start' },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
   exampleLink: { fontSize: 14, fontWeight: '600', color: ACCESSIBLE_GREEN },
   statePanel: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   stateText: { fontSize: 13, color: TEXT_SECONDARY },

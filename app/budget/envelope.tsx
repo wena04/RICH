@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -227,11 +226,12 @@ export default function BudgetEnvelopeScreen() {
       <View style={styles.head}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerAction,
+            styles.backAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require('../../assets/images/ui/nav_icon_back_black.png')} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>{isEdit ? '编辑预算' : '新建预算'}</Text>
         <Pressable
@@ -420,14 +420,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
   headerAction: { minWidth: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: '600', color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: 'flex-start' },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
   exampleLink: { fontSize: 14, fontWeight: '600', color: ACCESSIBLE_GREEN },
   content: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 32 },
   statePanel: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

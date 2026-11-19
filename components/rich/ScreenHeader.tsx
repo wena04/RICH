@@ -58,7 +58,7 @@ export function ScreenHeader({
           accessibilityLabel="返回"
           hitSlop={8}
           onPress={onBack}
-          style={[styles.action, { width: actionSlotWidth }]}
+          style={[styles.action, styles.backAction, { width: actionSlotWidth }]}
         >
           <Image
             source={require('../../assets/images/ui/nav_icon_back_black.png')}
@@ -112,6 +112,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // The original back chevron sits 16pt from the screen edge, not centred in the touch slot.
+  backAction: { alignItems: 'flex-start' },
   copy: {
     position: 'absolute',
     alignItems: 'center',

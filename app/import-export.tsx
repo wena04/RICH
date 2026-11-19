@@ -1,10 +1,18 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet } from 'react-native';
+import {
+  type ImageSourcePropType,
+  Image,
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+} from 'react-native';
 
 import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
@@ -15,6 +23,7 @@ import type { Account } from '@/src/domain/types';
 import { exportCsvV1, importCsvV1 } from '@/src/features/importExport/csvV1';
 import { exportCsvV2 } from '@/src/features/importExport/csvV2';
 import { exportDatabaseToFile, importDatabaseFromFileUri } from '@/src/features/importExport/dbFile';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 export default function ImportExportScreen() {
   const router = useRouter();
@@ -166,7 +175,7 @@ export default function ImportExportScreen() {
     danger = false,
     divider = false,
   }: {
-    icon: string;
+    icon: ImageSourcePropType;
     title: string;
     detail: string;
     onPress: () => void;
@@ -180,13 +189,13 @@ export default function ImportExportScreen() {
         style={({ pressed }) => [styles.actionRow, divider && styles.divider, pressed && styles.pressed]}
       >
         <View style={styles.actionIcon}>
-          <FontAwesome name={icon as any} size={18} color={danger ? EXPENSE_RED : TEXT_PRIMARY} />
+          <Image source={icon} style={styles.actionArt} accessible={false} />
         </View>
         <View style={styles.actionCopy}>
           <Text style={[styles.actionTitle, danger && styles.dangerText]}>{title}</Text>
           <Text style={styles.actionDetail}>{detail}</Text>
         </View>
-        <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+        <RichChevron tone="muted" />
       </Pressable>
     );
   }
@@ -202,13 +211,13 @@ export default function ImportExportScreen() {
         <Text style={styles.sectionLabel}>备份与迁移</Text>
         <View style={styles.section}>
           <ActionRow
-            icon="database"
+            icon={require('../assets/images/ui/icon_data_export.png')}
             title="导出完整备份"
             detail="保留账户、分类、子分类、预算和全部记录"
             onPress={onExportDb}
           />
           <ActionRow
-            icon="refresh"
+            icon={require('../assets/images/ui/icon_change_money.png')}
             title="从备份恢复"
             detail="选择数据库文件并覆盖当前设备数据"
             onPress={onImportDb}
@@ -220,13 +229,13 @@ export default function ImportExportScreen() {
         <Text style={styles.sectionLabel}>表格导出</Text>
         <View style={styles.section}>
           <ActionRow
-            icon="file-text-o"
+            icon={require('../assets/images/ui/icon_clipboard_list.png')}
             title="导出完整 CSV"
             detail="包含账户、分类、子分类和稳定 ID"
             onPress={onExportCsvV2}
           />
           <ActionRow
-            icon="file-o"
+            icon={require('../assets/images/ui/icon_clipboard.png')}
             title="导出旧版 CSV"
             detail="用于兼容早期 RICH 数据格式"
             onPress={onExportCsvV1}
@@ -252,7 +261,7 @@ export default function ImportExportScreen() {
             </View>
           </View>
           <ActionRow
-            icon="upload"
+            icon={require('../assets/images/ui/icon_add.png')}
             title="选择 CSV 并导入"
             detail="旧版格式没有账户列，所有记录会进入上方账户"
             onPress={onImportCsvV1}
@@ -275,7 +284,8 @@ const styles = StyleSheet.create({
   actionRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#DDDDDD' },
   pressed: { backgroundColor: '#F7F7F7' },
-  actionIcon: { width: 34, alignItems: 'flex-start' },
+  actionIcon: { width: 36, alignItems: 'flex-start' },
+  actionArt: { width: 24, height: 24 },
   actionCopy: { flex: 1, paddingRight: 12 },
   actionTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   actionDetail: { marginTop: 4, fontSize: 10.5, lineHeight: 15, color: TEXT_SECONDARY },

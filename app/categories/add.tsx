@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   StyleSheet,
   SafeAreaView,
@@ -12,7 +13,6 @@ import {
   Text,
   useWindowDimensions,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import {
   ACCESSIBLE_GREEN,
@@ -85,11 +85,11 @@ export default function AddCategoryScreen() {
       <View style={styles.head}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.headerAction, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerAction, styles.backAction, pressed && styles.headerActionPressed]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require("../../assets/images/ui/nav_icon_back_black.png")} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>{isSubcategory ? '添加子类' : '添加自定义类目'}</Text>
         <Pressable
@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
@@ -193,7 +193,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: "flex-start" },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
   done: { fontSize: 14, fontWeight: "600", color: ACCESSIBLE_GREEN },
   doneOff: { color: "#B8B8B8" },
   nameInput: {

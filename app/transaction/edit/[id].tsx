@@ -1,7 +1,7 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   Alert,
   Pressable,
   SafeAreaView,
@@ -16,7 +16,7 @@ import {
 
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { DatePickerModal } from '@/components/DatePickerModal';
-import { ScreenHeader } from '@/components/rich';
+import { AccountIcon, RichChevron, ScreenHeader } from '@/components/rich';
 import {
   ACTION_BACKGROUND,
   ACTION_FOREGROUND,
@@ -272,7 +272,7 @@ export default function EditTransactionScreen() {
               style={({ pressed }) => [styles.dateButton, pressed && styles.controlPressed]}
             >
               <Text style={styles.dateText}>{formatIsoDateCN(date)}</Text>
-              <FontAwesome name="chevron-down" size={9} color={TEXT_SECONDARY} />
+              <RichChevron direction="down" tone="muted" scale={0.8} />
             </Pressable>
           </View>
           <View style={styles.amountLine}>
@@ -411,7 +411,7 @@ export default function EditTransactionScreen() {
           </>
         ) : (
           <View style={styles.adjustmentNote}>
-            <FontAwesome name="info-circle" size={15} color={PRIMARY_GREEN} />
+            <Image source={require('../../../assets/images/ui/icon_help_center.png')} style={styles.noteMark} accessible={false} />
             <Text style={styles.adjustmentText}>余额调整不会计入支出、收入或预算。</Text>
           </View>
         )}
@@ -438,11 +438,7 @@ export default function EditTransactionScreen() {
                   pressed && styles.controlPressed,
                 ]}
               >
-                <FontAwesome
-                  name={account.type === 'cash' ? 'money' : 'bank'}
-                  size={12}
-                  color={active ? '#FFFFFF' : TEXT_SECONDARY}
-                />
+                <AccountIcon type={account.type} size={16} />
                 <Text
                   numberOfLines={1}
                   style={[styles.accountText, active && styles.accountTextActive]}
@@ -482,7 +478,6 @@ export default function EditTransactionScreen() {
           onPress={onDelete}
           style={({ pressed }) => [styles.deleteButton, pressed && styles.controlPressed]}
         >
-          <FontAwesome name="trash-o" size={14} color={DESTRUCTIVE_TEXT} />
           <Text style={styles.deleteText}>删除这笔记录</Text>
         </Pressable>
       </ScrollView>
@@ -624,6 +619,7 @@ const styles = StyleSheet.create({
   subcategoryTextActive: { color: ACTION_FOREGROUND, fontWeight: '600' },
   manageLink: { minHeight: RICH_SIZE.minimumTouchTarget, justifyContent: 'center' },
   manageLinkText: { ...RICH_TYPE.caption, color: PRIMARY_GREEN },
+  noteMark: { width: 16, height: 16 },
   adjustmentNote: {
     flexDirection: 'row',
     gap: 9,

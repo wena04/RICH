@@ -1,7 +1,7 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Image,
   ActivityIndicator,
   Pressable,
   SafeAreaView,
@@ -27,6 +27,7 @@ import { getDb } from '@/src/db/db';
 import { listTransactions, type TransactionListItem } from '@/src/db/repo/transactions';
 import { formatIsoDateCN } from '@/src/utils/date';
 import { centsToYuan } from '@/src/utils/money';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 type Section = {
   title: string;
@@ -111,7 +112,7 @@ export default function TransactionsScreen() {
       onPress={() => router.push('/transaction/new')}
       style={({ pressed }) => [styles.headerAction, pressed && styles.controlPressed]}
     >
-      <FontAwesome name="plus" size={17} color={TEXT_PRIMARY} />
+      <Image source={require('../../assets/images/ui/icon_add.png')} style={styles.addArt} accessible={false} />
     </Pressable>
   );
 
@@ -133,9 +134,7 @@ export default function TransactionsScreen() {
         </View>
       ) : error ? (
         <View style={styles.stateCanvas}>
-          <View style={styles.stateMark}>
-            <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
-          </View>
+          <Image source={require('../../assets/images/ui/icon_warning.png')} style={styles.stateMark} accessible={false} />
           <Text style={styles.stateTitle}>账单暂时没有载入</Text>
           <Text style={styles.stateBody}>{error}</Text>
           <Pressable
@@ -148,9 +147,7 @@ export default function TransactionsScreen() {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.stateCanvas}>
-          <View style={styles.emptyIcon}>
-            <FontAwesome name="file-text-o" size={22} color={TEXT_PRIMARY} />
-          </View>
+          <Image source={require('../../assets/images/ui/icon-emptybox.png')} style={styles.emptyIcon} accessible={false} />
           <Text style={styles.stateTitle}>还没有账单</Text>
           <Text style={styles.stateBody}>记下第一笔之后，每天的收支会整理在这里。</Text>
           <Pressable
@@ -206,7 +203,7 @@ export default function TransactionsScreen() {
                 <Text style={[styles.rowAmount, { color: amount.color }]}>
                   {amount.sign}¥{centsToYuan(amount.cents)}
                 </Text>
-                <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+                <RichChevron tone="muted" />
               </Pressable>
             );
           }}
@@ -232,22 +229,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     backgroundColor: '#F6F8F7',
   },
-  stateMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#DFF2EA',
-  },
-  emptyIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PRIMARY_GREEN,
-  },
+  // Original icon_warning art.
+  stateMark: { width: 32, height: 32 },
+  emptyIcon: { width: 81, height: 81 },
+  addArt: { width: 24, height: 24 },
   stateTitle: { marginTop: 14, fontSize: 17, fontWeight: '700', color: TEXT_PRIMARY },
   stateBody: {
     maxWidth: 280,

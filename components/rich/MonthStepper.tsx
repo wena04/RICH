@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
   Pressable,
   StyleSheet,
@@ -9,8 +8,9 @@ import {
   type StyleProp,
 } from 'react-native';
 
-import { CONTROL_BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import { CONTROL_BACKGROUND, TEXT_PRIMARY } from '@/constants/Colors';
 import { RICH_RADIUS, RICH_SIZE, RICH_TYPE } from '@/constants/Design';
+import { RichChevron } from '@/components/rich/RichChevron';
 
 type MonthStepperProps = {
   label: string;
@@ -56,7 +56,7 @@ export function MonthStepper({
         onPress={onPrevious}
         style={[styles.button, { width: buttonSize, height: buttonSize }]}
       >
-        <FontAwesome name="chevron-left" size={12} color={TEXT_SECONDARY} />
+        <RichChevron direction="left" tone="muted" />
       </Pressable>
       {onLabelPress ? (
         <Pressable
@@ -87,7 +87,7 @@ export function MonthStepper({
         onPress={onNext}
         style={[styles.button, { width: buttonSize, height: buttonSize }]}
       >
-        <FontAwesome name="chevron-right" size={12} color={TEXT_SECONDARY} />
+        <RichChevron tone="muted" />
       </Pressable>
     </View>
   );

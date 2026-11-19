@@ -1,4 +1,3 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -68,12 +67,13 @@ export default function BudgetHelpScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => [
             styles.headerAction,
+            styles.backAction,
             pressed && styles.headerActionPressed,
           ]}
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image source={require("../../assets/images/ui/nav_icon_back_black.png")} style={styles.backIcon} accessible={false} />
         </Pressable>
         <Text style={styles.title}>{topic.title}</Text>
         <View style={styles.headerAction} />
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    minHeight: 56,
+    paddingHorizontal: 16,
+    minHeight: 44,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
@@ -138,7 +138,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerActionPressed: { backgroundColor: CONTROL_BACKGROUND },
-  title: { fontSize: 16, fontWeight: "600", color: TEXT_PRIMARY },
+  // Original back chevron: nav_icon_back_black, 16pt from the screen edge.
+  backAction: { alignItems: "flex-start" },
+  backIcon: { width: 16, height: 16 },
+  title: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
   intro: {
     marginHorizontal: 24,
     marginVertical: 16,

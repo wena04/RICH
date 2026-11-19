@@ -1,5 +1,5 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -11,7 +11,6 @@ import {
 import {
   CATEGORY_FRAME_BACKGROUND,
   DESTRUCTIVE_CORAL,
-  TEXT_MUTED,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "@/constants/Colors";
@@ -78,8 +77,12 @@ export function BudgetPickerSheet({
                   disabled: saving,
                 }}
               >
-                <View style={[styles.icon, styles.noneIcon]}>
-                  <FontAwesome name="times" size={12} color="#FFFFFF" />
+                <View style={styles.icon}>
+                  <Image
+                    source={require("../../assets/images/ui/icon_cancel.png")}
+                    style={styles.noneArt}
+                    accessible={false}
+                  />
                 </View>
                 <Text style={styles.name}>不归入预算</Text>
               </Pressable>
@@ -124,7 +127,11 @@ export function BudgetPickerSheet({
               accessibilityRole="button"
               accessibilityLabel="新预算"
             >
-              <FontAwesome name="plus" size={12} color={TEXT_SECONDARY} />
+              <Image
+                source={require("../../assets/images/ui/symbol_add.png")}
+                style={styles.createArt}
+                accessible={false}
+              />
               <Text style={styles.createText}>新预算</Text>
             </Pressable>
           </ScrollView>
@@ -179,7 +186,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
     backgroundColor: CATEGORY_FRAME_BACKGROUND,
   },
-  noneIcon: { backgroundColor: TEXT_MUTED },
+  noneArt: { width: 20, height: 20 },
+  createArt: { width: 11, height: 11 },
   emoji: { fontSize: 17 },
   name: { flex: 1, fontSize: 15, color: TEXT_PRIMARY },
   balance: {
