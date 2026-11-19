@@ -139,12 +139,28 @@ existing patterns; they are **not** pixel-verified against Rich 1.1.0.
 | Budget/plan examples (`app/budget/help.tsx`) | All eight original help images | Plain header, horizontal paging |
 | 计划清单 (`app/budget/plans.tsx`) | Plan-help card layout (gray card, emoji, 冻结预算「…」¥/月, target, `0/N`), `plan_clock` / `plan_clock_finish`, `icon_no_plan` | Budget list header/footer patterns |
 | Create plan / plan detail (`app/budget/plan.tsx`) | Fields from the backup `deposit_plan` schema, `icon_plan_finish` | Budget editor form, account-sheet picker |
-| Budget sort mode, 已归档 (`app/budget/archived.tsx`) | `icon_list_sort`; `sort_index` / `is_archived` in the backup schema | **Deviation:** up/down buttons instead of the original drag-to-reorder |
+| Budget sort mode, 已归档 (`app/budget/archived.tsx`) | `icon_list_sort`; `sort_index` / `is_archived` in the backup schema | Drag-to-reorder (≡ handle, or long-press the row) plus ↑/↓ buttons kept for VoiceOver; the original's exact drag affordance is not captured |
 
 Browser check (production web export, 393 × 852 and 375 × 667): empty state → create monthly →
 create special → populated list → edit amount → reload persists → examples; no console errors.
 Web limitation: React Native Web's `Alert.alert` is a no-op, so the validation alert and delete
 confirmation only appear on native.
+
+## Trends and budget detail (November 19, 2026) — designed, not source-verified
+
+No capture exists for the original 趋势图 or a budget detail page; the bundle only has
+`icon_trend_chart` (a monitor with a pie and ranked bars), used here as the empty state.
+
+| Screen | Original evidence used | Designed to match |
+| --- | --- | --- |
+| 趋势图 (`app/trends.tsx`) | `icon_trend_chart` empty art; 支出/收入 pill geometry from 记一笔 | Ranked bars (shown in the original art) with category glyph discs; month columns with a live readout instead of a tooltip |
+| 预算明细 (`app/budget/detail.tsx`) | `icon_month_budget` / `icon_special_budget` badges; Home ledger rows | Budget tab list row, emoji disc, `ProgressBar` |
+| Filtered records (`app/records.tsx`) | Home day groups and rows (shared `LedgerList`, pixel-identical to Home) | — |
+
+Browser check (production web export, 393 × 852 and 375 × 667): three months of records → June
+ranking (79% / 21%) → hover April → drag to May and release → stepper back → unfold 餐饮
+(50 / 34 / 16%) → subcategory records → 交通 records → 收入 → empty July → budget detail (¥436.50
+left, 外卖 60% / 咖啡 40%) → 编辑 → back. No console errors.
 
 ## Open Questions
 

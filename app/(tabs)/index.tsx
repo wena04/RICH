@@ -17,7 +17,6 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   CONTROL_PRESSED_BACKGROUND,
   ENTRY_GREEN,
-  INCOME_TEXT_GREEN,
   PRIMARY_GREEN,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
@@ -28,8 +27,8 @@ import {
   TransactionListItem,
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
-import { CategoryIcon } from "@/components/icons/CategoryIcon";
-import { DashedDivider, RichBrandName } from "@/components/rich";
+import { RichBrandName } from "@/components/rich";
+import { LedgerDayHeader, LedgerDays, LedgerRow, groupLedgerByDay } from "@/components/rich/LedgerList";
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const MONTH_NAMES_CN = [
@@ -49,13 +48,6 @@ function firstWeekdayMonFirst(year: number, month: number): number {
 function fmt(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
-function dateHeaderCN(date: string): string {
-  const [, m, d] = date.split("-");
-  return `${parseInt(m)}月${parseInt(d)}日`;
-}
-
-// Original day-header rule: 5.5pt dashes on a 10pt pitch, 2px thick.
-const DATE_RULE = { dashWidth: 5.5, gap: 4.5, thickness: 2 / 3, color: "#D8D8D8" } as const;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -112,25 +104,7 @@ export default function HomeScreen() {
   }, [transactions]);
 
   // Group transactions by date (descending) for the list below the calendar
-  const groups = useMemo(() => {
-    const map = new Map<string, TransactionListItem[]>();
-    transactions.forEach((t) => {
-      const arr = map.get(t.date) ?? [];
-      arr.push(t);
-      map.set(t.date, arr);
-    });
-    return [...map.keys()]
-      .sort((a, b) => (a < b ? 1 : -1))
-      .map((date) => {
-        const txs = map.get(date)!;
-        let exp = 0, inc = 0;
-        txs.forEach((t) => {
-          if (t.type === "expense") exp += t.amountCents;
-          else if (t.type === "income") inc += t.amountCents;
-        });
-        return { date, txs, exp, inc };
-      });
-  }, [transactions]);
+  const groups = useMemo(() => groupLedgerByDay(transactions), [transactions]);
 
   const visibleGroups = useMemo(
     () => (filterDate ? groups.filter((group) => group.date === filterDate) : groups),
@@ -376,55 +350,10 @@ export default function HomeScreen() {
               ) : null}
             </View>
           ) : (
-            visibleGroups.map((g, gi) => (
-              <View key={g.date}>
-                {gi > 0 && <View style={styles.gapBand} />}
-                <View style={styles.dateHeader}>
-                  <Text style={styles.dateLabel}>{dateHeaderCN(g.date)}</Text>
-                  <View style={styles.dayTotals}>
-                    <Text style={styles.dayExpense}>
-                      – ¥ {centsToYuan(g.exp)}
-                    </Text>
-                    <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
-                  </View>
-                </View>
-                <DashedDivider style={styles.dateDivider} {...DATE_RULE} />
-                {g.txs.map((t) => (
-                  <Pressable
-                    key={t.id}
-                    style={styles.txRow}
-                    onPress={() => router.push(`/transaction/${t.id}`)}
-                  >
-                    <View style={styles.txIcon}>
-                      <CategoryIcon
-                        id={t.category?.icon ?? undefined}
-                        name={t.category?.name}
-                        size={34}
-                      />
-                    </View>
-                    <View style={styles.txInfo}>
-                      <Text style={styles.txTitle} numberOfLines={1}>
-                        {t.note || t.category?.name || "记录"}
-                      </Text>
-                      <Text style={styles.txSub}>
-                        {t.subcategory?.name
-                          ? `${t.category?.name ?? '分类'} › ${t.subcategory.name}`
-                          : (t.category?.name ?? '')}
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.txAmt,
-                        t.type === "income" && { color: INCOME_TEXT_GREEN },
-                      ]}
-                    >
-                      {t.type === "expense" || t.amountCents < 0 ? "−" : "+"}
-                      {centsToYuan(Math.abs(t.amountCents))}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ))
+            <LedgerDays
+              days={visibleGroups}
+              onOpen={(t) => router.push(`/transaction/${t.id}`)}
+            />
           )}
         </View>
       </ScrollView>
@@ -474,50 +403,16 @@ export default function HomeScreen() {
                 }
                 return (
                   <View style={{ paddingBottom: 20 }}>
-                    <View style={styles.dateHeader}>
-                      <Text style={styles.dateLabel}>{dateHeaderCN(g.date)}</Text>
-                      <View style={styles.dayTotals}>
-                        <Text style={styles.dayExpense}>– ¥ {centsToYuan(g.exp)}</Text>
-                        <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
-                      </View>
-                    </View>
-                    <DashedDivider style={styles.dateDivider} {...DATE_RULE} />
+                    <LedgerDayHeader day={g} />
                     {g.txs.map((t) => (
-                      <Pressable
+                      <LedgerRow
                         key={t.id}
-                        style={styles.txRow}
+                        t={t}
                         onPress={() => {
                           setShowDaySheet(false);
                           router.push((`/transaction/${t.id}` as unknown) as Href);
                         }}
-                      >
-                        <View style={styles.txIcon}>
-                          <CategoryIcon
-                            id={t.category?.icon ?? undefined}
-                            name={t.category?.name}
-                            size={34}
-                          />
-                        </View>
-                        <View style={styles.txInfo}>
-                          <Text style={styles.txTitle} numberOfLines={1}>
-                            {t.note || t.category?.name || "记录"}
-                          </Text>
-                          <Text style={styles.txSub}>
-                            {t.subcategory?.name
-                              ? `${t.category?.name ?? '分类'} › ${t.subcategory.name}`
-                              : (t.category?.name ?? "")}
-                          </Text>
-                        </View>
-                        <Text
-                          style={[
-                            styles.txAmt,
-                            t.type === "income" && { color: INCOME_TEXT_GREEN },
-                          ]}
-                        >
-                          {t.type === "expense" || t.amountCents < 0 ? "−" : "+"}
-                          {centsToYuan(Math.abs(t.amountCents))}
-                        </Text>
-                      </Pressable>
+                      />
                     ))}
                   </View>
                 );
@@ -728,48 +623,6 @@ const styles = StyleSheet.create({
   },
   emptyActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
-  gapBand: { height: 10, backgroundColor: "#F7F7F7" },
-  // List geometry measured from the original at 3x: totals 18pt under the band, 72.6pt rows,
-  // icon circle at 21pt, amounts 22pt from the edge.
-  dateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingLeft: 24.7,
-    paddingRight: 24.3,
-    paddingTop: 14,
-    paddingBottom: 7,
-  },
-  dateDivider: {
-    marginLeft: 20,
-    marginRight: 24.7, // the original rule ends under the day totals
-    marginBottom: 1,
-  },
-  dateLabel: { fontSize: 13.5, color: "#777777" },
-  dayTotals: { alignItems: "flex-end" },
-  dayExpense: { fontSize: 10.3, lineHeight: 16, color: "#777777", fontVariant: ["tabular-nums"] },
-  dayIncome: { fontSize: 10.3, lineHeight: 16, color: PRIMARY_GREEN, fontVariant: ["tabular-nums"] },
-
-  txRow: {
-    minHeight: 72.6,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 21,
-    paddingRight: 22,
-  },
-  txIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#F7F7F7",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 11.3,
-  },
-  txInfo: { flex: 1, paddingTop: 4 },
-  txTitle: { fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY },
-  txSub: { fontSize: 12, lineHeight: 16, color: "#777777", marginTop: 6.65 },
-  txAmt: { fontSize: 16, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
   sheetOverlay: {
     flex: 1,

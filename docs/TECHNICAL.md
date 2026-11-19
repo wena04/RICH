@@ -95,6 +95,7 @@ Constraint: `(category_id, name)` unique. The original app stored an icon per su
 | subcategory_id | TEXT FK | Optional                            |
 | note           | TEXT    | Max 100 chars                       |
 | budget_envelope_id | TEXT FK | Optional 所属预算 (migration v8); expense only, SET NULL on budget delete |
+| transfer_group_id | TEXT | Shared by the two sides of an account transfer (migration v11) |
 | created_at     | TEXT    | ISO timestamp                       |
 | updated_at     | TEXT    | ISO timestamp                       |
 
@@ -103,6 +104,7 @@ Invariants:
 - `balance_adjustment` must have NULL category/subcategory
 - `subcategory_id` must reference a subcategory of `category_id`
 - `budget_envelope_id` may only be set on `expense` rows (trigger); `updateTransaction` clears it when the type changes
+- `transfer_group_id` may only be set on `balance_adjustment` rows (trigger). A transfer is exactly one negative and one positive row in different accounts; `createTransfer` / `updateTransfer` / `deleteTransfer` (`src/db/repo/transactions.ts`) write both sides in one SQLite transaction. Migration v11 linked earlier transfers only when unambiguous (opposite amounts, same day and note, different accounts, written within two seconds, each row matching exactly one partner); anything else stays as separate adjustments.
 
 ### Budget envelopes and savings plans (migration v8)
 
@@ -190,7 +192,7 @@ Compatible with original RICH app exports.
 **Headers (English):**
 
 ```
-date,type,amount,account,account_id,category,category_id,subcategory,subcategory_id,note
+date,type,amount,account,account_id,category,category_id,subcategory,subcategory_id,note,budget,budget_id,transfer_group_id
 ```
 
 **Format:**
@@ -198,6 +200,7 @@ date,type,amount,account,account_id,category,category_id,subcategory,subcategory
 - Date: `YYYY-MM-DD`
 - Type: `expense`, `income`, `balance_adjustment`
 - Includes IDs for better round-trip
+- `budget`/`budget_id`: the 所属预算 of an expense; `transfer_group_id`: the same value on both sides of a transfer (appended columns, export only). Savings plans are only in the database backup.
 
 ### Database Export
 
@@ -214,10 +217,13 @@ app/
 ├── (tabs)/
 │   ├── _layout.tsx      # Custom tab bar (首页, FAB, 预算/计划)
 │   ├── index.tsx        # Home (calendar + day filter)
-│   └── charts.tsx       # Budget page
+│   └── charts.tsx       # 预算/计划 tab
 ├── budget/
-│   └── edit.tsx         # Budget editor (per-category limits)
-├── trends.tsx           # Charts sub-view (pie, trends)
+│   ├── envelope.tsx     # Create/edit budget
+│   ├── detail.tsx       # One budget: remaining, category/subcategory breakdown, records
+│   ├── plans.tsx, plan.tsx, archived.tsx, help.tsx
+├── trends.tsx           # 趋势图: month columns + ranked categories/subcategories
+├── records.tsx          # Filtered record list (chart rows, budgets)
 ├── transaction/
 │   ├── new.tsx          # Add transaction (numpad)
 │   ├── [id].tsx         # Transaction detail
@@ -233,7 +239,9 @@ app/
 components/
 ├── icons/CategoryIcon.tsx            # Original category glyph (SVG), no disc
 ├── icons/categoryArt.generated.ts    # Generated SVG markup by icon name
-├── rich/                             # Visual system (headers, RichChevron, numpad, sheets)
+├── charts/                           # MonthlyColumns, CategoryBreakdownList, chart colour tokens
+├── budget/budgetVisuals.ts           # Budget kind badges and progress colours
+├── rich/                             # Visual system (headers, RichChevron, numpad, sheets, LedgerList, SortableList)
 └── DatePickerModal.tsx               # Date picker for add screen
 
 assets/icons/categories/  # 123 original glyphs as SVG masters (npm run icons:generate)
@@ -242,15 +250,17 @@ scripts/icons/            # trace / generate / extract tooling for the icon pipe
 
 src/
 ├── db/
-│   ├── migrations.ts    # Schema (v1–v7)
+│   ├── migrations.ts    # Schema (append-only versions)
 │   ├── starter.ts       # Idempotent taxonomy, no fake transactions
 │   └── repo/
-│       ├── budgets.ts   # Budget CRUD + summary
+│       ├── envelopes.ts # Budgets, savings plans, Budget tab summary
+│       ├── transactions.ts  # Records, with optional type/date/category/subcategory/budget filter
 │       └── ...
 ├── domain/
 │   ├── types.ts
 │   └── categories.ts  # DEFAULT_CATEGORIES constant
 └── features/
-    ├── charts/
+    ├── budgets/
+    ├── charts/          # aggregations.ts (monthly totals), breakdown.ts (category → subcategory), labels.ts
     └── importExport/
 ```

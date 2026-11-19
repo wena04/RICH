@@ -2,12 +2,12 @@
 
 Living implementation, source-parity, and verification status for Rich记账.
 
-**Last updated:** November 18, 2026
+**Last updated:** November 19, 2026
 
 **Phase:** original Rich 1.1.0 budget/plan model complete; native-device QA and release prep next
 
-**Latest pushed checkpoint:** `e6c4f0a` — history cleanup (private screenshots purged); budget/plan
-slices 3–5 committed locally after it
+**Latest pushed checkpoint:** `7527f0e` — icon separation, Android readiness, storage tests; trends/budget
+breakdowns, linked transfers, and CSV v2 columns are local after it
 
 ## Current objective
 
@@ -112,12 +112,16 @@ Completed on November 19, 2026 (local workspace):
 
 ```text
 TypeScript:              npx tsc --noEmit                         PASS
-Unit + storage tests:    npm test                                 PASS (74/74, incl. 7 SQLite integration tests)
+Unit + storage tests:    npm test                                 PASS (89/89, incl. 19 SQLite integration tests)
 Category icon registry:  npm run icons:check                      PASS (123 vector glyphs)
 Icon fidelity vs original rasters at 3x                            mean IoU 0.955, colour Δ 1.4/255
 Native bundles:          npx expo export --platform ios,android   PASS (Hermes, both platforms)
-Expo doctor:             17/18 checks; 3 patch-level SDK bumps pending (expo, expo-constants, expo-file-system)
+Expo doctor:             18/18 checks (expo 54.0.37, expo-constants 18.0.14, expo-file-system 19.0.24)
 Web walkthrough:         15 flows incl. reload persistence        PASS, no page errors
+Trends + budget detail:  13 steps at 393×852 and 375×667          PASS, no page errors
+Home after LedgerList refactor: pixel diff vs previous build      0.000% differing pixels
+Linked transfer flow:    create → detail → edit amount → reload   PASS, no page errors
+Budget sort flow:        handle drag, long-press drag, quick swipe ignored, ↑/↓, save, reload   PASS
 Patch hygiene:           git diff --check                         PASS
 Privacy staging scan:    no IPA/iMazing/CSV/DB files              PASS
 ```
@@ -165,6 +169,55 @@ Budget/plan creation screens remain designed rather than verified (no captures e
   Android device backups unless that is changed. Starter subcategories now keep their designed order.
 - **Budget emoji kept:** budgets and plans use emoji like the original; the brand guide now scopes
   the no-emoji rule to category surfaces.
+
+## Trends and budget breakdowns — November 19, 2026
+
+Owner request: show subcategories as well as categories in the charts and budgets, with hover.
+No original capture of 趋势图 or a budget detail page exists (only the `icon_trend_chart`
+empty-state art, now used), so both are designed rather than source-verified.
+
+- **趋势图** (`app/trends.tsx`): one filter row (支出/收入 pills from 记一笔 + month stepper) scopes
+  everything below. Six month columns: the selected month in the chart green, the rest gray;
+  hovering (web, iPad pointer) or pressing and dragging moves a crosshair and updates the readout
+  (total, the other type, 结余); tap/release selects the month; VoiceOver adjusts it. Below, the
+  month's categories are ranked with whole-number shares that add up to 100; a category unfolds into
+  its subcategories (share of the category, 未细分 for records without one), and every row opens
+  the matching records. The pie and line chart were removed: ranked bars compare categories more
+  exactly than pie slices and need one colour instead of one per category.
+- **Budget detail** (`app/budget/detail.tsx`): tapping a budget now opens remaining/超支, progress,
+  amount/spent/frozen/share, the assigned expenses by category → subcategory, and the records
+  (monthly budgets step between their start month and this month; special budgets show all time).
+  编辑 in the header opens the existing editor.
+- **Records screen** (`app/records.tsx`) and `listTransactions` filters (type, dates, category,
+  subcategory or 未细分, budget). Home's ledger rows moved into `components/rich/LedgerList.tsx`
+  (pixel-identical) so every list matches.
+- Chart colours were run through the dataviz palette validator against the white card: #2C9B7A
+  passes 3:1; the lighter mint on subcategory meters doesn't, so those rows always print their
+  share and amount.
+- Still to check on devices: press-and-drag inside the scroll view on iOS and Android (verified on
+  web with mouse drag), and VoiceOver/TalkBack on the adjustable chart.
+
+## Linked transfers and CSV v2 — November 19, 2026
+
+- Transfers now share `transactions.transfer_group_id` (migration v11, append-only). Opening either
+  side shows one 账户转账 (from → to); editing reopens the transfer screen prefilled and rewrites
+  both sides; deleting removes both. A trigger keeps a transfer side from becoming an expense or
+  income. The migration links earlier transfers only when the pair is unambiguous (tested with
+  clear, ambiguous, loose, and untimed pairs); anything else stays as separate adjustments.
+- CSV v2 export appends `budget`, `budget_id`, and `transfer_group_id`. Savings plans remain in the
+  database backup only.
+- Expo patch updates applied (expo 54.0.37, expo-constants 18.0.14, expo-file-system 19.0.24);
+  expo-doctor passes 18/18.
+
+## Drag-to-reorder budgets — November 19, 2026
+
+Sort mode now supports dragging as well as the ↑/↓ buttons: drag the ≡ handle, or long-press a
+row and drag. Neighbours slide aside as the row passes their midpoint, scrolling pauses while a row
+is held, and a quick swipe on a row does nothing (it needs the hold). Added
+`react-native-gesture-handler` (~2.28.0, the SDK 54 version; included in Expo Go, a custom dev build
+must be rebuilt). Found and avoided a gesture-handler web quirk where a first move of exactly 15pt
+skipped the long-press wait. Device check still needed: drag inside the scroll view on iOS and
+Android, and VoiceOver/TalkBack using the buttons.
 
 ## Future idea needing user research: a personal AI assistant for logging
 
@@ -233,8 +286,8 @@ chooses the category and taps 确定.
      clock: 0/10 → 4/10 (¥2000) → 已攒够 → 完成计划, with the source budget's freeze released.
    - [x] **Slice 5 — archive, reorder, cleanup**: archive/restore budgets (blocked while a plan
      freezes them) and ended plans; `app/budget/archived.tsx` lists both with 恢复. Budget sort mode
-     uses the original `icon_list_sort` with up/down controls instead of the original drag gesture
-     (no gesture library in the project; buttons are also VoiceOver-friendly). Migration v9 drops
+     uses the original `icon_list_sort` with up/down controls (drag-to-reorder was added later the
+     same month, see "Drag-to-reorder budgets"). Migration v9 drops
      the v4/v6 tables; a populated v7 database was upgraded through v9 with integrity and
      foreign-key checks passing. All earlier browser flows re-run without errors.
 
@@ -252,8 +305,14 @@ chooses the category and taps 确定.
    small-screen keyboard, safe-area, modal, long-label, and empty/filled states.
 5. Exercise fresh install, schema migration, CSV exchange, database restore, transfer rollback, and
    category-kind changes using real native SQLite behavior without committing any private data.
-6. Complete App Store metadata, privacy answers, signing/build, TestFlight, and submission checks in
-   [Apple Release 2026](APPLE_RELEASE_2026.md).
+6. ~~Complete App Store metadata, privacy answers, signing/build, TestFlight, and submission checks in
+   [Apple Release 2026](APPLE_RELEASE_2026.md).~~ On hold (owner, November 19, 2026): the app may be
+   published through another company or entered in the Swift Student Challenge, so release prep
+   waits for that decision. Already in place regardless of publisher: `ios.privacyManifests` in
+   `app.json` (no tracking, no collected data, React Native's UserDefaults/FileTimestamp/
+   SystemBootTime reasons; verified in a throwaway `expo prebuild`). Facts for that decision: the
+   original 1.1.0 was published as `com.duitang.richman` (build 58); this replica uses
+   `com.richapp.finance`, and its artwork comes from the original bundle.
 
 ## Known limitations
 
@@ -263,8 +322,8 @@ chooses the category and taps 确定.
   status-bar, keyboard, launcher-icon, and SQLite behavior require native-device verification.
 - No cloud sync, recurring entries, reminders, receipt attachments, search, authentication, or
   multi-currency conversion is currently implemented in the replica.
-- Transfer rows are atomic but still lack a shared transfer-group ID for linked editing/deletion.
-- CSV v1/v2 export does not carry budget assignments or plans; the full database backup does.
+- CSV v1 does not carry budget assignments; CSV v2 carries assignments and transfer links but not
+  savings plans. The full database backup carries everything.
 
 ## References
 

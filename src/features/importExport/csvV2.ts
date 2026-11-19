@@ -15,6 +15,10 @@ export const CSV_V2_HEADERS = [
   'subcategory',
   'subcategory_id',
   'note',
+  // Appended after the original ten columns so readers that use the header names keep working.
+  'budget',
+  'budget_id',
+  'transfer_group_id',
 ] as const;
 
 export type CsvV2Row = {
@@ -28,6 +32,9 @@ export type CsvV2Row = {
   subcategory: string;
   subcategory_id: string;
   note: string;
+  budget: string;
+  budget_id: string;
+  transfer_group_id: string;
 };
 
 export async function exportCsvV2(db: AppDb): Promise<string> {
@@ -42,6 +49,9 @@ export async function exportCsvV2(db: AppDb): Promise<string> {
     subcategory_id: string | null;
     subcategory_name: string | null;
     note: string | null;
+    budget_id: string | null;
+    budget_name: string | null;
+    transfer_group_id: string | null;
   }>(
     `
     SELECT
@@ -54,11 +64,15 @@ export async function exportCsvV2(db: AppDb): Promise<string> {
       c.name AS category_name,
       s.id AS subcategory_id,
       s.name AS subcategory_name,
-      t.note AS note
+      t.note AS note,
+      b.id AS budget_id,
+      b.name AS budget_name,
+      t.transfer_group_id AS transfer_group_id
     FROM transactions t
     JOIN accounts a ON a.id = t.account_id
     LEFT JOIN categories c ON c.id = t.category_id
     LEFT JOIN subcategories s ON s.id = t.subcategory_id
+    LEFT JOIN budget_envelopes b ON b.id = t.budget_envelope_id
     ORDER BY t.date ASC, t.created_at ASC
     `
   );
@@ -78,6 +92,9 @@ export async function exportCsvV2(db: AppDb): Promise<string> {
       subcategory: r.subcategory_name ?? '',
       subcategory_id: r.subcategory_id ?? '',
       note: r.note ?? '',
+      budget: r.budget_name ?? '',
+      budget_id: r.budget_id ?? '',
+      transfer_group_id: r.transfer_group_id ?? '',
     };
   });
 

@@ -160,6 +160,51 @@ Source: `components/icons/CategoryIcon.tsx`
   earlier build → 其他 (`src/domain/categoryIcons`).
 - Do not substitute emoji or icon-font glyphs for a category icon.
 
+### `MonthlyColumns`
+
+Source: `components/charts/MonthlyColumns.tsx` (labels in `src/features/charts/labels.ts`)
+
+- One series at a time (支出 or 收入), one column per month. The selected month is #2C9B7A (the
+  only chart green that clears 3:1 on white) with its value printed on top; other months are
+  #DEDEDE. 4pt rounded tops, square at a hairline #D8D8D8 baseline, month ticks below.
+- The readout above the plot (month, total, the other type, 结余) follows the pointer: hover on web
+  and iPad, press-and-drag on touch, with a crosshair on the active column. It replaces a floating
+  tooltip so a finger never covers it. Tap or release selects a month.
+- Accessibility: the plot is one `adjustable` element; swipe up/down moves the selected month.
+
+### `CategoryBreakdownList`
+
+Source: `components/charts/CategoryBreakdownList.tsx` (data from `src/features/charts/breakdown.ts`)
+
+- Ranked rows, largest first: 36pt #F7F7F7 disc with the category glyph, name, whole-number share
+  (shares add up to 100), amount, and a 5pt #2C9B7A meter of the share of the total.
+- A category with named subcategories unfolds (chevron down/up) into 52pt subcategory rows
+  indented under the name: 28pt disc, share of the category, 3pt mint meter. Records filed under the
+  category itself appear as 未细分 with the category glyph at 50%. 查看全部 N 笔 closes the group.
+- Every row leads to its records (`/records`); a category with no subcategories goes there
+  directly. Hover lightens the row on web.
+- Identity comes from the glyph and name, not colour, so the list never needs more than one hue.
+
+### `SortableList`
+
+Source: `components/rich/SortableList.tsx` (`react-native-gesture-handler`; drop math in
+`src/features/budgets/order.ts`)
+
+- Three ways to reorder: drag the ≡ handle (three 16×1.5pt #BBBBBB bars in a 44pt target, starts at
+  once), long-press the row (280ms) and drag, or the row's ↑/↓ buttons, which stay for VoiceOver.
+- The dragged row lifts (white, soft shadow, 1.02 scale) and follows the finger; neighbours slide
+  to open the gap once its edge passes their midpoint. Rows may differ in height.
+- `onDragActiveChange` lets the screen pause its ScrollView while a row is held.
+- The app root is wrapped in `GestureHandlerRootView` (`app/_layout.tsx`).
+
+### `LedgerList`
+
+Source: `components/rich/LedgerList.tsx`
+
+- `groupLedgerByDay`, `LedgerDayHeader`, `LedgerRow`, `LedgerDays`: Home's day groups (date,
+  stacked − / + totals, 5.5/4.5 dashed rule, 72.6pt rows, 10pt #F7F7F7 band between days). Home,
+  the day sheet, budget detail, and the filtered records screen all draw records with it.
+
 ### `DatePickerModal`
 
 Source: `components/DatePickerModal.tsx`
@@ -257,7 +302,9 @@ then the standard bottom navigation. Changing budget state must not replace that
 | 记一笔 | contextual header, `DatePickerModal`, category grid, inline subcategory zone, `MoneyNumpad` |
 | 收入 entry | same composer with `DEFAULT_INCOME_CATEGORIES` |
 | 预算/计划 | budget summary matrix, `MonthStepper` when needed, `ProgressBar`, bottom nav |
-| 趋势图 | `ScreenHeader`, `MonthStepper`, pie/line charts, `ProgressBar` drill-down |
+| 趋势图 | `ScreenHeader`, 支出/收入 pills + `MonthStepper` filter row, `MonthlyColumns`, `CategoryBreakdownList` |
+| 预算明细 | `ScreenHeader`, `MonthStepper`, `ProgressBar`, `CategoryBreakdownList`, `LedgerDays` |
+| 记录 (filtered) | `ScreenHeader`, `LedgerDays` |
 | 交易详情 | `ScreenHeader`, square detail card, rectangular coral delete button |
 | 资产管理 | `ScreenHeader`, `AssetGoalIllustration`, account groups |
 | 账户转账 | contextual date header, `DatePickerModal`, account selectors, `MoneyNumpad` |

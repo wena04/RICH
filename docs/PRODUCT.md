@@ -74,7 +74,7 @@ and 我的; secondary routes cover categories, trends, data management, About, a
   chosen balance.
 - Transfer between different accounts with amount arithmetic, date, and optional note. Both sides
   commit atomically as matched negative/positive balance adjustments and do not change
-  income/expense totals.
+  income/expense totals. Editing or deleting a transfer always changes both accounts.
 
 ### Hierarchical budgets
 
@@ -88,8 +88,12 @@ and 我的; secondary routes cover categories, trends, data management, About, a
 
 ### Trends and portability
 
-- Trends display real monthly expense/income history, category distribution, and optional
-  subcategory drill-down.
+- Trends display real monthly expense or income history (six month columns; hover or press and
+  drag to read any month, tap to select it) and the month's ranked categories, each unfolding into
+  its subcategories, with every row leading to its records. Shares are whole percentages that add
+  up to 100.
+- A budget's detail page shows what is left and which categories and subcategories its assigned
+  expenses went to.
 - Export CSV v1, CSV v2, or a lossless SQLite database backup.
 - Import legacy CSV into a selected account or restore a complete database after confirmation.
 

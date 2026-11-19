@@ -114,4 +114,6 @@ export type Transaction = {
   note: string | null;
   /** 所属预算 (expenses only). Read-only here; set via assignTransactionToEnvelope. */
   budgetEnvelopeId?: string | null;
+  /** Shared by the two sides of an account transfer. Read-only here; see the transfer functions. */
+  transferGroupId?: string | null;
 };

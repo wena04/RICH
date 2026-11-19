@@ -334,6 +334,16 @@ export async function getEnvelopeSummaries(
   });
 }
 
+/** One budget's summary for a month (archived budgets included), or `null` if it was deleted. */
+export async function getEnvelopeSummary(
+  db: AppDb,
+  id: string,
+  period: string,
+): Promise<BudgetEnvelopeSummary | null> {
+  const all = await getEnvelopeSummaries(db, period, { includeArchived: true });
+  return all.find((summary) => summary.envelope.id === id) ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Savings plans
 // ---------------------------------------------------------------------------

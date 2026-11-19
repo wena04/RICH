@@ -56,14 +56,14 @@ Local-first: SQLite is the only source of truth. No backend, sign-in, analytics,
 - `src/features/` — budgets, charts aggregations, CSV v1/v2 and whole-DB import/export.
   - **Budgets follow the original Rich model** (migration v8): named monthly/special envelopes that expenses are explicitly assigned to (`transactions.budget_envelope_id`, set from the detail row 所属预算/计划), plus savings plans that freeze a monthly budget toward a target. Logic in `budgets/envelopes.ts`, SQL in `src/db/repo/envelopes.ts`. The legacy v4/v6 category-limit tables were dropped in migration v9. Model details and archive/order rules are in `docs/TECHNICAL.md`.
   - Spend is always derived from transactions, never stored twice.
-- `components/rich/` — the RICH visual system (headers, month stepper, numpad, progress bars, `RichChevron`). `components/icons/` — `CategoryIcon` and its generated registry (`scripts/icons/generate-category-icons.mjs`); edit the SVG sources and regenerate, don't hand-edit. Icon resolution (stored id → name → legacy id → 其他) lives in `src/domain/categoryIcons/`.
+- `components/rich/` — the RICH visual system (headers, month stepper, numpad, progress bars, `RichChevron`, `LedgerList` record rows). `components/charts/` — `MonthlyColumns` and `CategoryBreakdownList` (data from `src/features/charts/breakdown.ts`; colour tokens in `components/charts/tokens.ts`). `components/icons/` — `CategoryIcon` and its generated registry (`scripts/icons/generate-category-icons.mjs`); edit the SVG sources and regenerate, don't hand-edit. Icon resolution (stored id → name → legacy id → 其他) lives in `src/domain/categoryIcons/`.
 - Screens use `SafeAreaView` from `react-native-safe-area-context` (React Native's own is iOS-only), and Modals set `onRequestClose` for the Android back button.
 
 Key invariants spread across files:
 
 - Money is integer cents; dates are local `YYYY-MM-DD` strings (`src/utils/money.ts`, `date.ts`).
 - `balance_adjustment` transactions have no category and are excluded from income/expense analytics.
-- Transfers are a matched negative/positive adjustment pair committed in one SQLite transaction.
+- Transfers are a matched negative/positive adjustment pair sharing `transactions.transfer_group_id` (migration v11), written, edited, and deleted together through the transfer functions in `src/db/repo/transactions.ts`.
 - Transaction entry/edit references categories by stable ID, not name.
 
 ## Privacy and data-safety rules

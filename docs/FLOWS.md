@@ -26,6 +26,8 @@
 | `transaction/adjust`, `transaction/transfer` | default | Balance and transfer flows. |
 | `categories/add` | default | headerShown: false. Icon picker for custom categories. |
 | `budget/envelope` | default | headerShown: false. Create (no params) or edit (`?id=`) a budget. |
+| `budget/detail` | default | headerShown: false. One budget (`?id=`): remaining, category/subcategory breakdown, records. |
+| `records` | default | headerShown: false. Records behind a chart row or budget (`?type&start&end&categoryId&subcategoryId&envelopeId`, `subcategoryId=none` = 未细分). |
 | `budget/help` | default | headerShown: false. Original example pages (`?topic=budget\|plan`). |
 | `budget/plans` | default | headerShown: false. 计划清单 list. |
 | `budget/plan` | default | headerShown: false. Create (no params) or detail (`?id=`) a savings plan. |
@@ -83,9 +85,9 @@ Only **two** visible tabs + a center FAB. `more` and `transactions` have no tab 
 | 趋势图 row (right, with mini donut) | `router.push('/trends')` → 趋势图 screen. |
 | Empty-state donut + legend | Original `icon_budget_progress` artwork when no budget exists. |
 | **+ 创建预算** button | `router.push('/budget/envelope')` → new budget. |
-| 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/envelope?id=…`. |
+| 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/detail?id=…`. |
 | **+ 新预算** pill | `router.push('/budget/envelope')`. |
-| Sort icon (`icon_list_sort`, 2+ budgets) | Sort mode: ↑/↓ per row, 完成 → `reorderEnvelopes`. |
+| Sort icon (`icon_list_sort`, 2+ budgets) | Sort mode (`SortableList`): drag a row's ≡ handle, or long-press the row and drag; ↑/↓ per row (also VoiceOver). Scrolling pauses while dragging. 完成 → `reorderEnvelopes`. |
 | 已归档 N 项 | Shown when anything is archived → `/budget/archived`. |
 | 看看别人怎么分预算 | `/budget/help?topic=budget`. |
 
@@ -120,10 +122,22 @@ Only **two** visible tabs + a center FAB. `more` and `transactions` have no tab 
 | Element | Trigger → Result |
 |---|---|
 | Back chevron | `router.back()`. |
-| Month ‹ / › | `setMonth(addMonths(m, ±1))` — reloads aggregations for that month. Real. |
-| Category legend row tap | `setSelectedCategoryId(...)` → reveals the 子分类明细 drill-down card below (real data). |
-| Pie chart / line chart | Display (real aggregations from DB). |
+| 支出 / 收入 pills | Switch the series for the chart and the ranking. |
+| Month ‹ / › | Select a month; the six-month window moves only when the month leaves it. |
+| Month columns: hover (web, iPad pointer) or press-and-drag | Crosshair + readout (month total, the other type, 结余) follow the pointer. |
+| Month columns: tap / release | Select that month. VoiceOver: adjustable (swipe up/down). |
+| Category row | Has named subcategories → unfolds them (share of the category); otherwise → `/records`. |
+| Subcategory row / 查看全部 N 笔 | `/records` filtered to that subcategory (未细分 = none) or the whole category. |
 Fully wired to real data; no dead buttons here.
+
+### 预算明细 — `app/budget/detail.tsx`
+| Element | Trigger → Result |
+|---|---|
+| 编辑 | `/budget/envelope?id=…`. If the budget is deleted there, the detail shows 这个预算已删除. |
+| Month ‹ / › (monthly budgets) | Between the budget's start month and this month. Special budgets show all time. |
+| Summary | 本月剩余 / 超支, progress, 本月预算 · 已用 · 计划冻结 · 已用比例. |
+| 支出构成 | The assigned expenses by category → subcategory (same list as 趋势图); rows open `/records` limited to the budget. |
+| 本月记录 / 全部记录 | The assigned records, grouped by day like Home → `/transaction/[id]`. |
 
 ### Add — `app/transaction/new.tsx`
 | Element | Trigger → Result |
@@ -175,7 +189,8 @@ Fully wired to real data; no dead buttons here.
 | **账户转账** button (bottom) | `router.push('/transaction/transfer')` → **real Transfer screen.** |
 
 ### 账户转账 (Transfer) — `app/transaction/transfer.tsx`
-Reached from 资产管理's 账户转账 button.
+Reached from 资产管理's 账户转账 button (new), or from a transfer's detail row (`?groupId=`, edit:
+amount, accounts, date, and note prefilled; an automatic note is rebuilt from the accounts).
 | Element | Trigger → Result |
 |---|---|
 | Back chevron | `router.back()`. |
@@ -184,7 +199,7 @@ Reached from 资产管理's 账户转账 button.
 | Numpad + backspace + "." | Edit the transfer amount. Real. |
 | **+ / − operator keys** | Evaluate chained transfer arithmetic before confirmation. |
 | Note field | Optional; defaults to `转账 {from} → {to}`. |
-| **确定** | `onConfirm()` → creates **two `balance_adjustment` transactions** (−X on source, +X on destination) → `router.back()`. Disabled unless amount>0 and from≠to. Real. |
+| **确定** | `createTransfer` (new) or `updateTransfer` (edit): **two `balance_adjustment` rows** (−X on source, +X on destination) sharing a `transfer_group_id`, in one SQLite transaction → `router.back()`. Disabled unless amount>0 and from≠to. Real. |
 
 ### 调整余额 (Adjust) — `app/transaction/adjust.tsx`
 Reached only from the Accounts edit modal's 调整余额.
@@ -267,6 +282,5 @@ destructive confirmation.
 
 - The Home month label is display-only; adjacent arrows are the month controls.
 - The no-budget illustration is intentionally illustrative until the user creates a real budget.
-- Transfers are atomic but do not yet have a shared persisted group ID for linked edit/delete.
 - Final release acceptance still requires native-device visual, keyboard, safe-area, migration,
   restore, and accessibility walkthroughs.

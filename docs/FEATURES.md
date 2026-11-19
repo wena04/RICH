@@ -40,7 +40,8 @@ derived real data; final on-device pixel review is tracked separately.
 - Derived balances, target-asset progress, create/edit, and guarded deletion.
 - Transfers support source/destination, date, optional note, and keypad arithmetic.
 - Both transfer rows commit in one SQLite transaction and roll back together; they remain outside
-  income/expense totals.
+  income/expense totals. They share a transfer group, so opening either side shows one 账户转账
+  (from → to) that edits or deletes both sides together.
 
 ### Budgets (original Rich model) and analytics
 
@@ -53,7 +54,8 @@ derived real data; final on-device pixel review is tracked separately.
 - Progress, remaining or overspent state, and threshold colors per budget; 结余 for the month.
 - Original budget and plan example pages.
 - Archive/restore budgets and ended plans; manual budget order.
-- Six-month income/expense trends, category distribution, and subcategory drill-down.
+- 趋势图: 支出/收入 switch, six-month month columns with hover/press-and-drag readout, ranked categories that unfold into subcategories, and the records behind any row.
+- Budget detail: remaining/progress for a month (or all time for special budgets), the assigned expenses by category and subcategory, and their records.
 
 ### Data ownership and recovery
 
@@ -94,6 +96,8 @@ the wrong parent category.
 | `/categories` | Typed category/subcategory management |
 | `/categories/add` | Category/icon creator |
 | `/budget/envelope` | Create/edit budget |
+| `/budget/detail` | One budget: breakdown and records |
+| `/records` | Filtered record list (chart rows, budgets) |
 | `/budget/help` | Budget/plan examples |
 | `/budget/plans` | 计划清单 |
 | `/budget/plan` | Create plan / plan detail |
@@ -110,7 +114,6 @@ the wrong parent category.
 
 - No automatic cloud sync, recurring entries, reminders, receipt attachments, search, authentication,
   or multi-currency conversion.
-- Transfer pairs do not yet have a shared persisted group ID for linked edit/delete.
 - The native SQLite app targets iOS/Android; `mockups.html` is the browser preview.
 - Automated logic/build checks pass, but final visual acceptance still requires an on-device route
   walkthrough and screenshots at target iPhone sizes.

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -18,32 +18,21 @@ import {
   PRIMARY_GREEN,
   TEXT_PRIMARY,
   TEXT_SECONDARY,
-  WARNING_AMBER,
 } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
 import { getBudgetTabSummary, reorderEnvelopes } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelopeSummary, BudgetTabSummary } from '@/src/domain/types';
 import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
-import { moveItem } from '@/src/features/budgets/order';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
 import { RichChevron } from '@/components/rich/RichChevron';
-
-const KIND_BADGE = {
-  monthly: require('../../assets/images/budget/icon_month_budget.png'),
-  special: require('../../assets/images/budget/icon_special_budget.png'),
-};
+import { SortableList } from '@/components/rich/SortableList';
+import { KIND_BADGE, budgetProgressColor } from '@/components/budget/budgetVisuals';
 
 function monthLabel(period: string): string {
   const [year, month] = period.split('-');
   const now = new Date();
   return Number(year) === now.getFullYear() ? `${Number(month)}月` : `${year}年${Number(month)}月`;
-}
-
-function progressColor(percent: number): string {
-  if (percent > 100) return EXPENSE_RED;
-  if (percent >= 80) return WARNING_AMBER;
-  return PRIMARY_GREEN;
 }
 
 function BudgetExampleDonut() {
@@ -81,7 +70,7 @@ function EnvelopeRow({
           ? `剩余 ${centsToYuan(remainingCents)} 元`
           : `超支 ${centsToYuan(-remainingCents)} 元`
       }`}
-      accessibilityHint="编辑预算"
+      accessibilityHint="查看预算明细"
     >
       <View style={styles.envelopeIcon}>
         <Text style={styles.envelopeEmoji}>{envelope.icon}</Text>
@@ -99,7 +88,7 @@ function EnvelopeRow({
         </Text>
         <ProgressBar
           percent={percent}
-          color={progressColor(percent)}
+          color={budgetProgressColor(percent)}
           height={5}
           style={styles.envelopeTrack}
         />
@@ -119,16 +108,21 @@ function EnvelopeRow({
   );
 }
 
+const summaryKey = (summary: BudgetEnvelopeSummary) => summary.envelope.id;
+
 function SortRow({
   summary,
   first,
   last,
   onMove,
+  handle,
 }: {
   summary: BudgetEnvelopeSummary;
   first: boolean;
   last: boolean;
   onMove: (delta: number) => void;
+  /** Drag handle from `SortableList`. */
+  handle: ReactNode;
 }) {
   const { envelope } = summary;
   return (
@@ -159,6 +153,7 @@ function SortRow({
       >
         <RichChevron direction="down" />
       </Pressable>
+      {handle}
     </View>
   );
 }
@@ -171,6 +166,8 @@ export default function BudgetScreen() {
   const loadRequestRef = useRef(0);
   const [sortOrder, setSortOrder] = useState<BudgetEnvelopeSummary[] | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
+  // Scrolling pauses while a budget is being dragged.
+  const [dragging, setDragging] = useState(false);
 
   const refresh = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -206,7 +203,7 @@ export default function BudgetScreen() {
   }
 
   function openEnvelope(id: string) {
-    router.push({ pathname: '/budget/envelope', params: { id } });
+    router.push({ pathname: '/budget/detail', params: { id } });
   }
 
   async function finishSorting() {
@@ -291,7 +288,7 @@ export default function BudgetScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} scrollEnabled={!dragging}>
         {loadState === 'loading' ? (
           <View style={styles.statePanel}>
             <ActivityIndicator size="small" color={PRIMARY_GREEN} />
@@ -317,7 +314,9 @@ export default function BudgetScreen() {
             <View style={styles.listHeader}>
               <View>
                 <Text style={styles.listTitle}>我的预算</Text>
-                <Text style={styles.listMeta}>{monthLabel(month)} · {envelopes.length} 个预算</Text>
+                <Text style={styles.listMeta}>
+                  {sortOrder ? '拖动右侧把手，或长按后拖动' : `${monthLabel(month)} · ${envelopes.length} 个预算`}
+                </Text>
               </View>
               {sortOrder ? (
                 <Pressable
@@ -362,24 +361,32 @@ export default function BudgetScreen() {
               )}
             </View>
             <View style={styles.envelopeList}>
-              {sortOrder
-                ? sortOrder.map((item, index) => (
+              {sortOrder ? (
+                <SortableList
+                  items={sortOrder}
+                  keyOf={summaryKey}
+                  onReorder={setSortOrder}
+                  onDragActiveChange={setDragging}
+                  renderRow={(item, row) => (
                     <SortRow
-                      key={item.envelope.id}
                       summary={item}
-                      first={index === 0}
-                      last={index === sortOrder.length - 1}
-                      onMove={(delta) => setSortOrder((current) => (current ? moveItem(current, index, delta) : current))}
+                      first={row.first}
+                      last={row.last}
+                      onMove={row.move}
+                      handle={row.handle}
                     />
-                  ))
-                : envelopes.map((item, index) => (
+                  )}
+                />
+              ) : (
+                envelopes.map((item, index) => (
                     <EnvelopeRow
                       key={item.envelope.id}
                       summary={item}
                       first={index === 0}
                       onPress={() => openEnvelope(item.envelope.id)}
                     />
-                  ))}
+                  ))
+              )}
             </View>
             {!sortOrder ? (
               <>

@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { StartupError } from '@/components/rich/StartupError';
 import { CARD_BACKGROUND } from '@/constants/Colors';
@@ -87,7 +88,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <View style={styles.previewShell}>
+    <GestureHandlerRootView style={styles.previewShell}>
       <View style={styles.appFrame}>
         <ThemeProvider value={DefaultTheme}>
           <Stack>
@@ -104,6 +105,8 @@ function RootLayoutNav() {
             <Stack.Screen name="categories" options={{ headerShown: false }} />
             <Stack.Screen name="categories/add" options={{ headerShown: false }} />
             <Stack.Screen name="budget/envelope" options={{ headerShown: false }} />
+            <Stack.Screen name="budget/detail" options={{ headerShown: false }} />
+            <Stack.Screen name="records" options={{ headerShown: false }} />
             <Stack.Screen name="budget/help" options={{ headerShown: false }} />
             <Stack.Screen name="budget/plans" options={{ headerShown: false }} />
             <Stack.Screen name="budget/plan" options={{ headerShown: false }} />
@@ -115,7 +118,7 @@ function RootLayoutNav() {
           </Stack>
         </ThemeProvider>
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 

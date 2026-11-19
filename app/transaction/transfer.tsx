@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -28,15 +28,21 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
 import { getDb } from "@/src/db/db";
 import { listAccounts } from "@/src/db/repo/accounts";
-import { createTransaction } from "@/src/db/repo/transactions";
+import { createTransfer, getTransfer, updateTransfer } from "@/src/db/repo/transactions";
 import type { Account } from "@/src/domain/types";
 import { formatIsoDateCN, isoDateToday } from "@/src/utils/date";
-import { newId } from "@/src/utils/id";
-import { centsToYuan } from "@/src/utils/money";
+import { centsToCurrencyString, centsToYuan } from "@/src/utils/money";
 
+/** The note written when the person leaves 添加备注 empty. */
+function autoMemo(fromName: string | null, toName: string | null) {
+  return `转账 ${fromName} → ${toName}`;
+}
+
+/** New transfer, or `?groupId=` to edit both sides of an existing one. */
 export default function TransferScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { groupId } = useLocalSearchParams<{ groupId?: string }>();
   const [amountStr, setAmountStr] = useState("0");
   const [date, setDate] = useState(isoDateToday());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -53,9 +59,26 @@ export default function TransferScreen() {
   useEffect(() => {
     (async () => {
       const db = await getDb();
-      setAccounts(await listAccounts(db));
+      const list = await listAccounts(db);
+      setAccounts(list);
+      if (!groupId) return;
+      const transfer = await getTransfer(db, groupId);
+      if (!transfer) {
+        Alert.alert("找不到这笔转账", "它可能已经被删除。");
+        router.back();
+        return;
+      }
+      const name = (id: string) => list.find((a) => a.id === id)?.name ?? null;
+      const cents = transfer.amountCents;
+      setAmountStr(cents % 100 === 0 ? String(cents / 100) : centsToCurrencyString(cents));
+      setFromId(transfer.fromAccountId);
+      setToId(transfer.toAccountId);
+      setDate(transfer.date);
+      // An automatic note is rebuilt from the accounts, so it stays right if they change.
+      const generated = autoMemo(name(transfer.fromAccountId), name(transfer.toAccountId));
+      setNote(transfer.note && transfer.note !== generated ? transfer.note : "");
     })();
-  }, []);
+  }, [groupId, router]);
 
   const nameOf = (id: string | null) =>
     accounts.find((a) => a.id === id)?.name ?? null;
@@ -96,32 +119,12 @@ export default function TransferScreen() {
       const db = await getDb();
       const fromName = nameOf(fromId);
       const toName = nameOf(toId);
-      const memo = note.trim()
-        ? note.trim().slice(0, 100)
-        : `转账 ${fromName} → ${toName}`;
-      // Both sides commit together, so an interrupted transfer can never leave one account wrong.
-      await db.withTransactionAsync(async () => {
-        await createTransaction(db, {
-          id: newId("txn"),
-          type: "balance_adjustment",
-          amountCents: -cents,
-          date,
-          accountId: fromId,
-          categoryId: null,
-          subcategoryId: null,
-          note: memo,
-        });
-        await createTransaction(db, {
-          id: newId("txn"),
-          type: "balance_adjustment",
-          amountCents: cents,
-          date,
-          accountId: toId,
-          categoryId: null,
-          subcategoryId: null,
-          note: memo,
-        });
-      });
+      const memo = note.trim() ? note.trim().slice(0, 100) : autoMemo(fromName, toName);
+      // Both sides commit together (one SQLite transaction) and share a transfer group, so an
+      // interrupted transfer never leaves one account wrong and edits/deletes move both sides.
+      const input = { fromAccountId: fromId, toAccountId: toId, amountCents: cents, date, note: memo };
+      if (groupId) await updateTransfer(db, groupId, input);
+      else await createTransfer(db, input);
       router.back();
     } catch (e) {
       console.error("Transfer failed:", e);

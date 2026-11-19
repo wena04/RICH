@@ -32,17 +32,22 @@ import {
   getEnvelopeSummaries,
 } from '@/src/db/repo/envelopes';
 import { getCategoryById, getSubcategoryById } from '@/src/db/repo/categories';
-import { deleteTransaction, getTransaction } from '@/src/db/repo/transactions';
+import { listAccounts } from '@/src/db/repo/accounts';
+import { deleteTransaction, deleteTransfer, getTransaction, getTransfer } from '@/src/db/repo/transactions';
 import type { BudgetEnvelopeSummary, TransactionType } from '@/src/domain/types';
 import { centsToCurrencyString } from '@/src/utils/money';
 
-function titleFor(type: TransactionType): string {
+type TransferView = { groupId: string; fromName: string; toName: string };
+
+function titleFor(type: TransactionType, transfer: TransferView | null): string {
   // Original titles: the detail screen is the edit entry point.
+  if (transfer) return '账户转账';
   if (type === 'income') return '收入编辑';
   if (type === 'balance_adjustment') return '余额调整';
   return '支出编辑';
 }
-function deleteLabelFor(type: TransactionType): string {
+function deleteLabelFor(type: TransactionType, transfer: TransferView | null): string {
+  if (transfer) return '删除该笔转账';
   if (type === 'income') return '删除该笔收入';
   if (type === 'balance_adjustment') return '删除该笔调整';
   return '删除该笔支出';
@@ -67,6 +72,7 @@ export default function TransactionDetailScreen() {
   const [showBudgetPicker, setShowBudgetPicker] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [transfer, setTransfer] = useState<TransferView | null>(null);
 
   const load = useCallback(async () => {
     setLoaded(false);
@@ -81,6 +87,14 @@ export default function TransactionDetailScreen() {
       setType(tx.type);
       setAmountCents(tx.amountCents);
       setNote(tx.note);
+      const linked = tx.transferGroupId ? await getTransfer(db, tx.transferGroupId) : null;
+      if (linked) {
+        const accounts = await listAccounts(db);
+        const name = (accountId: string) => accounts.find((a) => a.id === accountId)?.name ?? '账户';
+        setTransfer({ groupId: linked.groupId, fromName: name(linked.fromAccountId), toName: name(linked.toAccountId) });
+      } else {
+        setTransfer(null);
+      }
       if (tx.categoryId) {
         const cat = await getCategoryById(db, tx.categoryId);
         setCategoryName(cat?.name ?? '');
@@ -122,18 +136,28 @@ export default function TransactionDetailScreen() {
   );
 
   function onDelete() {
-    Alert.alert('删除该记录？', '此操作无法撤销。', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '删除',
-        style: 'destructive',
-        onPress: async () => {
-          const db = await getDb();
-          await deleteTransaction(db, id);
-          router.back();
+    Alert.alert(
+      transfer ? '删除这笔转账？' : '删除该记录？',
+      transfer ? `${transfer.fromName}和${transfer.toName}的这笔记录都会删除，此操作无法撤销。` : '此操作无法撤销。',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: async () => {
+            const db = await getDb();
+            if (transfer) await deleteTransfer(db, transfer.groupId);
+            else await deleteTransaction(db, id);
+            router.back();
+          },
         },
-      },
-    ]);
+      ],
+    );
+  }
+
+  function onEdit() {
+    if (transfer) router.push({ pathname: '/transaction/transfer', params: { groupId: transfer.groupId } });
+    else router.push(`/transaction/edit/${id}`);
   }
 
   async function onSelectBudget(envelopeId: string | null) {
@@ -168,7 +192,7 @@ export default function TransactionDetailScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
       <ScreenHeader
-        title={titleFor(type)}
+        title={titleFor(type, transfer)}
         onBack={() => router.back()}
         backgroundColor={PRIMARY_GREEN}
       />
@@ -207,7 +231,7 @@ export default function TransactionDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={`编辑这笔记录，金额 ¥${displayAmount}`}
               style={({ pressed }) => [styles.row, pressed && styles.controlPressed]}
-              onPress={() => router.push(`/transaction/edit/${id}`)}
+              onPress={onEdit}
             >
               <View style={styles.iconCircle}>
                 <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={34} />
@@ -216,7 +240,11 @@ export default function TransactionDetailScreen() {
                 <Text style={styles.rowTitle} numberOfLines={1}>
                   {note || categoryName || '记录'}
                 </Text>
-                {categoryName ? (
+                {transfer ? (
+                  <Text style={styles.rowSub} numberOfLines={1}>
+                    {transfer.fromName} → {transfer.toName}
+                  </Text>
+                ) : categoryName ? (
                   <Text style={styles.rowSub} numberOfLines={1}>
                     {subcategoryName ? `${categoryName} › ${subcategoryName}` : categoryName}
                   </Text>
@@ -261,11 +289,11 @@ export default function TransactionDetailScreen() {
           <View style={styles.contentSpacer} />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={deleteLabelFor(type)}
+            accessibilityLabel={deleteLabelFor(type, transfer)}
             style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
             onPress={onDelete}
           >
-            <Text style={styles.deleteText}>{deleteLabelFor(type)}</Text>
+            <Text style={styles.deleteText}>{deleteLabelFor(type, transfer)}</Text>
           </Pressable>
         </ScrollView>
       )}

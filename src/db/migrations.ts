@@ -341,4 +341,63 @@ export const migrations: Migration[] = [
     version: 10,
     statements: [`ALTER TABLE subcategories ADD COLUMN icon TEXT;`],
   },
+  {
+    // A transfer is two balance adjustments (out of one account, into another) sharing a
+    // transfer_group_id, so it can be edited or deleted as one. Earlier transfers are linked when
+    // the pair is unambiguous: opposite amounts on the same day and note, different accounts,
+    // written within two seconds, and neither row matching anything else.
+    version: 11,
+    statements: [
+      `ALTER TABLE transactions ADD COLUMN transfer_group_id TEXT;`,
+      `CREATE INDEX IF NOT EXISTS idx_transactions_transfer_group ON transactions(transfer_group_id);`,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_transactions_transfer_type_insert
+      BEFORE INSERT ON transactions
+      WHEN NEW.transfer_group_id IS NOT NULL AND NEW.type != 'balance_adjustment'
+      BEGIN
+        SELECT RAISE(ABORT, 'transfer_must_be_balance_adjustment');
+      END;
+      `,
+      `
+      CREATE TRIGGER IF NOT EXISTS trg_transactions_transfer_type_update
+      BEFORE UPDATE OF type, transfer_group_id ON transactions
+      WHEN NEW.transfer_group_id IS NOT NULL AND NEW.type != 'balance_adjustment'
+      BEGIN
+        SELECT RAISE(ABORT, 'transfer_must_be_balance_adjustment');
+      END;
+      `,
+      `
+      CREATE TEMP TABLE transfer_pairs AS
+      SELECT o.id AS out_id, i.id AS in_id
+      FROM transactions o
+      JOIN transactions i
+        ON i.type = 'balance_adjustment'
+       AND i.amount_cents = -o.amount_cents
+       AND i.date = o.date
+       AND i.account_id != o.account_id
+       AND i.note IS o.note
+       AND i.created_at IS NOT NULL
+       AND abs(julianday(i.created_at) - julianday(o.created_at)) * 86400.0 <= 2
+      WHERE o.type = 'balance_adjustment'
+        AND o.amount_cents < 0
+        AND o.created_at IS NOT NULL;
+      `,
+      `
+      DELETE FROM transfer_pairs
+      WHERE out_id IN (SELECT out_id FROM transfer_pairs GROUP BY out_id HAVING COUNT(*) > 1)
+         OR in_id IN (SELECT in_id FROM transfer_pairs GROUP BY in_id HAVING COUNT(*) > 1);
+      `,
+      `
+      UPDATE transactions
+      SET transfer_group_id = 'xfer_' || (SELECT out_id FROM transfer_pairs WHERE out_id = transactions.id)
+      WHERE id IN (SELECT out_id FROM transfer_pairs);
+      `,
+      `
+      UPDATE transactions
+      SET transfer_group_id = 'xfer_' || (SELECT out_id FROM transfer_pairs WHERE in_id = transactions.id)
+      WHERE id IN (SELECT in_id FROM transfer_pairs);
+      `,
+      `DROP TABLE transfer_pairs;`,
+    ],
+  },
 ];
