@@ -14,14 +14,11 @@ import {
   Text,
   ScrollView,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import {
   BORDER_COLOR,
   CARD_BACKGROUND,
-  CONTROL_BACKGROUND,
   CONTROL_PRESSED_BACKGROUND,
-  DASHED_RULE_COLOR,
   KEYPAD_BACKGROUND,
   PRIMARY_GREEN,
   TEXT_PRIMARY,
@@ -29,6 +26,7 @@ import {
 } from "@/constants/Colors";
 import { RICH_NUMERAL_FONT, RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from "@/constants/Design";
 import { DatePickerModal } from "@/components/DatePickerModal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
 import { getDb } from "@/src/db/db";
 import { listAccounts } from "@/src/db/repo/accounts";
@@ -39,6 +37,7 @@ import { newId } from "@/src/utils/id";
 import { centsToYuan } from "@/src/utils/money";
 
 export default function TransferScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [amountStr, setAmountStr] = useState("0");
   const [date, setDate] = useState(isoDateToday());
@@ -160,7 +159,7 @@ export default function TransferScreen() {
         >
           {chosen ? (
             <View style={styles.selIconChosen}>
-              <AccountIcon type={chosen.type} size={22} />
+              <AccountIcon type={chosen.type} size={20} />
             </View>
           ) : (
             <View style={styles.selIcon} />
@@ -192,7 +191,11 @@ export default function TransferScreen() {
                 <AccountIcon type={a.type} size={20} />
                 <Text numberOfLines={1} style={styles.optionText}>{a.name}</Text>
                 {a.id === id ? (
-                  <FontAwesome name="check" size={12} color={PRIMARY_GREEN} />
+                  <Image
+                    source={require("../../assets/images/ui/btn_select.png")}
+                    style={styles.optionCheck}
+                    accessible={false}
+                  />
                 ) : null}
               </Pressable>
             ))}
@@ -211,7 +214,8 @@ export default function TransferScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
-      <View style={styles.header}>
+      {/* Header: like the add screen, the original sits this row 8.3pt below the safe area. */}
+      <View style={[styles.header, { marginTop: -Math.min(insets.top, 13.8) }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="返回"
@@ -265,7 +269,7 @@ export default function TransferScreen() {
             </Text>
           ) : null}
         </View>
-        <DashedDivider color={DASHED_RULE_COLOR} style={styles.amountDivider} />
+        <DashedDivider style={styles.amountDivider} dashWidth={7} gap={6.7} thickness={2 / 3} color="#E3E3E3" />
 
         <ScrollView
           style={styles.midScroll}
@@ -289,7 +293,7 @@ export default function TransferScreen() {
         <View style={styles.pad}>
           <View style={styles.noteRow}>
             <Image
-              source={require("../../assets/images/ui/icon_edit_black.png")}
+              source={require("../../assets/images/ui/icon_describe.png")}
               style={styles.noteIcon}
               accessible={false}
             />
@@ -333,55 +337,58 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: CARD_BACKGROUND },
   keyboardArea: { flex: 1, backgroundColor: CARD_BACKGROUND },
   controlPressed: { opacity: 0.76 },
+  // Geometry measured from the original at 3x; the amount block matches the add screen.
   dateButton: {
-    minHeight: 32,
+    height: 24.7,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 13,
-    borderRadius: 16,
-    backgroundColor: "#F2F3F5",
+    gap: 7.4,
+    paddingLeft: 8.6,
+    paddingRight: 8,
+    borderRadius: 12.35,
+    backgroundColor: "#F6F7F8",
   },
-  dateText: { fontSize: 15, color: TEXT_PRIMARY },
+  dateText: { fontSize: 13, color: "#000000" },
   amountBox: {
     width: "100%",
     maxWidth: 430,
     alignSelf: "center",
-    paddingHorizontal: RICH_SPACING.xl,
-    paddingTop: 22,
-    paddingBottom: 14,
+    paddingHorizontal: 24,
+    paddingTop: 14.8,
+    paddingBottom: 12,
   },
   amountLabel: { ...RICH_TYPE.label, fontWeight: "600", color: TEXT_SECONDARY },
   amount: {
     fontFamily: RICH_NUMERAL_FONT,
-    fontSize: 44,
+    fontSize: 35,
     color: TEXT_PRIMARY,
   },
-  cursor: { width: 1.5, height: 44, marginLeft: 4, backgroundColor: TEXT_PRIMARY },
+  cursor: { width: 1, height: 40, marginLeft: 7, backgroundColor: TEXT_PRIMARY },
   header: {
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingLeft: 20.3,
+    paddingRight: 24.3,
   },
-  backButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  backButton: { width: 44, height: 44, alignItems: "flex-start", justifyContent: "center" },
   backIcon: { width: 16, height: 16 },
   amountLine: { flexDirection: "row", alignItems: "center" },
   caret: {
     width: 0,
     height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 6,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderTopWidth: 5,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
     borderTopColor: TEXT_PRIMARY,
   },
   caretUp: { transform: [{ rotate: "180deg" }] },
-  selIconChosen: { width: 22, height: 22, alignItems: "center", justifyContent: "center" },
+  selIconChosen: { width: 20, height: 20, alignItems: "center", justifyContent: "center" },
   arrowIcon: { width: 11, height: 12.7 },
-  noteIcon: { width: 28, height: 28 },
+  noteIcon: { width: 24, height: 24 }, // icon_describe: the original 18pt note glyph
   pendingText: {
     ...RICH_TYPE.caption,
     marginTop: RICH_SPACING.xxs,
@@ -389,7 +396,7 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   amountDivider: {
-    marginHorizontal: 18,
+    marginHorizontal: 20,
     marginBottom: RICH_SPACING.xxs,
   },
   midScroll: { flex: 1 },
@@ -410,25 +417,26 @@ const styles = StyleSheet.create({
   },
   sel: {
     alignSelf: "center",
-    width: "70%",
-    maxWidth: 280,
-    minHeight: 44,
+    width: 272.4,
+    maxWidth: "100%",
+    minHeight: 44.3,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    backgroundColor: "#F5F6F8",
-    borderRadius: 22,
-    paddingHorizontal: 12,
+    gap: 8.6,
+    backgroundColor: "#F6F7F8",
+    borderRadius: 22.15,
+    paddingLeft: 12.4,
+    paddingRight: 18,
   },
   selIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: "#E6E6E6",
   },
-  selLabel: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: "500", color: TEXT_PRIMARY },
+  selLabel: { flex: 1, minWidth: 0, fontSize: 14, fontWeight: "500", color: "#000000" },
   selLabelActive: { color: TEXT_PRIMARY, fontWeight: "600" },
-  arrow: { alignItems: "center", paddingVertical: 14 },
+  arrow: { alignItems: "center", paddingVertical: 15.15 },
   dropdown: {
     marginTop: RICH_SPACING.xxs,
     marginHorizontal: RICH_SPACING.xs,
@@ -450,6 +458,7 @@ const styles = StyleSheet.create({
   optionSelected: {
     backgroundColor: CONTROL_PRESSED_BACKGROUND,
   },
+  optionCheck: { width: 24, height: 24 },
   optionText: {
     ...RICH_TYPE.body,
     flex: 1,

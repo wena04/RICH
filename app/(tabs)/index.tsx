@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -55,6 +54,9 @@ function dateHeaderCN(date: string): string {
   const [, m, d] = date.split("-");
   return `${parseInt(m)}月${parseInt(d)}日`;
 }
+
+// Original day-header rule: 5.5pt dashes on a 10pt pitch, 2px thick.
+const DATE_RULE = { dashWidth: 5.5, gap: 4.5, thickness: 2 / 3, color: "#D8D8D8" } as const;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -160,6 +162,8 @@ export default function HomeScreen() {
       year === today.getFullYear();
     const isSelected = selectedDate === dateStr;
     const entry = has(day);
+    // The original greys out days that haven't happened yet.
+    const isFuture = new Date(year, month, day) > today;
 
     let inner: any = styles.dayPlain;
     let dot = false;
@@ -179,10 +183,10 @@ export default function HomeScreen() {
         inner = [
           styles.dayBand,
           {
-            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 15,
-            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 15,
-            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 15,
-            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 15,
+            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14,
+            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14,
+            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14,
+            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14,
           },
         ];
       } else {
@@ -204,7 +208,7 @@ export default function HomeScreen() {
         }}
       >
         <View style={inner}>
-          <Text style={styles.dayText}>{day}</Text>
+          <Text style={[styles.dayText, isFuture && styles.dayTextFuture]}>{day}</Text>
           {dot && <View style={styles.todayDot} />}
         </View>
       </Pressable>
@@ -255,7 +259,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Calendar card */}
-        <View style={styles.calCard}>
+        <View style={[styles.calCard, !showCalendar && styles.calCardCollapsed]}>
           <View style={[styles.calTop, !showCalendar && styles.calTopCollapsed]}>
             <Pressable
               accessibilityRole="button"
@@ -271,14 +275,15 @@ export default function HomeScreen() {
               <Text style={styles.monthPillText}>
                 {year === today.getFullYear() ? "" : `${year}年`}{MONTH_NAMES_CN[month]}
               </Text>
-              <FontAwesome name="caret-down" size={13} color={TEXT_PRIMARY} />
+              <View style={styles.monthCaret} />
             </Pressable>
             <View style={styles.totals}>
               <View style={styles.totItem}>
                 <Text style={styles.totLabel}>总支出</Text>
                 <Text style={styles.totValue}>¥ {centsToYuan(monthExpense)}</Text>
               </View>
-              <View style={[styles.totItem, styles.totDivider]}>
+              <View style={styles.totDivider} />
+              <View style={styles.totItem}>
                 <Text style={styles.totLabel}>总收入</Text>
                 <Text style={styles.totValue}>¥ {centsToYuan(monthIncome)}</Text>
               </View>
@@ -325,7 +330,7 @@ export default function HomeScreen() {
         <View style={styles.listArea}>
           {loadState === "error" ? (
             <View style={styles.empty}>
-              <FontAwesome name="exclamation-circle" size={22} color={TEXT_SECONDARY} />
+              <Image source={require("../../assets/images/ui/icon_warning.png")} style={{ width: 32, height: 32 }} accessible={false} />
               <Text style={[styles.emptyText, styles.errorTitle]}>没有读取到本月记录</Text>
               <Text style={styles.errorBody}>记录没有丢失，请重新读取。</Text>
               <Pressable
@@ -384,7 +389,7 @@ export default function HomeScreen() {
                     <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
                   </View>
                 </View>
-                <DashedDivider style={styles.dateDivider} />
+                <DashedDivider style={styles.dateDivider} {...DATE_RULE} />
                 {g.txs.map((t) => (
                   <Pressable
                     key={t.id}
@@ -431,7 +436,12 @@ export default function HomeScreen() {
             style={styles.sheetBackdrop}
             onPress={() => setShowDaySheet(false)}
           />
-          <View style={[styles.sheet, { top: insets.top + headerHeight }]}>
+          <View
+            style={[
+              styles.sheet,
+              { top: insets.top + headerHeight + 5.3, paddingBottom: insets.bottom + 21.3 },
+            ]}
+          >
             <Pressable
               style={styles.sheetClose}
               onPress={() => setShowDaySheet(false)}
@@ -439,7 +449,7 @@ export default function HomeScreen() {
               accessibilityLabel="关闭"
             >
               <Image
-                source={require("../../assets/images/ui/icon_close48.png")}
+                source={require("../../assets/images/ui/close_clear.png")}
                 style={styles.sheetCloseIcon}
                 accessible={false}
               />
@@ -464,7 +474,7 @@ export default function HomeScreen() {
                         <Text style={styles.dayIncome}>+ ¥ {centsToYuan(g.inc)}</Text>
                       </View>
                     </View>
-                    <DashedDivider style={styles.dateDivider} />
+                    <DashedDivider style={styles.dateDivider} {...DATE_RULE} />
                     {g.txs.map((t) => (
                       <Pressable
                         key={t.id}
@@ -528,81 +538,106 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
 
   // Header
+  // Measured from the original at 3x: title art at (23.7, 11.3) below the safe area, the 40pt
+  // account menu and profile buttons level with its lettering, and the card 22.4pt below it.
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
+    alignItems: "flex-start",
+    paddingLeft: 23.7,
+    paddingRight: 18.3,
+    paddingTop: 11.3,
+    paddingBottom: 22.4,
     backgroundColor: PRIMARY_GREEN,
   },
-  brandRow: { flexDirection: "row", alignItems: "center" },
+  brandRow: { flexDirection: "row", alignItems: "flex-start" },
   brandDd: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 12,
+    width: 40,
+    height: 40,
+    marginTop: 16.9,
+    marginBottom: -2.9, // keep the header as tall as the title art
+    marginLeft: 2,
   },
-  brandMenuImage: { width: 44, height: 44 },
+  brandMenuImage: { width: 40, height: 40 },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40,
+    height: 40,
+    marginTop: 15.4,
+    marginBottom: -1.4,
   },
-  avatarImage: { width: 44, height: 44 },
+  avatarImage: { width: 40, height: 40 },
 
   scroll: { flex: 1, backgroundColor: PRIMARY_GREEN },
-  scrollContent: { flexGrow: 1, paddingBottom: 24 },
+  scrollContent: { flexGrow: 1 },
 
   // Calendar card
+  // Calendar card geometry measured from the original at 3x (offsets from the card top):
+  // month pill +11.3, divider +45.6, weekdays +59.6, first day circle +87.3, 38pt rows,
+  // 4pt under the last row, then 20.3pt of green before the list.
   calCard: {
     backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     borderRadius: 0,
-    paddingVertical: 10,
+    paddingBottom: 4,
   },
   calTop: {
     flexDirection: "row",
-    alignItems: "center",
-    minHeight: 40,
-    marginBottom: 8,
-    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    height: 45.6,
+    paddingLeft: 10.3,
+    paddingRight: 17,
   },
-  calTopCollapsed: { marginBottom: 0 },
+  calTopCollapsed: { height: 46 },
+  calCardCollapsed: { paddingBottom: 0 },
   monthTrigger: {
-    minWidth: 52,
-    height: 26,
+    minWidth: 52.2,
+    height: 23.3,
+    marginTop: 11.3,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    borderRadius: 13,
-    backgroundColor: '#F5F5F5',
+    gap: 8,
+    paddingLeft: 8.4,
+    paddingRight: 7.5,
+    borderRadius: 11.65,
+    backgroundColor: '#F6F7F8',
   },
   monthTriggerPressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
-  monthPillText: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
-  totals: { flexDirection: "row", marginLeft: "auto", alignItems: "center" },
+  monthPillText: { fontSize: 14, fontWeight: "600", color: "#000000" },
+  monthCaret: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4.5,
+    borderRightWidth: 4.5,
+    borderTopWidth: 5.7,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#000000",
+  },
+  totals: { flexDirection: "row", marginLeft: "auto", alignItems: "flex-start", marginTop: 11 },
   totItem: { alignItems: "flex-end" },
   totDivider: {
-    borderLeftWidth: 1,
-    borderLeftColor: "#E5E5E5",
-    marginLeft: 14,
-    paddingLeft: 14,
+    width: 1,
+    height: 26,
+    marginTop: -1,
+    marginLeft: 16.6,
+    marginRight: 14,
+    backgroundColor: "#EAEAEA",
   },
-  totLabel: { fontSize: 11, color: TEXT_SECONDARY, marginBottom: 3 },
-  totValue: { fontSize: 13.5, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
+  totLabel: { fontSize: 10, lineHeight: 12, color: "#777777" },
+  totValue: {
+    fontSize: 13.5,
+    lineHeight: 16,
+    color: "#000000",
+    fontVariant: ["tabular-nums"],
+  },
 
-  weekRow: { flexDirection: "row", marginTop: 10, marginBottom: 2 },
+  weekRow: { flexDirection: "row", marginTop: 11.9, marginBottom: 10.1 },
   weekLabel: {
     flex: 1,
     textAlign: "center",
     fontSize: 12,
-    color: "#BDBDBD",
+    lineHeight: 14,
+    color: "#C7C7D3",
   },
 
   grid: { flexDirection: "row", flexWrap: "wrap" },
@@ -612,42 +647,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dayText: { fontSize: 15, color: "#222222" },
-  adjacentMonthText: { fontSize: 15, color: "#C8C8C8" },
+  dayText: { fontSize: 14, color: "#000000" },
+  dayTextFuture: { color: "#777777" },
+  adjacentMonthText: { fontSize: 14, color: "#C7C7D2" },
   dayPlain: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
   },
   dayCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayBand: {
     width: "100%",
-    height: 30,
+    height: 28,
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayToday: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
   },
   daySelected: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#E2E2E2",
     alignItems: "center",
     justifyContent: "center",
@@ -665,25 +701,9 @@ const styles = StyleSheet.create({
   listArea: {
     flexGrow: 1,
     backgroundColor: "#FFFFFF",
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 20.3,
+    paddingBottom: 24,
   },
-  filterBar: {
-    minHeight: 38,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  filterLabel: { fontSize: 12, color: TEXT_SECONDARY },
-  clearFilter: {
-    borderRadius: 12,
-    backgroundColor: "#EEEEEE",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  clearFilterText: { fontSize: 10.5, color: TEXT_PRIMARY },
   empty: { paddingVertical: 60, alignItems: "center" },
   emptyIllustration: { width: 80, height: 80, marginBottom: 20 },
   emptyText: { fontSize: 15, color: TEXT_SECONDARY },
@@ -702,28 +722,33 @@ const styles = StyleSheet.create({
   emptyActionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
   gapBand: { height: 10, backgroundColor: "#F7F7F7" },
+  // List geometry measured from the original at 3x: totals 18pt under the band, 72.6pt rows,
+  // icon circle at 21pt, amounts 22pt from the edge.
   dateHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 10,
+    alignItems: "center",
+    paddingLeft: 24.7,
+    paddingRight: 24.3,
+    paddingTop: 14,
+    paddingBottom: 7,
   },
   dateDivider: {
-    marginHorizontal: 20,
-    marginBottom: 6,
+    marginLeft: 20,
+    marginRight: 24.7, // the original rule ends under the day totals
+    marginBottom: 1,
   },
-  dateLabel: { fontSize: 15, color: TEXT_SECONDARY },
+  dateLabel: { fontSize: 13.5, color: "#777777" },
   dayTotals: { alignItems: "flex-end" },
-  dayExpense: { fontSize: 11.5, color: TEXT_SECONDARY, fontVariant: ["tabular-nums"] },
-  dayIncome: { fontSize: 11.5, color: PRIMARY_GREEN, marginTop: 4, fontVariant: ["tabular-nums"] },
+  dayExpense: { fontSize: 10.3, lineHeight: 16, color: "#777777", fontVariant: ["tabular-nums"] },
+  dayIncome: { fontSize: 10.3, lineHeight: 16, color: PRIMARY_GREEN, fontVariant: ["tabular-nums"] },
 
   txRow: {
+    minHeight: 72.6,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 17,
+    paddingLeft: 21,
+    paddingRight: 22,
   },
   txIcon: {
     width: 34,
@@ -732,27 +757,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F7F7",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginRight: 11.3,
   },
-  txInfo: { flex: 1 },
-  txTitle: { fontSize: 15, color: TEXT_PRIMARY },
-  txSub: { fontSize: 13, color: "#888888", marginTop: 6 },
-  txAmt: { fontSize: 17, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
+  txInfo: { flex: 1, paddingTop: 4 },
+  txTitle: { fontSize: 14, lineHeight: 20, color: TEXT_PRIMARY },
+  txSub: { fontSize: 12, lineHeight: 16, color: "#777777", marginTop: 6.65 },
+  txAmt: { fontSize: 16, color: TEXT_PRIMARY, fontVariant: ["tabular-nums"] },
 
   sheetOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheetBackdrop: { flex: 1 },
-  sheetCloseIcon: { width: 18, height: 18, tintColor: "#FFFFFF" },
-  calDivider: { height: StyleSheet.hairlineWidth, backgroundColor: "#ECECEC", marginHorizontal: 16 },
+  sheetCloseIcon: { width: 40, height: 40 },
+  calDivider: { height: 2 / 3, backgroundColor: "#F2F2F2", marginHorizontal: 15.3 },
   sheet: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: "#FFFFFF",
-    paddingBottom: 40,
   },
   sheetTop: {
     flexDirection: "row",
@@ -763,16 +787,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#EFEFEF",
   },
+  // Original close_clear art (translucent disc with a white X), 6.3pt from the edge.
   sheetClose: {
     position: "absolute",
-    top: -36,
-    right: 8,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.35)",
-    alignItems: "center",
-    justifyContent: "center",
+    top: -42.3,
+    right: 6.3,
+    width: 40,
+    height: 40,
     zIndex: 2,
   },
   sheetTitle: { fontSize: 15, fontWeight: "600", color: TEXT_PRIMARY },
@@ -782,10 +803,10 @@ const styles = StyleSheet.create({
     width: 207,
     height: 44,
     marginTop: 12,
-    backgroundColor: "#F5F6F7",
-    borderRadius: 2,
+    backgroundColor: "#F6F7F8",
+    borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
   },
-  sheetAddText: { fontSize: 15, color: TEXT_PRIMARY },
+  sheetAddText: { fontSize: 15, color: "#000000" },
 });

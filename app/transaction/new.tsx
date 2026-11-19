@@ -11,10 +11,10 @@ import {
   TextInput,
   useWindowDimensions,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { Text, View } from "@/components/Themed";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
@@ -48,8 +48,10 @@ import { formatIsoDateCN, isIsoDate, isoDateToday } from "@/src/utils/date";
 import { RICH_NUMERAL_FONT } from "@/constants/Design";
 import { centsToYuan } from "@/src/utils/money";
 import { newId } from "@/src/utils/id";
+import { RichChevron } from '@/components/rich/RichChevron';
 
 export default function NewTransactionScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { date: initialDateParam } = useLocalSearchParams<{ date?: string }>();
 
@@ -306,7 +308,7 @@ export default function NewTransactionScreen() {
   // Chunk into rows so the subcategory zone can expand under the selected row.
   const categoryColumns = viewportWidth < 360 ? 4 : 5;
   const categoryGridWidth = Math.min(viewportWidth, 430);
-  const categoryItemWidth = (categoryGridWidth - 32) / categoryColumns;
+  const categoryItemWidth = (categoryGridWidth - 28.5) / categoryColumns;
   const categoryRows: CatCell[][] = [];
   for (let i = 0; i < displayCategories.length; i += categoryColumns) {
     categoryRows.push(displayCategories.slice(i, i + categoryColumns));
@@ -314,8 +316,8 @@ export default function NewTransactionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header: the original sits this row just under the status bar, 8.2pt below the safe area. */}
+      <View style={[styles.header, { marginTop: -Math.min(insets.top, 13.8) }]}>
         <Pressable
           onPress={() => router.back()}
           style={styles.backButton}
@@ -400,11 +402,11 @@ export default function NewTransactionScreen() {
           </Text>
         ) : null}
       </View>
-      <DashedDivider style={styles.amountDivider} />
+      <DashedDivider style={styles.amountDivider} dashWidth={7} gap={6.7} thickness={2 / 3} color="#E3E3E3" />
 
       {choicesError ? (
         <View style={styles.choicesError}>
-          <FontAwesome name="exclamation-circle" size={20} color={TEXT_SECONDARY} />
+          <Image source={require("../../assets/images/ui/icon_warning.png")} style={{ width: 28, height: 28 }} accessible={false} />
           <Text style={styles.choicesErrorTitle}>分类和账户没有载入</Text>
           <Text style={styles.choicesErrorBody}>现在无法保存这笔记录，请重新载入。</Text>
           <Pressable
@@ -463,11 +465,16 @@ export default function NewTransactionScreen() {
                         accessibilityLabel={`${cat.name}${catsWithSubs.has(cat.id) ? '，有子分类' : ''}`}
                         accessibilityState={{ selected: selectedCategoryId === cat.id }}
                       >
-                        <View style={styles.categoryIcon}>
+                        <View
+                          style={[
+                            styles.categoryIcon,
+                            selectedCategoryId && selectedCategoryId !== cat.id && styles.categoryDimmed,
+                          ]}
+                        >
                           <CategoryIcon
                             id={cat.iconId ?? undefined}
                             name={cat.name}
-                            size={27}
+                            size={26.7}
                             color={selectedCategoryId === cat.id ? '#181A19' : '#858B88'}
                           />
                           {selectedCategoryId === cat.id ? (
@@ -556,9 +563,11 @@ export default function NewTransactionScreen() {
                           accessibilityRole="button"
                           accessibilityLabel={`给${selectedCategory?.name ?? row[selIdx]?.name ?? ''}添加子类`}
                         >
-                          <View style={[styles.subItemIcon, styles.subAddIcon]}>
-                            <FontAwesome name="plus" size={14} color={TEXT_SECONDARY} />
-                          </View>
+                          <Image
+                            source={require("../../assets/images/ui/icon_add_custom.png")}
+                            style={styles.subItemIcon}
+                            accessible={false}
+                          />
                           <Text style={styles.subItemName}>添加子类</Text>
                         </Pressable>
                       ) : null}
@@ -590,11 +599,11 @@ export default function NewTransactionScreen() {
             >
               {selectedAccount ? selectedAccount.name : "选择账户"}
             </Text>
-            <FontAwesome name="angle-right" size={18} color={TEXT_SECONDARY} />
+            <RichChevron tone="muted" />
           </Pressable>
 
           <View style={styles.noteInput}>
-            <Image source={require("../../assets/images/ui/icon_edit_black.png")} style={styles.barIcon} accessible={false} />
+            <Image source={require("../../assets/images/ui/icon_describe.png")} style={styles.noteIcon} accessible={false} />
             <TextInput
               ref={noteInputRef}
               style={styles.noteTextInput}
@@ -689,17 +698,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  // Header geometry measured from the original at 3x: back art at 20pt, 54×24.7 type pills
+  // from 57.7pt with a 16.6pt gap, date pill 24.3pt from the right edge.
   header: {
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingLeft: 20,
+    paddingRight: 24.3,
     backgroundColor: "#FFFFFF",
   },
   backButton: {
-    width: 44,
+    width: 37.7,
     height: 44,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
   },
   choicesError: {
@@ -723,56 +735,57 @@ const styles = StyleSheet.create({
   choicesRetryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
   typeToggle: {
     flexDirection: "row",
-    marginLeft: 8,
-    gap: 16,
+    gap: 16.6,
   },
   typeButton: {
-    minHeight: 32,
-    paddingHorizontal: 16,
+    width: 54,
+    height: 24.7,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
+    borderRadius: 12.35,
+    borderWidth: 2 / 3,
+    borderColor: "#F6F7F8",
   },
   typeButtonActive: {
-    backgroundColor: "#F2F3F5",
-    borderColor: "#F2F3F5",
+    backgroundColor: "#F6F7F8",
   },
   typeText: {
-    fontSize: 15,
-    color: "#BDBDBD",
+    fontSize: 13,
+    color: "#AAAAAA",
   },
   typeTextActive: {
-    color: TEXT_PRIMARY,
+    color: "#000000",
   },
   dateButton: {
     marginLeft: "auto",
-    minHeight: 32,
+    height: 24.7,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 13,
-    borderRadius: 16,
-    backgroundColor: "#F2F3F5",
+    gap: 8.3,
+    paddingLeft: 8.4,
+    paddingRight: 7.4,
+    borderRadius: 12.35,
+    backgroundColor: "#F6F7F8",
   },
   dateText: {
-    fontSize: 15,
-    color: TEXT_PRIMARY,
+    fontSize: 13,
+    color: "#000000",
   },
+  // Amount: RichRounded 35 with digits 49.8pt below the header centre; a 40pt cursor 7pt after
+  // the digits; then the original's 7pt/6.7pt #E3E3E3 dashes and the grid 21.6pt below them.
   amountContainer: {
     paddingHorizontal: 24,
-    paddingTop: 22,
-    paddingBottom: 14,
+    paddingTop: 14.8,
+    paddingBottom: 12,
     backgroundColor: "#FFFFFF",
   },
   amountDivider: {
-    marginHorizontal: 18,
-    marginBottom: 6,
+    marginHorizontal: 20,
+    marginBottom: 14.25,
   },
   amountText: {
     fontFamily: RICH_NUMERAL_FONT,
-    fontSize: 44,
+    fontSize: 35,
     color: TEXT_PRIMARY,
   },
   pendingText: {
@@ -782,9 +795,9 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   cursor: {
-    width: 1.5,
-    height: 44,
-    marginLeft: 4,
+    width: 1,
+    height: 40,
+    marginLeft: 7,
     backgroundColor: TEXT_PRIMARY,
   },
   categoryScroll: {
@@ -793,7 +806,7 @@ const styles = StyleSheet.create({
   },
   categoryGrid: {
     alignSelf: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14.25,
     paddingBottom: 16,
     backgroundColor: "#FFFFFF",
   },
@@ -802,7 +815,7 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     alignItems: "center",
-    paddingVertical: 7,
+    paddingVertical: 7.35,
   },
   categoryIcon: {
     width: 48,
@@ -811,15 +824,15 @@ const styles = StyleSheet.create({
     backgroundColor: CATEGORY_FRAME_BACKGROUND,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 5,
   },
   backIcon: { width: 16, height: 16 },
   dateCaret: {
     width: 0,
     height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 6,
+    borderLeftWidth: 4.5,
+    borderRightWidth: 4.5,
+    borderTopWidth: 5.7,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
     borderTopColor: TEXT_PRIMARY,
@@ -847,6 +860,7 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
   },
   barIcon: { width: 30, height: 30 },
+  noteIcon: { width: 24, height: 24 }, // icon_describe: the original 18pt note glyph
   barPlaceholder: { color: "#B8B8B8" },
   categoryIconSelected: {
     backgroundColor: "#FFFFFF",
@@ -868,6 +882,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   catBadgeImage: { width: 15, height: 15, tintColor: "#FFFFFF" },
+  // The original draws every other category's art at half opacity once one is selected
+  // (black strokes read #7F7F7F, the #F7F7F7 disc #FBFBFB); labels stay black.
+  categoryDimmed: { opacity: 0.5 },
   categoryName: {
     fontSize: 11.5,
     lineHeight: 18.7,
@@ -1029,12 +1046,6 @@ const styles = StyleSheet.create({
   subItemNameSelected: {
     color: "#181A19",
     fontWeight: "600",
-  },
-  subAddIcon: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#C8C8C8",
-    borderStyle: "dashed",
   },
   modalOverlay: {
     flex: 1,

@@ -9,7 +9,6 @@ import {
   StatusBar,
   StyleSheet,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { ProgressBar } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
@@ -26,15 +25,9 @@ import { getBudgetTabSummary, reorderEnvelopes } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelopeSummary, BudgetTabSummary } from '@/src/domain/types';
 import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
 import { moveItem } from '@/src/features/budgets/order';
-import { PieChart } from '@/src/features/charts/PieChart';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
-
-const TREND_DONUT = [
-  { value: 35, color: '#9B8CFF' },
-  { value: 27, color: '#6FA8FF' },
-  { value: 38, color: '#7FE0B0' },
-];
+import { RichChevron } from '@/components/rich/RichChevron';
 
 const KIND_BADGE = {
   monthly: require('../../assets/images/budget/icon_month_budget.png'),
@@ -154,7 +147,7 @@ function SortRow({
         accessibilityLabel={`上移${envelope.name}`}
         accessibilityState={{ disabled: first }}
       >
-        <FontAwesome name="chevron-up" size={13} color={TEXT_PRIMARY} />
+        <RichChevron direction="up" />
       </Pressable>
       <Pressable
         onPress={() => onMove(1)}
@@ -164,7 +157,7 @@ function SortRow({
         accessibilityLabel={`下移${envelope.name}`}
         accessibilityState={{ disabled: last }}
       >
-        <FontAwesome name="chevron-down" size={13} color={TEXT_PRIMARY} />
+        <RichChevron direction="down" />
       </Pressable>
     </View>
   );
@@ -242,7 +235,7 @@ export default function BudgetScreen() {
         accessibilityRole="link"
       >
         <Text style={styles.helpLinkText}>已归档 {summary.archivedCount} 项</Text>
-        <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+        <RichChevron tone="muted" />
       </Pressable>
     ) : null;
 
@@ -279,7 +272,7 @@ export default function BudgetScreen() {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>结余</Text>
             <Text style={styles.summaryValue}>
-              ¥ {ready ? centsToYuan(summary.balanceCents) : '—'}
+              ¥ {ready ? centsToYuan(summary.balanceCents).replace('-', '−') : '—'}
             </Text>
           </View>
           <Pressable
@@ -289,7 +282,11 @@ export default function BudgetScreen() {
             accessibilityLabel="趋势图"
           >
             <Text style={styles.summaryKey}>趋势图</Text>
-            <PieChart size={30} innerRadius={9} data={TREND_DONUT} />
+            <Image
+              source={require('../../assets/images/budget/icon_trend_chart_small.png')}
+              style={styles.trendIcon}
+              accessible={false}
+            />
           </Pressable>
         </View>
       </View>
@@ -303,9 +300,7 @@ export default function BudgetScreen() {
           </View>
         ) : loadState === 'error' || !summary ? (
           <View style={styles.statePanel}>
-            <View style={styles.stateMark}>
-              <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
-            </View>
+            <Image source={require('../../assets/images/ui/icon_warning.png')} style={styles.stateMark} accessible={false} />
             <Text style={styles.stateTitle}>没有载入{monthLabel(month)}预算</Text>
             <Text style={styles.stateBody}>请重试</Text>
             <Pressable
@@ -314,7 +309,6 @@ export default function BudgetScreen() {
               onPress={() => void refresh()}
               style={styles.retryButton}
             >
-              <FontAwesome name="refresh" size={12} color="#FFFFFF" />
               <Text style={styles.retryText}>重新载入</Text>
             </Pressable>
           </View>
@@ -391,7 +385,7 @@ export default function BudgetScreen() {
               <>
                 <Pressable onPress={openHelp} style={styles.helpLink} accessibilityRole="link">
                   <Text style={styles.helpLinkText}>看看别人怎么分预算</Text>
-                  <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+                  <RichChevron tone="muted" />
                 </Pressable>
                 {archivedLink}
               </>
@@ -417,7 +411,7 @@ export default function BudgetScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
-  header: { minHeight: 60, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' },
+  header: { height: 46, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
   summaryCard: {
     minHeight: 146,
@@ -428,14 +422,17 @@ const styles = StyleSheet.create({
     borderRadius: 0,
   },
   summaryLeft: {
-    width: '46%',
-    padding: 16,
+    width: '50%',
+    paddingTop: 18,
+    paddingBottom: 14,
+    paddingLeft: 16.5,
+    paddingRight: 14,
     justifyContent: 'space-between',
-    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: 4 / 3,
     borderRightColor: PRIMARY_GREEN,
   },
-  planLabel: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
-  planAmount: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY, textAlign: 'right' },
+  planLabel: { fontSize: 19, fontWeight: '500', color: '#000000' },
+  planAmount: { fontSize: 16, color: '#000000', textAlign: 'right' },
   planCount: { marginTop: 4, fontSize: 11, color: TEXT_SECONDARY },
   summaryRight: { flex: 1 },
   summaryRow: {
@@ -444,11 +441,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
+    paddingLeft: 13.5,
+    paddingRight: 13.5,
   },
-  summaryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#D8D8D8' },
-  summaryKey: { fontSize: 12.5, color: '#555555' },
-  summaryValue: { fontSize: 12.5, fontWeight: '500', color: TEXT_PRIMARY },
+  // The original rule starts 12pt in from the column edge; the text keeps its 13.5pt inset.
+  summaryDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E2E2',
+    marginLeft: 12,
+    paddingLeft: 1.5,
+  },
+  summaryKey: { fontSize: 15, fontWeight: '500', color: '#000000' },
+  summaryValue: { fontSize: 13, color: '#000000' },
+  trendIcon: { width: 36, height: 36 },
   scroll: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { flexGrow: 1, paddingVertical: 14, paddingBottom: 40 },
   statePanel: {
@@ -461,14 +466,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: PRIMARY_GREEN,
   },
-  stateMark: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#DFF2EA',
-  },
+  // Original icon_warning art.
+  stateMark: { width: 32, height: 32 },
   stateTitle: { marginTop: 13, fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
   stateBody: {
     marginTop: 5,
@@ -561,29 +560,33 @@ const styles = StyleSheet.create({
   helpLinkText: { fontSize: 12, color: TEXT_SECONDARY },
   emptyHeadline: {
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: TEXT_PRIMARY,
-    paddingTop: 40,
-    paddingBottom: 4,
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '500',
+    color: '#000000',
+    marginTop: 26,
   },
   emptyPanel: {
-    marginHorizontal: 24,
-    marginTop: 14,
-    backgroundColor: '#F5F6F7',
+    marginHorizontal: 25,
+    marginTop: 40,
+    backgroundColor: '#F6F7F8',
     borderRadius: 0,
-    padding: 22,
+    paddingTop: 37,
+    paddingBottom: 40,
     alignItems: 'center',
   },
-  exampleChart: { width: 280, height: 150, backgroundColor: 'transparent' },
-  exampleArtwork: { position: 'absolute', left: 0, top: 10, width: 280, height: 130 },
-  tagline: { fontSize: 13, color: TEXT_SECONDARY, marginVertical: 16 },
+  exampleChart: { width: 210, height: 98, backgroundColor: 'transparent' },
+  exampleArtwork: { width: 210, height: 98 },
+  tagline: { fontSize: 14, lineHeight: 20, color: '#333333', marginTop: 36 },
   createButton: {
-    alignSelf: 'stretch',
-    backgroundColor: '#111111',
+    width: 284,
+    maxWidth: '88%',
+    height: 44,
+    marginTop: 20,
+    backgroundColor: '#000000',
     borderRadius: 0,
-    paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  createButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  createButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '400' },
 });

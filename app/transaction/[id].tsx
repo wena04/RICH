@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,11 +12,9 @@ import {
   View,
   Text,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import {
   ACTION_FOREGROUND,
-  BORDER_COLOR,
   CARD_BACKGROUND,
   CONTROL_BACKGROUND,
   DESTRUCTIVE_CORAL,
@@ -48,6 +47,8 @@ function deleteLabelFor(type: TransactionType): string {
   if (type === 'balance_adjustment') return '删除该笔调整';
   return '删除该笔支出';
 }
+
+const CHEVRON = require('../../assets/images/ui/icon_right_unfold.png');
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
@@ -182,7 +183,7 @@ export default function TransactionDetailScreen() {
       ) : loadError ? (
         <View style={styles.stateCanvas}>
           <View style={styles.stateCard}>
-            <FontAwesome name="exclamation-circle" size={22} color={TEXT_SECONDARY} />
+            <Image source={require('../../assets/images/ui/icon_warning.png')} style={{ width: 32, height: 32 }} accessible={false} />
             <Text style={styles.stateTitle}>无法显示这笔记录</Text>
             <Text style={styles.stateBody}>{loadError}</Text>
             <Pressable
@@ -229,7 +230,7 @@ export default function TransactionDetailScreen() {
               >
                 ¥ {displayAmount}
               </Text>
-              <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
+              <Image source={CHEVRON} style={styles.chevron} accessible={false} />
             </Pressable>
 
             <View style={styles.cardDivider} />
@@ -248,10 +249,11 @@ export default function TransactionDetailScreen() {
                 numberOfLines={1}
                 style={[styles.planValue, budgetEnvelopeId && styles.planValueAssigned]}
               >
-                {budgetLabel}
+                {/* The original leaves the value blank until an expense is assigned. */}
+                {budgetEnvelopeId || !canAssignBudget ? budgetLabel : ''}
               </Text>
               {canAssignBudget ? (
-                <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
+                <Image source={CHEVRON} style={styles.chevron} accessible={false} />
               ) : null}
             </Pressable>
           </View>
@@ -289,9 +291,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 430,
     alignSelf: 'center',
-    paddingHorizontal: RICH_SPACING.md,
-    paddingTop: RICH_SPACING.sm,
-    paddingBottom: RICH_SPACING.xl,
+    // Original geometry at 3x: 24.3pt side margins, card 16.7pt under the nav bar,
+    // delete button 19pt above the home indicator.
+    paddingHorizontal: 24.3,
+    paddingTop: 16.7,
+    paddingBottom: 19,
   },
   stateCanvas: {
     flex: 1,
@@ -329,14 +333,18 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: CARD_BACKGROUND,
     overflow: 'hidden',
+    borderBottomWidth: 2 / 3,
+    borderBottomColor: '#EAEAEA',
   },
   row: {
-    minHeight: 84,
+    minHeight: 74.7,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: RICH_SPACING.md,
+    paddingLeft: 21,
+    paddingRight: 5,
     paddingVertical: RICH_SPACING.sm,
   },
+  chevron: { width: 28, height: 28 },
   controlPressed: { backgroundColor: CONTROL_BACKGROUND },
   iconCircle: {
     width: 34,
@@ -345,49 +353,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: RICH_SPACING.sm,
+    marginRight: 11,
   },
   rowInfo: { flex: 1, minWidth: 0, marginRight: RICH_SPACING.xs },
   rowTitle: { fontSize: 15, color: TEXT_PRIMARY },
-  rowSub: { fontSize: 13, color: '#888888', marginTop: 6 },
+  rowSub: { fontSize: 12, color: '#777777', marginTop: 7 },
   amount: {
     maxWidth: '43%',
     flexShrink: 1,
-    marginRight: RICH_SPACING.xs,
+    marginRight: 4,
     fontSize: 15,
     color: TEXT_PRIMARY,
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   cardDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: BORDER_COLOR,
-    marginHorizontal: RICH_SPACING.md,
+    height: 2 / 3,
+    backgroundColor: '#EAEAEA',
+    marginHorizontal: 16,
   },
-  metaGrid: {
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: RICH_SPACING.md,
-  },
-  metaItem: { flex: 1, minWidth: 0, gap: RICH_SPACING.xxs },
-  metaRule: {
-    width: StyleSheet.hairlineWidth,
-    height: 28,
-    backgroundColor: BORDER_COLOR,
-    marginHorizontal: RICH_SPACING.md,
-  },
-  metaLabel: { ...RICH_TYPE.caption, color: TEXT_SECONDARY },
-  metaValue: { ...RICH_TYPE.amount, fontSize: 13, color: TEXT_PRIMARY },
   planRow: {
-    minHeight: 56,
+    minHeight: 55.7,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: RICH_SPACING.xs,
-    paddingHorizontal: RICH_SPACING.md,
+    gap: 4,
+    paddingLeft: 16.7,
+    paddingRight: 5,
     paddingVertical: RICH_SPACING.sm,
   },
-  planLabel: { ...RICH_TYPE.body, color: TEXT_SECONDARY },
+  planLabel: { fontSize: 13, color: '#777777' },
   planValue: {
     ...RICH_TYPE.amount,
     flex: 1,

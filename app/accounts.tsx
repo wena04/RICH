@@ -16,7 +16,7 @@ import {
   Modal,
   useWindowDimensions,
 } from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountIcon, AssetGoalIllustration, ScreenHeader } from '@/components/rich';
 import { RICH_NUMERAL_FONT } from '@/constants/Design';
@@ -87,6 +87,7 @@ export default function AccountsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const compact = width < 360;
+  const insets = useSafeAreaInsets();
   // Original hero art is about 150 × 186pt on a 393pt-wide screen.
   const illustrationWidth = Math.min(150, Math.max(110, Math.round(width * 0.38)));
   const illustrationHeight = Math.round(illustrationWidth * (186 / 150));
@@ -343,9 +344,7 @@ export default function AccountsScreen() {
           </View>
         ) : loadState === 'error' && !accounts.length ? (
           <View style={styles.statePanel}>
-            <View style={styles.stateMark}>
-              <FontAwesome name="exclamation" size={14} color={TEXT_PRIMARY} />
-            </View>
+            <Image source={require('../assets/images/ui/icon_warning.png')} style={styles.stateMark} accessible={false} />
             <Text style={styles.stateTitle}>账户暂时没有载入</Text>
             <Text style={styles.stateBody}>{loadError}</Text>
             <Pressable
@@ -387,7 +386,11 @@ export default function AccountsScreen() {
                       setShowAddModal(true);
                     }}
                   >
-                    <Text style={styles.addGroupText}>+ 添加</Text>
+                    <Image
+                      source={require('../assets/images/ui/create_item.png')}
+                      style={styles.addGroupImage}
+                      accessible={false}
+                    />
                   </Pressable>
                 </View>
 
@@ -401,7 +404,7 @@ export default function AccountsScreen() {
                       onPress={() => openEdit(account)}
                     >
                       <View style={styles.accountIcon}>
-                        <AccountIcon type={account.type} size={24} />
+                        <AccountIcon type={account.type} size={20} />
                       </View>
                       <View style={styles.accountCopy}>
                         <Text numberOfLines={1} style={styles.accountName}>{account.name}</Text>
@@ -410,7 +413,12 @@ export default function AccountsScreen() {
                       <Text numberOfLines={1} style={styles.accountBalance}>
                         {centsToYuan(account.balanceCents)}
                       </Text>
-                      <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
+                      <Image
+                        source={require('../assets/images/ui/icon_right_unfold.png')}
+                        style={styles.accountChevron}
+                        accessible={false}
+                      />
+                      <View style={styles.accountRule} />
                     </Pressable>
                   ))
                 ) : null}
@@ -423,7 +431,11 @@ export default function AccountsScreen() {
       {loadState !== 'loading' ? (
         <Pressable
           accessibilityRole="button"
-          style={({ pressed }) => [styles.xferButton, pressed && styles.primaryPressed]}
+          style={({ pressed }) => [
+            styles.xferButton,
+            { bottom: insets.bottom + 16 },
+            pressed && styles.primaryPressed,
+          ]}
           onPress={onTransfer}
         >
           <Text style={styles.xferButtonText}>账户转账</Text>
@@ -697,31 +709,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PRIMARY_GREEN,
   },
+  // Measured from the original at 3x: art 2.3pt under the nav bar, info column 30pt to its
+  // right, goal line centred 16.9pt down, cards 20.4pt below the art.
   assetSummary: {
     flexDirection: 'row',
     marginHorizontal: RICH_SPACING.lg,
-    marginBottom: 24,
-    gap: 18,
+    marginTop: 2.3,
+    marginBottom: 20.4,
+    gap: 30,
     backgroundColor: 'transparent',
   },
   assetSummaryCompact: { marginHorizontal: RICH_SPACING.md, gap: RICH_SPACING.sm },
   assetInfo: {
     flex: 1,
     minWidth: 0,
-    justifyContent: 'space-between',
-    paddingTop: 14,
-    paddingBottom: 18,
     backgroundColor: 'transparent',
   },
   goalRow: {
-    minHeight: 32,
+    height: 24,
+    marginTop: 4.9,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     backgroundColor: 'transparent',
   },
-  goalLeader: { width: 34, height: StyleSheet.hairlineWidth * 2, marginLeft: -40, backgroundColor: TEXT_PRIMARY },
-  goalEdit: { width: 24, height: 24 },
+  goalLeader: {
+    width: 29.3,
+    height: StyleSheet.hairlineWidth,
+    marginLeft: -33.3,
+    marginRight: 4,
+    backgroundColor: '#000000',
+  },
+  goalEdit: { width: 24, height: 24, marginLeft: 6 },
   goalCopy: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'transparent' },
   goalFlag: {
     width: 0,
@@ -733,7 +751,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
     borderLeftColor: DESTRUCTIVE_CORAL,
   },
-  goalLabel: { flexShrink: 1, fontSize: 14.5, color: TEXT_PRIMARY },
+  goalLabel: { flexShrink: 1, fontSize: 13, color: '#000000' },
   goalAmount: {
     ...RICH_TYPE.amount,
     marginTop: -2,
@@ -741,16 +759,18 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
   },
   totalLabel: {
-    marginTop: 'auto',
-    fontSize: 16,
+    marginTop: 64.65,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '600',
-    color: TEXT_PRIMARY,
+    color: '#000000',
   },
   totalValue: {
-    marginTop: 14,
+    marginTop: 14.6,
     fontFamily: RICH_NUMERAL_FONT,
-    fontSize: 40,
-    color: TEXT_PRIMARY,
+    fontSize: 31,
+    lineHeight: 36,
+    color: '#000000',
   },
   scrollContent: {
     flex: 1,
@@ -768,14 +788,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: PRIMARY_GREEN,
   },
-  stateMark: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#DFF2EA',
-  },
+  // Original icon_warning art.
+  stateMark: { width: 32, height: 32 },
   stateTitle: { marginTop: 12, fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
   stateBody: { marginTop: 5, fontSize: 11.5, lineHeight: 18, color: TEXT_SECONDARY, textAlign: 'center' },
   retryButton: {
@@ -802,39 +816,31 @@ const styles = StyleSheet.create({
   errorRetry: { minWidth: 64, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   errorRetryText: { ...RICH_TYPE.label, fontWeight: '700', color: DESTRUCTIVE_TEXT },
   accountGroup: {
-    marginHorizontal: RICH_SPACING.md,
+    marginHorizontal: 20,
     marginBottom: 20,
     backgroundColor: CARD_BACKGROUND,
     overflow: 'hidden',
   },
   groupHeader: {
-    minHeight: 66,
+    minHeight: 60.7,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 14,
-    paddingRight: 14,
+    paddingLeft: 13,
+    paddingRight: 13,
     backgroundColor: 'transparent',
   },
   groupCopy: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', backgroundColor: 'transparent' },
-  groupName: { fontSize: 14, color: '#8A8A8A' },
+  groupName: { fontSize: 13, color: '#777777' },
   groupTotal: {
     minWidth: 0,
     flexShrink: 1,
-    marginLeft: 10,
-    fontSize: 14,
-    color: '#8A8A8A',
+    marginLeft: 6.5,
+    fontSize: 13,
+    color: '#777777',
     fontVariant: ['tabular-nums'],
   },
-  addGroupButton: {
-    minWidth: 68,
-    height: 30,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 15,
-    backgroundColor: '#F2F3F5',
-  },
-  addGroupText: { fontSize: 14, color: '#333333' },
+  addGroupButton: { width: 62, height: 40 },
+  addGroupImage: { width: 62, height: 40 },
   emptyGroup: {
     paddingHorizontal: RICH_SPACING.md,
     paddingVertical: RICH_SPACING.md,
@@ -842,37 +848,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   accountRow: {
-    minHeight: 60,
+    minHeight: 60.3,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingLeft: 12.3,
+    paddingRight: 1.5,
+  },
+  accountChevron: { width: 30, height: 30 },
+  accountRule: {
+    position: 'absolute',
+    left: 42.3,
+    right: 0,
+    bottom: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#EAEAEA',
   },
   rowPressed: { backgroundColor: CONTROL_BACKGROUND },
   accountIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: RICH_SPACING.sm,
+    marginRight: 10.7,
   },
   accountCopy: { flex: 1, minWidth: 0, backgroundColor: 'transparent' },
   accountName: { fontSize: 15, color: TEXT_PRIMARY },
   accountType: { marginTop: 2, ...RICH_TYPE.caption, color: TEXT_MUTED },
   accountBalance: {
     maxWidth: 140,
-    marginRight: 12,
     fontSize: 15,
-    color: TEXT_PRIMARY,
+    color: '#333333',
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   xferButton: {
     position: 'absolute',
     alignSelf: 'center',
-    bottom: 36,
-    width: 274,
-    height: 44,
+    width: 272.4,
+    height: 42.3,
     backgroundColor: ACTION_BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',

@@ -7,6 +7,7 @@ type DashedDividerProps = {
   color?: string;
   dashWidth?: number;
   gap?: number;
+  thickness?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -14,15 +15,16 @@ export function DashedDivider({
   color = DASHED_RULE_COLOR,
   dashWidth = RICH_SPACING.xxs,
   gap = RICH_SPACING.xxs,
+  thickness = 1,
   style,
 }: DashedDividerProps) {
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.clip, style]}>
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.clip, { height: thickness }, style]}>
       <View style={styles.row}>
         {Array.from({ length: 80 }, (_, index) => (
           <View
             key={index}
-            style={{ width: dashWidth, height: 1, marginRight: gap, backgroundColor: color }}
+            style={{ width: dashWidth, height: thickness, marginRight: gap, backgroundColor: color }}
           />
         ))}
       </View>
