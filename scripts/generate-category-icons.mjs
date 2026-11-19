@@ -73,7 +73,7 @@ function validateIcon(id, source) {
     ['1.7px stroke', 'stroke-width="1.7"'],
     ['rounded joins', 'stroke-linejoin="round"'],
     ['rounded caps', 'stroke-linecap="round"'],
-    ['mint accent', '#3ECDA5'],
+    ['mint accent', '#3FDEAE'],
   ];
 
   for (const [label, fragment] of requirements) {

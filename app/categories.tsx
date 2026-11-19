@@ -1,5 +1,6 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   Alert, 
   Pressable, 
@@ -39,8 +40,11 @@ import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/src/domain/cate
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { type: requestedType } = useLocalSearchParams<{ type?: string }>();
   const [categories, setCategories] = useState<Array<Category & { subcategoryCount: number }>>([]);
-  const [filter, setFilter] = useState<'expense' | 'income' | 'all'>('expense');
+  const [filter, setFilter] = useState<'expense' | 'income'>(
+    requestedType === 'income' ? 'income' : 'expense',
+  );
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   
@@ -55,11 +59,16 @@ export default function CategoriesScreen() {
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
 
+  useEffect(() => {
+    setFilter(requestedType === 'income' ? 'income' : 'expense');
+    setExpandedCategoryId(null);
+  }, [requestedType]);
+
   const visibleCategories = useMemo(
     () =>
       categories.filter(
         (category) =>
-          filter === 'all' || category.kind === filter || category.kind === 'both',
+          category.kind === filter || category.kind === 'both',
       ),
     [categories, filter],
   );
@@ -217,34 +226,6 @@ export default function CategoriesScreen() {
       
       <ScreenHeader title="自定义" onBack={() => router.back()} borderBottom />
 
-      <View style={styles.filterBar}>
-        {([
-          ['expense', '支出'],
-          ['income', '收入'],
-          ['all', '全部'],
-        ] as const).map(([value, label]) => (
-          <Pressable
-            key={value}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: filter === value }}
-            onPress={() => {
-              setFilter(value);
-              setExpandedCategoryId(null);
-            }}
-            style={[styles.filterButton, filter === value && styles.filterButtonActive]}
-          >
-            <Text style={[styles.filterText, filter === value && styles.filterTextActive]}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.introRow}>
-        <Text style={styles.introTitle}>分类 → 子分类</Text>
-        <Text style={styles.introHint}>点开分类即可整理第二层</Text>
-      </View>
-
       <ScrollView
         style={styles.scrollContent}
         contentContainerStyle={styles.scrollBody}
@@ -282,9 +263,6 @@ export default function CategoriesScreen() {
                 </View>
 
                 <Text style={styles.categoryName}>{category.name}</Text>
-                <View style={styles.categoryMetaPill}>
-                  <Text style={styles.categoryMetaText}>{category.subcategoryCount} 个子类</Text>
-                </View>
               </Pressable>
 
               <Pressable
@@ -352,7 +330,9 @@ export default function CategoriesScreen() {
           accessibilityRole="button"
           accessibilityLabel="添加自定义分类"
           style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
-          onPress={() => router.push('/categories/add')}
+          onPress={() =>
+            router.push({ pathname: '/categories/add', params: { type: filter } })
+          }
         >
           <Text style={styles.addButtonText}>+ 添加自定义</Text>
         </Pressable>
@@ -472,28 +452,6 @@ const styles = StyleSheet.create({
   scrollBody: {
     paddingBottom: 8,
   },
-  filterBar: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 3,
-    backgroundColor: '#F1F3F2',
-    borderRadius: 999,
-  },
-  filterButton: { flex: 1, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  filterButtonActive: { backgroundColor: '#101A17' },
-  filterText: { fontSize: 12, color: TEXT_SECONDARY },
-  filterTextActive: { color: '#FFFFFF', fontWeight: '700' },
-  introRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 8,
-  },
-  introTitle: { fontSize: 14, fontWeight: '700', color: TEXT_PRIMARY },
-  introHint: { fontSize: 10.5, color: TEXT_SECONDARY },
   categorySection: {
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
@@ -537,14 +495,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: TEXT_PRIMARY,
   },
-  categoryMetaPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 3,
-    borderRadius: 999,
-    backgroundColor: '#F1F4F2',
-  },
-  categoryMetaText: { fontSize: 9.5, color: TEXT_SECONDARY },
   menuButton: {
     width: 44,
     height: 44,

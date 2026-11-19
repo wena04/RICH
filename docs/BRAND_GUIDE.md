@@ -12,8 +12,8 @@ is defined in [PRODUCT.md](PRODUCT.md); reusable UI behavior is defined in
 | Brand element | Canonical form |
 | --- | --- |
 | Public product name | **RICH 记账** |
-| Primary logo / short name | **Original Avenir Next Bold mixed-case `Rich` artwork** |
-| Localized signature | **Continuous `Rich记账` horizontal lockup artwork** |
+| Primary in-product logo | **Supplied original `Rich记账` title artwork** |
+| App icon | **Supplied original 1024 px `Rich` icon artwork** |
 | Square mark | **Complete one-line `Rich` word centered in a square canvas** |
 | Chinese brand line | **把每一笔钱，变成看得见的选择。** |
 | English brand line | **Turn every amount into a visible choice.** |
@@ -76,10 +76,13 @@ shadows, ornamental blobs, or a page full of rounded cards.
 
 ### Approved artwork
 
-Use the supplied vector files; do not redraw or typeset a substitute logo:
+Use the supplied original raster assets in the app; do not redraw or typeset a substitute logo:
 
 | Asset | Use |
 | --- | --- |
+| `assets/images/rich-title.png` | Canonical original 3x in-product title artwork |
+| `assets/images/icon-rich.png` | Canonical original 1024 px app icon |
+| `assets/images/rich-start.png` | Original launch artwork and tagline |
 | `assets/brand/rich-wordmark.svg` | Primary full `Rich` wordmark on white, paper, or other light fields |
 | `assets/brand/rich-wordmark-reversed.svg` | Primary full `Rich` wordmark on ink or a sufficiently dark image |
 | `assets/brand/rich-wordmark-on-mint.svg` | Primary full `Rich` wordmark on the exact RICH Mint field |
@@ -112,9 +115,8 @@ R, lowercase i/c/h, angled c terminals, and mixed letter heights reproduce the f
 the original app header. This locked typesetting is intentional: do not replace it with the system
 font, a rounded display font, a custom redraw, or added decorative shapes.
 
-The circle above the lowercase i is its ordinary dot. It uses the same color as every letter, stays
-centered over the stem, and is never detached, recolored, hollowed out, or interpreted as a badge.
-The square mark keeps this complete word on one line and centers it optically within its canvas.
+The bright mint circle behind the latter part of the supplied logo is a locked part of the original
+artwork. It uses `#00FFB2`; do not detach, recolor, redraw, or reinterpret it.
 
 The localized horizontal signature sets `Rich记账` continuously, without an inserted space. Avenir
 Next Bold carries the Latin word; PingFang SC Semibold (`600`) is 91.7% of the Latin size and sits
@@ -145,14 +147,15 @@ descriptor is necessary, the localized horizontal signature.
 
 | Token | Hex | Role |
 | --- | --- | --- |
-| RICH Mint | `#3ECDA5` | Signature field, active state, selected detail, icon accent |
-| Pressed Mint | `#2BB890` | Pressed or strengthened mint state |
+| RICH Mint | `#3FDEAE` | Signature field, active state, selected detail, icon accent |
+| Pressed Mint | `#2C9B7A` | Pressed or strengthened mint state |
 | Accessible Ink Green | `#14745B` | Green text and focus detail on light surfaces |
 | Ledger White | `#FFFFFF` | Cards, sheets, list bands, reversed content |
 | Ledger Paper | `#F5F6F7` | Bounded utility panels and empty states |
 | Page Gray | `#F4F4F4` | Group separation and utility-screen background |
-| RICH Ink | `#1A1A1A` | Primary text, amounts, outlines, primary actions |
-| Secondary Ink | `#666666` | Supporting labels and values |
+| RICH Highlight | `#00FFB2` | Locked circle inside the original logo artwork |
+| RICH Ink | `#000000` | Primary text, amounts, outlines, primary actions |
+| Secondary Ink | `#777777` | Supporting labels and values |
 | Muted Ink | `#999999` | Inactive controls and decorative metadata only |
 | Ledger Rule | `#E5E5E5` | Solid inset separators and borders |
 | Entry Mint | `#B5EAD7` | Calendar dates containing entries |
@@ -167,7 +170,7 @@ with RICH Ink; do not place small white text on mint.
 | Income Green | `#4CAF50` | Positive/income visualization; use `#247A3C` for small text on white |
 | Balance Blue | `#5C9CE6` | Balance adjustments only |
 | Warning Amber | `#E2A33A` | Budget use from 80% through 100% |
-| Destructive Coral | `#FF6B6B` | Destructive controls and over-budget surfaces; use `#C43D4D` for small text on white |
+| Destructive Coral | `#EC5E56` | Destructive controls and over-budget surfaces; use `#C43D4D` for small text on white |
 | Chart Teal | `#61CFCB` | Primary categorical series |
 | Chart Blue | `#88A8EE` | Secondary categorical series |
 | Chart Violet | `#9B8CFF` | Tertiary categorical series |

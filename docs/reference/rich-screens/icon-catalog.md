@@ -2,7 +2,7 @@
 
 Cataloged from the 添加自定义类目 (icon picker) screenshots in the reference set. Drives the
 hand-drawn SVG icon set. Line-art style: thin (~1.7px) rounded strokes, mostly monochrome gray
-with occasional mint (#3ECDA5) accent detail.
+with occasional mint (#3FDEAE) accent detail.
 
 ## Add-screen default categories (22 + 管理分类)
 餐饮, 衣服, 交通, 网费话费, 学习, 日用, 住房, 医疗, 发红包, 汽车/加油, 娱乐, 请客送礼,
@@ -33,17 +33,23 @@ with occasional mint (#3ECDA5) accent detail.
 
 ## Current implementation
 
-- `assets/icons/categories/` contains 114 independently drawn SVG source icons, including a
-  separate `handcoin` reward glyph so 打赏 does not reuse the donation artwork.
-- `components/CategoryIcon.tsx` renders the same family through `react-native-svg` and can theme
-  the outline and mint detail for idle, selected and inverse states.
-- `scripts/generate-category-icons.mjs` keeps the runtime registry and visual gallery generated
-  from those individual SVG sources; `npm run icons:check` detects drift.
+- `assets/images/category-original/` contains the 122 category PNGs named by the original
+  `TallyTypeinfo.plist`, plus the supplied `还钱`, settings, and three-dot assets used by the
+  captured add-entry flow. These are direct extractions from the supplied `Assets.car` rather
+  than redraws.
+- `src/domain/originalCategoryCatalog.json` preserves the original 18-section, 134-item catalog
+  and its `iconName` values. `components/originalCategoryIconRegistry.generated.ts` supplies the
+  static React Native image registry and exact category-name mapping.
+- `components/CategoryIcon.tsx` prefers the original PNG for known RICH categories. The 114 SVGs
+  in `assets/icons/categories/` remain only as a safe fallback for imported or user-created names
+  that have no corresponding original asset.
+- `scripts/generate-original-category-icons.mjs` regenerates the original PNG registry with
+  `npm run icons:original:generate`; `scripts/generate-category-icons.mjs` continues to maintain
+  the fallback SVG registry.
 - `src/domain/categoryIconCatalog.ts` is the typed source for all 18 sections and 134 picker
   choices, including the distinct 奖金 (briefcase + ¥) and 员工奖金 (trophy + ¥) treatments.
 - `src/domain/categoryIcons.ts` provides semantic fallbacks for built-in categories, common imports
   and starter subcategories.
-- Idle grid icons use muted gray linework; selected icons use the near-black reference-style ring;
-  the manage tile is the intentional mint/white exception.
-- The design follows the reference's visual grammar without treating external screenshots as
-  reusable artwork or tracing proprietary paths.
+- Idle grid icons, mint accents, circular frames, the original settings glyph, and the original
+  three-dot subcategory badges now come from the supplied app itself. Selected categories keep
+  the native-looking black selection ring applied by the screen layout.

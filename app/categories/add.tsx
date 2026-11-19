@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -29,9 +29,10 @@ import type { CategoryKind } from "@/src/domain/types";
 
 export default function AddCategoryScreen() {
   const router = useRouter();
+  const { type: requestedType } = useLocalSearchParams<{ type?: string }>();
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<{ id: string; label: string } | null>(null);
-  const [kind, setKind] = useState<CategoryKind>('expense');
+  const kind: CategoryKind = requestedType === 'income' ? 'income' : 'expense';
   const [saving, setSaving] = useState(false);
   const { width: viewportWidth } = useWindowDimensions();
   const gridColumns = viewportWidth < 360 ? 4 : 5;
@@ -95,31 +96,6 @@ export default function AddCategoryScreen() {
         placeholderTextColor={TEXT_SECONDARY}
       />
 
-      <View style={styles.kindSection}>
-        <Text style={styles.kindLabel}>用于</Text>
-        <View style={styles.kindToggle} accessibilityRole="tablist">
-          {([
-            ['expense', '支出'],
-            ['income', '收入'],
-            ['both', '两者'],
-          ] as const).map(([value, label]) => (
-            <Pressable
-              key={value}
-              accessibilityRole="button"
-              accessibilityState={{ selected: kind === value }}
-              onPress={() => setKind(value)}
-              style={({ pressed }) => [
-                styles.kindButton,
-                kind === value && styles.kindButtonActive,
-                pressed && kind !== value && styles.kindButtonPressed,
-              ]}
-            >
-              <Text style={[styles.kindText, kind === value && styles.kindTextActive]}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.libraryIntro}>
           <View>
@@ -155,6 +131,7 @@ export default function AddCategoryScreen() {
                     <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
                       <CategoryIcon
                         id={id}
+                        name={label}
                         size={25}
                         color={active ? '#181A19' : '#858B88'}
                       />
@@ -204,22 +181,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
-  kindSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  kindLabel: { fontSize: 12, color: TEXT_SECONDARY },
-  kindToggle: { flexDirection: 'row', padding: 2, backgroundColor: CONTROL_BACKGROUND, borderRadius: 999 },
-  kindButton: { minWidth: 60, minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  kindButtonActive: { backgroundColor: '#101A17' },
-  kindButtonPressed: { backgroundColor: '#E4E9E6' },
-  kindText: { fontSize: 11, color: TEXT_SECONDARY },
-  kindTextActive: { color: '#FFFFFF', fontWeight: '600' },
   libraryIntro: {
     flexDirection: 'row',
     alignItems: 'center',

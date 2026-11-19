@@ -98,7 +98,7 @@ export default function MoreScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <RichBrandName size={16} style={styles.appName} />
+          <RichBrandName size={16} />
           <Text style={styles.appVersion}>本地存储 · 隐私优先</Text>
         </View>
 
@@ -157,9 +157,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 32,
     backgroundColor: 'transparent',
-  },
-  appName: {
-    color: TEXT_PRIMARY,
   },
   appVersion: {
     fontSize: 12,

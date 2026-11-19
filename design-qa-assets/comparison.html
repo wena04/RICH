@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rich visual QA comparison</title>
+    <style>
+      :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 32px; background: #171717; color: #fff; }
+      h1 { margin: 0 0 24px; font-size: 24px; }
+      h2 { margin: 40px 0 14px; font-size: 18px; }
+      .pair { display: grid; grid-template-columns: repeat(2, 393px); gap: 24px; align-items: start; }
+      figure { margin: 0; }
+      figcaption { margin-bottom: 8px; color: #bdbdbd; font-size: 13px; }
+      img { display: block; width: 393px; height: auto; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <h1>Rich记账 — supplied app vs implementation</h1>
+
+    <h2>Budget / plan — empty state</h2>
+    <div class="pair">
+      <figure>
+        <figcaption>Supplied Rich 1.1.0 capture · 393 × 852 CSS px at 3×</figcaption>
+        <img src="../RICH%20Items/IMG_3425.png" alt="Supplied Rich budget screen" />
+      </figure>
+      <figure>
+        <figcaption>Browser implementation · 431 × 863 CSS px at 2×, normalized to 393 px wide</figcaption>
+        <img src="budget-implementation.png" alt="Implemented Rich budget screen" />
+      </figure>
+    </div>
+
+    <h2>Add expense</h2>
+    <div class="pair">
+      <figure>
+        <figcaption>Supplied Rich 1.1.0 capture · 393 × 852 CSS px at 3×</figcaption>
+        <img src="../RICH%20Items/IMG_3428.png" alt="Supplied Rich add expense screen" />
+      </figure>
+      <figure>
+        <figcaption>Browser implementation · 431 × 863 CSS px at 2×, normalized to 393 px wide</figcaption>
+        <img src="add-implementation.png" alt="Implemented Rich add expense screen" />
+      </figure>
+    </div>
+
+    <h2>Home shell</h2>
+    <div class="pair">
+      <figure>
+        <figcaption>Supplied Rich 1.1.0 populated state · 393 × 852 CSS px at 3×</figcaption>
+        <img src="../RICH%20Items/IMG_3426.png" alt="Supplied Rich home screen" />
+      </figure>
+      <figure>
+        <figcaption>Browser implementation empty state · 431 × 863 CSS px at 2×, normalized to 393 px wide</figcaption>
+        <img src="home-implementation.png" alt="Implemented Rich home screen" />
+      </figure>
+    </div>
+
+    <h2>Asset management</h2>
+    <div class="pair">
+      <figure>
+        <figcaption>Supplied Rich 1.1.0 capture · 393 × 852 CSS px at 3×</figcaption>
+        <img src="../RICH%20Items/IMG_3431.png" alt="Supplied Rich asset-management screen" />
+      </figure>
+      <figure>
+        <figcaption>Browser implementation · 431 × 863 CSS px at 2×, normalized to 393 px wide</figcaption>
+        <img src="accounts-implementation.png" alt="Implemented Rich asset-management screen" />
+      </figure>
+    </div>
+  </body>
+</html>

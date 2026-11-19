@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -55,6 +56,7 @@ export default function NewTransactionScreen() {
   const [amountStr, setAmountStr] = useState("0");
   const [date, setDate] = useState(isoDateToday());
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [accountId, setAccountId] = useState<string>("");
   const [selectedAccountName, setSelectedAccountName] = useState<string>("");
@@ -108,6 +110,7 @@ export default function NewTransactionScreen() {
         categoryLoadRequestRef.current += 1;
         setSubcategories([]);
         setSelectedSubId(null);
+        setExpandedCategoryId(null);
         return null;
       });
       const withCounts = await listCategoriesWithSubcategoryCounts(db);
@@ -133,6 +136,7 @@ export default function NewTransactionScreen() {
     const requestId = ++categoryLoadRequestRef.current;
     setSelectedCategoryId(category.id);
     setSelectedSubId(null);
+    setExpandedCategoryId(null);
     try {
       const db = await getDb();
       const rows = await listSubcategories(db, category.id);
@@ -254,6 +258,7 @@ export default function NewTransactionScreen() {
     categoryLoadRequestRef.current += 1;
     setType(nextType);
     setSelectedCategoryId(null);
+    setExpandedCategoryId(null);
     setSubcategories([]);
     setSelectedSubId(null);
   }
@@ -384,18 +389,6 @@ export default function NewTransactionScreen() {
       </View>
       <DashedDivider style={styles.amountDivider} />
 
-      {selectedCategory ? (
-        <View style={styles.selectionPath}>
-          <Text style={styles.selectionEyebrow}>{type === 'expense' ? '支出分类' : '收入分类'}</Text>
-          <Text style={styles.selectionValue} numberOfLines={1}>
-            {selectedCategory.name}
-            {selectedSubId
-              ? `  ›  ${subcategories.find((subcategory) => subcategory.id === selectedSubId)?.name ?? ''}`
-              : '  ›  不细分'}
-          </Text>
-        </View>
-      ) : null}
-
       {/* Category grid */}
       <ScrollView
         style={styles.categoryScroll}
@@ -403,7 +396,7 @@ export default function NewTransactionScreen() {
       >
         <View style={[styles.categoryGrid, { width: categoryGridWidth }]}>
           {categoryRows.map((row, rowIdx) => {
-            const selIdx = row.findIndex((c) => c.id === selectedCategoryId);
+            const selIdx = row.findIndex((c) => c.id === expandedCategoryId);
             const showZone = selIdx !== -1;
             return (
               <View key={rowIdx}>
@@ -413,13 +406,16 @@ export default function NewTransactionScreen() {
                       <Pressable
                         key="__manage"
                         style={[styles.categoryItem, { width: categoryItemWidth }]}
-                        onPress={() => router.push("/categories")}
+                        onPress={() =>
+                          router.push({ pathname: "/categories", params: { type } })
+                        }
                         accessibilityRole="button"
                         accessibilityLabel="管理分类"
                       >
                         <View style={[styles.categoryIcon, styles.manageIcon]}>
                           <CategoryIcon
-                            id="gear"
+                            id="icon_setting"
+                            name="管理分类"
                             size={25}
                             color="#FFFFFF"
                             accentColor="#FFFFFF"
@@ -453,9 +449,30 @@ export default function NewTransactionScreen() {
                             color={selectedCategoryId === cat.id ? '#181A19' : '#858B88'}
                           />
                           {catsWithSubs.has(cat.id) && (
-                            <View style={styles.catBadge}>
-                              <Text style={styles.catBadgeText}>⋯</Text>
-                            </View>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`展开${cat.name}子分类`}
+                              accessibilityHint="在当前分类行下方显示可选的子分类"
+                              accessibilityState={{ expanded: expandedCategoryId === cat.id }}
+                              hitSlop={10}
+                              onPress={(event) => {
+                                event.stopPropagation();
+                                const category = categories.find((item) => item.id === cat.id);
+                                if (!category) return;
+                                void onSelectCategory(category);
+                                setExpandedCategoryId((current) =>
+                                  current === cat.id ? null : cat.id,
+                                );
+                              }}
+                              style={styles.catBadge}
+                            >
+                              <Image
+                                source={require('../../assets/images/category-original/icon_three_dot.png')}
+                                resizeMode="contain"
+                                style={styles.catBadgeImage}
+                                accessible={false}
+                              />
+                            </Pressable>
                           )}
                         </View>
                         <Text
@@ -486,40 +503,7 @@ export default function NewTransactionScreen() {
                         },
                       ]}
                     />
-                    <View style={styles.subZoneHeader}>
-                      <Text style={styles.subZoneTitle}>
-                        {selectedCategory?.name ?? row[selIdx]?.name ?? ''} · 子分类
-                      </Text>
-                      <Text style={styles.subZoneHint}>可选，下一次仍可修改</Text>
-                    </View>
                     <View style={styles.subGrid}>
-                      <Pressable
-                        style={[styles.subItem, { width: categoryItemWidth }]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: selectedSubId == null }}
-                        onPress={() => setSelectedSubId(null)}
-                      >
-                        <View
-                          style={[
-                            styles.subItemIcon,
-                            selectedSubId == null && styles.subItemIconSelected,
-                          ]}
-                        >
-                          <FontAwesome
-                            name="circle-o"
-                            size={16}
-                            color={selectedSubId == null ? '#181A19' : TEXT_SECONDARY}
-                          />
-                        </View>
-                        <Text
-                          style={[
-                            styles.subItemName,
-                            selectedSubId == null && styles.subItemNameSelected,
-                          ]}
-                        >
-                          不细分
-                        </Text>
-                      </Pressable>
                       {subcategories.map((s) => {
                         const active = selectedSubId === s.id;
                         return (
@@ -666,6 +650,7 @@ export default function NewTransactionScreen() {
             <MoneyNumpad
               onDigit={handleNumPress}
               onBackspace={handleBackspace}
+              keyHeight={80}
               operators={[
                 { label: "+", accessibilityLabel: "加", onPress: () => handleOperator("+") },
                 { label: "−", accessibilityLabel: "减", onPress: () => handleOperator("-") },
@@ -795,24 +780,8 @@ const styles = StyleSheet.create({
     color: PRIMARY_GREEN,
     fontWeight: "300",
   },
-  selectionPath: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    backgroundColor: '#F2F8F5',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#D7E6DE',
-  },
-  selectionEyebrow: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    color: ACCESSIBLE_GREEN,
-    marginRight: 12,
-  },
-  selectionValue: { flex: 1, fontSize: 11.5, fontWeight: '600', color: TEXT_PRIMARY },
   categoryScroll: {
-    flex: 1,
+    maxHeight: 310,
     backgroundColor: "#FFFFFF",
   },
   categoryGrid: {
@@ -826,7 +795,7 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 5,
   },
   categoryIcon: {
     width: 48,
@@ -847,24 +816,18 @@ const styles = StyleSheet.create({
   },
   catBadge: {
     position: "absolute",
-    top: -1,
-    right: -1,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: "#C9CCCA",
     borderWidth: 1.5,
     borderColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
   },
-  catBadgeText: {
-    fontSize: 9,
-    lineHeight: 10,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    marginTop: -2,
-  },
+  catBadgeImage: { width: 12, height: 12 },
   categoryName: {
     fontSize: 11.5,
     color: "#4E5350",
@@ -883,7 +846,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 3,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
     backgroundColor: "#FFFFFF",
@@ -985,23 +948,14 @@ const styles = StyleSheet.create({
   noteDoneText: { fontSize: 13, fontWeight: "600", color: "#FFFFFF" },
   subZone: {
     position: "relative",
-    backgroundColor: "#F4F6F5",
-    borderRadius: 0,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 14,
     marginTop: 2,
     marginBottom: 8,
-    paddingTop: 10,
+    paddingTop: 14,
     paddingBottom: 4,
     paddingHorizontal: 4,
   },
-  subZoneHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingHorizontal: 12,
-    paddingBottom: 4,
-  },
-  subZoneTitle: { fontSize: 11.5, fontWeight: '600', color: TEXT_PRIMARY },
-  subZoneHint: { fontSize: 10.5, color: TEXT_SECONDARY },
   subZoneCaret: {
     position: "absolute",
     top: -7,
@@ -1012,7 +966,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 8,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderBottomColor: "#F4F6F5",
+    borderBottomColor: "#F0F0F0",
   },
   subGrid: {
     flexDirection: "row",

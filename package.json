@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "icons:generate": "node scripts/generate-category-icons.mjs",
     "icons:check": "node scripts/generate-category-icons.mjs --check",
+    "icons:original:generate": "node scripts/generate-original-category-icons.mjs",
     "test": "node --import tsx --test src/__tests__/*.test.ts"
   },
   "dependencies": {

@@ -1,9 +1,9 @@
 # RICH brand assets
 
-This directory contains the editable, vector-first identity package for **RICH 记账**. In ordinary
-text, use the canonical product name exactly as written: uppercase `RICH`, one space, then `记账`.
-The fixed logo artwork intentionally reads **Rich** in mixed case to preserve the friendly character
-of the original app header; do not treat that artwork casing as a metadata spelling change.
+This directory contains editable vector derivatives for **Rich记账**. The supplied original app
+package is the visual source of truth: `assets/images/icon-rich.png` is its 1024 px App Store icon,
+and `assets/images/rich-title.png` is its original 3x header title artwork. Use those PNGs in the
+product; use the SVGs here only where an editable derivative is required.
 
 Canonical brand line:
 
@@ -12,9 +12,9 @@ Canonical brand line:
 
 ## Status and provenance
 
-> **Internal working identity — not cleared for public release.** These assets are original working files developed inside the RICH project, but the product name, identity design, and any referenced legacy material still require ownership, trademark, and release clearance before App Store submission, publication, merchandising, or other external use.
-
-The existing files `assets/images/icon-rich.png` and `assets/images/icon-rich-source.png` remain the current production app-icon assets until an explicit design and release approval replaces them. Do not silently swap the production icon to a file from this directory.
+The files `assets/images/icon-rich.png`, `assets/images/rich-title.png`, and
+`assets/images/rich-start.png` were recovered from the supplied Rich 1.1.0 application and are the
+current production references. Do not replace them with a re-typeset or redrawn approximation.
 
 Expo starter artwork, template icons, favicons, and other placeholders are not RICH brand assets and must not be used in builds, store listings, presentations, or marketing exports.
 
@@ -26,13 +26,13 @@ All SVG files are masters. Keep them editable and export derivatives rather than
 | --- | --- | --- |
 | `rich-wordmark.svg` | Primary original-style `Rich` wordmark | White, near-white, or other light neutral backgrounds |
 | `rich-wordmark-reversed.svg` | Reversed primary `Rich` wordmark | Ink (`#1A1A1A`), dark photography, or another sufficiently dark solid background |
-| `rich-wordmark-on-mint.svg` | Ink primary `Rich` wordmark | RICH Mint (`#3ECDA5`) fields only |
+| `rich-wordmark-on-mint.svg` | Ink primary `Rich` wordmark | RICH Mint (`#3FDEAE`) fields only |
 | `rich-lockup-horizontal.svg` | Localized original-style `Rich记账` signature | White, near-white, or other light neutral backgrounds |
 | `rich-lockup-horizontal-reversed.svg` | Reversed localized signature | Ink (`#1A1A1A`) or another sufficiently dark background |
-| `rich-lockup-horizontal-on-mint.svg` | Ink localized signature | RICH Mint (`#3ECDA5`) fields only |
+| `rich-lockup-horizontal-on-mint.svg` | Ink localized signature | RICH Mint (`#3FDEAE`) fields only |
 | `rich-mark.svg` | Complete one-line `Rich` artwork centered in a square canvas | White, near-white, or other light neutral backgrounds |
 | `rich-mark-reversed.svg` | Reversed square `Rich` mark | Ink (`#1A1A1A`), dark photography, or another sufficiently dark solid background |
-| `rich-mark-on-mint.svg` | Ink square `Rich` mark | RICH Mint (`#3ECDA5`) fields only |
+| `rich-mark-on-mint.svg` | Ink square `Rich` mark | RICH Mint (`#3FDEAE`) fields only |
 | `rich-app-icon-master.svg` | Square, full-bleed mint app-icon composition using the complete `Rich` word | Used as the artwork itself; do not place it inside another tile |
 | `rich-brand-sheet.svg` | Reference sheet showing approved assets, palette, spacing, sizing, and misuse examples | Documentation and internal review only; never ship as a logo asset |
 | `rich-brand-sheet.jpg` | Raster preview of the brand sheet for quick sharing and review | Documentation and internal review only; regenerate from the SVG after changes |
@@ -51,9 +51,9 @@ with natural tracking. The localized signature sets `Rich记账` as one continuo
 PingFang SC Semibold (`600`) at 91.7% of the Latin size so both scripts share the original baseline
 and visual mass. The natural font bearings create the small visible gap; do not insert a space.
 
-The black circle above the i is its ordinary typeface dot: it is the same color as the other
-letters and is never treated as a decorative badge or cutout. Do not substitute a rounded display
-font, redraw individual letters, add a gap before `记账`, or change the approved weight and tracking.
+The bright mint circle is a locked part of the original artwork and sits behind the latter part of
+the wordmark/descriptor. Preserve its position, size, and `#00FFB2` color; do not replace it with a
+typeset dot, badge, or newly drawn shape.
 
 The square mark keeps the complete `Rich` word on one line and centers it inside a square canvas.
 It never stacks, abbreviates, or converts the word to a monogram. It is the source composition for
@@ -67,9 +67,10 @@ Never place the square mark before or beside it, which would duplicate the produ
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| RICH Mint | `#3ECDA5` | Primary identity color and meaningful highlights |
-| RICH Mint Dark | `#2BB890` | Darker mint support where additional contrast is required |
-| RICH Ink | `#1A1A1A` | Primary wordmark, linework, and dark backgrounds |
+| RICH Mint | `#3FDEAE` | Primary identity color and meaningful highlights |
+| RICH Mint Dark | `#2C9B7A` | Darker mint support where additional contrast is required |
+| RICH Highlight | `#00FFB2` | Locked circle inside original logo artwork |
+| RICH Ink | `#000000` | Primary wordmark, linework, and dark actions |
 | White | `#FFFFFF` | Reversed artwork and clean surfaces |
 | Canvas | `#F5F5F5` | Soft product and presentation background |
 | Border | `#E5E5E5` | Supporting UI rules only; not a logo color |
@@ -105,16 +106,16 @@ that it is legible merely because the SVG can scale down.
 
 ### iOS and the App Store
 
-- Export the approved full-word composition in `rich-app-icon-master.svg` to a **1024 × 1024 px**, full-bleed, opaque PNG in sRGB for App Store submission.
+- Use `assets/images/icon-rich.png`, the supplied original **1024 × 1024 px** full-bleed sRGB icon, for App Store submission.
 - Do not add a rounded-rectangle mask; Apple applies the platform mask.
 - Do not add transparent margins, a white border, or an extra container around the master artwork.
-- Generate the required Xcode asset-catalog sizes from the approved master, not from a previously resized PNG.
+- Generate platform sizes from that 1024 px original.
 - Review the icon at actual Home Screen, Spotlight, Settings, and notification sizes before approval.
 - Render release exports on macOS and confirm that Avenir Next and PingFang SC resolve correctly;
   these live-text SVG masters can change appearance on a platform without the same fonts.
 - Confirm the current requirements in Xcode and App Store Connect before submission, since platform specifications may change.
 
-Until approval is recorded, keep `assets/images/icon-rich.png` configured as the production icon.
+Keep `assets/images/icon-rich.png` configured as the production icon.
 
 ### Web and documents
 

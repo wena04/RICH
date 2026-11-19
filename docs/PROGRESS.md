@@ -2,7 +2,7 @@
 
 Living implementation and verification status for Rich记账.
 
-**Last updated:** August 24, 2026
+**Last updated:** September 18, 2026
 
 **Phase:** native release hardening and on-device visual QA
 
@@ -35,6 +35,8 @@ Recent work moved the app beyond the earlier MVP model:
   state, responsive trend width, app icon/configuration, and native release metadata.
 - Added focused hierarchical-budget tests and changed the test command to avoid the prior `tsx` IPC
   restriction.
+- Restored the supplied Rich 1.1.0 app icon, title artwork, mint/highlight palette, header controls,
+  tab artwork, and asset-goal illustration as the visual source of truth.
 
 ## Current architecture
 
@@ -49,7 +51,7 @@ Recent work moved the app beyond the earlier MVP model:
 
 ## Verification
 
-Completed against the current workspace on August 24, 2026:
+Completed against the current workspace on September 18, 2026:
 
 ```text
 TypeScript:       npx tsc --noEmit                         PASS

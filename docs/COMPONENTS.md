@@ -12,22 +12,22 @@ Brand identity, naming, voice, logo, and external-use rules live in [BRAND_GUIDE
 
 | Token | Value | Use |
 |---|---:|---|
-| `PRIMARY_GREEN` | `#3ECDA5` | App header fields, active navigation, icon accents |
-| `PRIMARY_GREEN_DARK` | `#2BB890` | Pressed/strong green state |
-| `TEXT_PRIMARY` | `#1A1A1A` | Main text, expense amounts, icon outlines |
-| `TEXT_SECONDARY` | `#666666` | Labels and supporting values |
+| `PRIMARY_GREEN` | `#3FDEAE` | App header fields, active navigation, icon accents |
+| `PRIMARY_GREEN_DARK` | `#2C9B7A` | Pressed/strong green state |
+| `TEXT_PRIMARY` | `#000000` | Main text, expense amounts, icon outlines |
+| `TEXT_SECONDARY` | `#777777` | Labels and supporting values |
 | `TEXT_MUTED` | `#999999` | Inactive navigation and placeholders |
 | `CARD_BACKGROUND` | `#FFFFFF` | Cards, sheets, list bands |
-| `BORDER_COLOR` | `#E5E5E5` | Solid inset separators |
-| `ENTRY_GREEN` | `#B5EAD7` | Calendar dates that contain entries |
-| `INCOME_GREEN` | `#4CAF50` | Positive/income values only |
+| `BORDER_COLOR` | `#EAEAEA` | Solid inset separators |
+| `ENTRY_GREEN` | `#A8E9DD` | Calendar dates that contain entries |
+| `INCOME_GREEN` | `#3FDEAE` | Positive/income visualization |
 | budget warning | `#E2A33A` | Budget usage from 80% through 100% |
-| `EXPENSE_RED` | `#FF6B6B` | Destructive actions and over-budget state, not expenses |
+| `EXPENSE_RED` | `#EC5E56` | Destructive actions and over-budget state, not expenses |
 | chart teal | `#61CFCB` | Primary categorical chart segment |
 | chart blue | `#88A8EE` | Secondary categorical chart segment |
 | chart violet | `#9B8CFF` | Tertiary categorical chart segment |
-| panel gray | `#F5F6F7` | Empty-state and bounded utility panels |
-| page gray | `#F4F4F4` | Group separation and utility-screen backgrounds |
+| panel gray | `#F7F7F7` | Empty-state and bounded utility panels |
+| page gray | `#F6F7F8` | Group separation and utility-screen backgrounds |
 
 Core implementation source: `constants/Colors.ts`. The budget warning and chart hues are currently
 defined in `docs/mockups.html` and should be exported from `Colors.ts` when this approved mockup is
@@ -64,12 +64,10 @@ Color use is deliberately restrained:
 
 Source: `components/rich/RichBrandName.tsx`
 
-- Reproduces the original `Rich记账` header: Avenir Next Bold (`700`) for `Rich`, followed without
-  an inserted space by PingFang SC Semibold (`600`) at 91.7% of the Latin size.
-- The home header uses a 40 px Latin size, matching the archived screenshot. About and secondary
-  product-identification surfaces may use smaller sizes through the `size` property.
-- Keep the ordinary lowercase-i dot. Do not add a separate spot, monogram, stacked construction,
-  or substitute rounded display font.
+- Renders the exact 3x `Rich记账` title artwork recovered from the supplied Rich 1.1.0 app.
+- The home header uses `size={40}` to reproduce the original 166 × 54 pt treatment. About and
+  secondary product-identification surfaces may use smaller sizes through the same property.
+- Preserve the artwork's bright `#00FFB2` circle, aspect ratio, and transparent background.
 
 ### `ScreenHeader`
 
@@ -140,7 +138,7 @@ owned by each flow; the component owns only presentation and input events.
 Source: `components/CategoryIcon.tsx`
 
 - 114 custom `react-native-svg` icons.
-- Outline color `#1A1A1A`; detail/accent color `#3ECDA5`.
+- Outline color `#1A1A1A`; detail/accent color `#3FDEAE`.
 - Prefer a stored icon ID. Category-name lookup is a fallback for migrated/seeded records.
 - Standard sizes: 16 px in compact ledger rows, 20-26 px in grids/cards.
 - Standard category frame: 40-48 px light-gray circle. Selected frame: dark outline or mint border.

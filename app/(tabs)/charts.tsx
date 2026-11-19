@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -9,10 +10,9 @@ import {
   StyleSheet,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Svg, { Path } from 'react-native-svg';
 
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { MonthStepper, ProgressBar } from '@/components/rich';
+import { ProgressBar } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { EXPENSE_RED, PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
@@ -21,13 +21,7 @@ import { getMonthlyTotals } from '@/src/features/charts/aggregations';
 import { PieChart } from '@/src/features/charts/PieChart';
 import type { BudgetSummary } from '@/src/domain/types';
 import { centsToYuan } from '@/src/utils/money';
-import { addMonths, currentMonth } from '@/src/utils/month';
-
-const BUDGET_DONUT = [
-  { value: 55, color: '#7ED9BE' },
-  { value: 30, color: '#B7E9D8' },
-  { value: 15, color: '#DFF2EA' },
-];
+import { currentMonth } from '@/src/utils/month';
 
 const TREND_DONUT = [
   { value: 35, color: '#9B8CFF' },
@@ -50,33 +44,19 @@ function progressColor(percent: number): string {
 function BudgetExampleDonut() {
   return (
     <View style={styles.exampleChart}>
-      <View style={styles.exampleDonut}>
-        <PieChart size={124} innerRadius={38} data={BUDGET_DONUT} />
-      </View>
-      <Svg pointerEvents="none" style={StyleSheet.absoluteFillObject} viewBox="0 0 280 150">
-        <Path d="M89 77 H76 L66 87" fill="none" stroke="#1A1A1A" strokeWidth="1" />
-        <Path d="M177 43 H191 L201 33" fill="none" stroke="#1A1A1A" strokeWidth="1" />
-        <Path d="M188 99 H201 L211 109" fill="none" stroke="#1A1A1A" strokeWidth="1" />
-      </Svg>
-      <View style={[styles.exampleLabel, styles.exampleLabelLeft]}>
-        <Text style={styles.exampleName}>🍑日常开销</Text>
-        <Text style={styles.examplePercent}>55%</Text>
-      </View>
-      <View style={[styles.exampleLabel, styles.exampleLabelTopRight]}>
-        <Text style={styles.exampleName}>📖学习基金</Text>
-        <Text style={styles.examplePercent}>15%</Text>
-      </View>
-      <View style={[styles.exampleLabel, styles.exampleLabelBottomRight]}>
-        <Text style={styles.exampleName}>💰消费升级</Text>
-        <Text style={styles.examplePercent}>30%</Text>
-      </View>
+      <Image
+        source={require('../../assets/images/budget/icon_budget_progress.png')}
+        resizeMode="contain"
+        style={styles.exampleArtwork}
+        accessible={false}
+      />
     </View>
   );
 }
 
 export default function BudgetScreen() {
   const router = useRouter();
-  const [month, setMonth] = useState(currentMonth());
+  const [month] = useState(currentMonth());
   const [balance, setBalance] = useState(0);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
@@ -125,16 +105,6 @@ export default function BudgetScreen() {
   const totalPercent = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
   const remaining = totalLimit - totalSpent;
 
-  function changeMonth(delta: number) {
-    loadRequestRef.current += 1;
-    setLoadState('loading');
-    setLoadError('');
-    setSummary(null);
-    setBalance(0);
-    setExpandedCategoryId(null);
-    setMonth((value) => addMonths(value, delta));
-  }
-
   function openEditor() {
     router.push({ pathname: '/budget/edit', params: { period: month } });
   }
@@ -170,13 +140,6 @@ export default function BudgetScreen() {
           </Pressable>
         </View>
       </View>
-
-      <MonthStepper
-        label={monthLabel(month)}
-        onPrevious={() => changeMonth(-1)}
-        onNext={() => changeMonth(1)}
-        style={styles.monthRow}
-      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {loadState === 'loading' ? (
@@ -395,6 +358,7 @@ const styles = StyleSheet.create({
     minHeight: 146,
     flexDirection: 'row',
     marginHorizontal: 24,
+    marginBottom: 30,
     backgroundColor: '#FFFFFF',
     borderRadius: 0,
   },
@@ -419,10 +383,6 @@ const styles = StyleSheet.create({
   summaryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#D8D8D8' },
   summaryKey: { fontSize: 12.5, color: '#555555' },
   summaryValue: { fontSize: 12.5, fontWeight: '500', color: TEXT_PRIMARY },
-  monthRow: {
-    height: 40,
-    backgroundColor: PRIMARY_GREEN,
-  },
   scroll: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { flexGrow: 1, paddingVertical: 14, paddingBottom: 40 },
   statePanel: {
@@ -575,13 +535,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   exampleChart: { width: 280, height: 150, backgroundColor: 'transparent' },
-  exampleDonut: { position: 'absolute', left: 78, top: 13, backgroundColor: 'transparent' },
-  exampleLabel: { position: 'absolute', backgroundColor: 'transparent' },
-  exampleLabelLeft: { left: 0, top: 70, alignItems: 'flex-start' },
-  exampleLabelTopRight: { right: 0, top: 12, alignItems: 'flex-start' },
-  exampleLabelBottomRight: { right: 0, top: 98, alignItems: 'flex-start' },
-  exampleName: { fontSize: 11, color: TEXT_PRIMARY },
-  examplePercent: { marginTop: 2, fontSize: 15, fontWeight: '600', color: TEXT_PRIMARY },
+  exampleArtwork: { position: 'absolute', left: 0, top: 10, width: 280, height: 130 },
   tagline: { fontSize: 13, color: TEXT_SECONDARY, marginVertical: 16 },
   createButton: {
     alignSelf: 'stretch',

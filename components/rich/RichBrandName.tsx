@@ -1,35 +1,21 @@
-import { Platform, StyleProp, Text, TextStyle } from 'react-native';
-
-import { TEXT_PRIMARY } from '@/constants/Colors';
+import { Image, type ImageStyle, type StyleProp } from 'react-native';
 
 interface RichBrandNameProps {
-  color?: string;
   size?: number;
-  style?: StyleProp<TextStyle>;
+  style?: StyleProp<ImageStyle>;
 }
 
-/** Original Rich记账 header treatment: Avenir Next Bold + smaller PingFang SC Semibold. */
-export function RichBrandName({ color = TEXT_PRIMARY, size = 28, style }: RichBrandNameProps) {
+/** Exact Rich记账 title artwork from the supplied Rich 1.1.0 application. */
+export function RichBrandName({ size = 28, style }: RichBrandNameProps) {
+  const height = size * 1.35;
+
   return (
-    <Text accessibilityLabel="Rich记账" style={[{ color }, style]}>
-      <Text
-        style={{
-          color,
-          fontFamily: Platform.select({ ios: 'AvenirNext-Bold', web: 'Avenir Next' }),
-          fontSize: size,
-          fontWeight: '700',
-        }}>
-        Rich
-      </Text>
-      <Text
-        style={{
-          color,
-          fontFamily: Platform.select({ ios: 'PingFangSC-Semibold', web: 'PingFang SC' }),
-          fontSize: size * (11 / 12),
-          fontWeight: '600',
-        }}>
-        记账
-      </Text>
-    </Text>
+    <Image
+      accessibilityLabel="Rich记账"
+      accessibilityRole="image"
+      resizeMode="contain"
+      source={require('../../assets/images/rich-title.png')}
+      style={[{ width: height * (498 / 162), height }, style]}
+    />
   );
 }

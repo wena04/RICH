@@ -20,7 +20,7 @@
   <rect width="1600" height="1100" fill="#F4F4F4"/>
 
   <!-- Identity thesis: mint field + ledger panel -->
-  <rect width="1600" height="360" fill="#3ECDA5"/>
+  <rect width="1600" height="360" fill="#3FDEAE"/>
   <text x="80" y="64" class="sans eyebrow" fill="#1A1A1A">RICH BRAND SYSTEM · 01</text>
   <text x="80" y="220" class="logo" fill="#1A1A1A" font-size="180">Rich</text>
   <text x="459.5" y="215.5" class="logo-cn" fill="#1A1A1A" font-size="165">记账</text>
@@ -35,7 +35,7 @@
     <text x="30" y="172" class="sans small" fill="#666666">餐饮 › 买菜</text>
     <text x="450" y="172" class="sans small" fill="#1A1A1A" text-anchor="end">¥80 / ¥120</text>
     <rect x="30" y="195" width="420" height="8" rx="4" fill="#E5E5E5"/>
-    <rect x="30" y="195" width="280" height="8" rx="4" fill="#3ECDA5"/>
+    <rect x="30" y="195" width="280" height="8" rx="4" fill="#3FDEAE"/>
   </g>
   <text x="1040" y="333" class="sans eyebrow" fill="#14745B">PRIVATE · AMOUNT-FIRST · CALENDAR-FIRST</text>
 
@@ -45,9 +45,9 @@
 
   <g transform="translate(80 470)">
     <g>
-      <rect width="132" height="76" rx="3" fill="#3ECDA5"/>
+      <rect width="132" height="76" rx="3" fill="#3FDEAE"/>
       <text x="0" y="102" class="sans small" fill="#1A1A1A">RICH Mint</text>
-      <text x="0" y="124" class="sans caption" fill="#666666">#3ECDA5</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#3FDEAE</text>
     </g>
     <g transform="translate(154 0)">
       <rect width="132" height="76" rx="3" fill="#1A1A1A"/>
@@ -70,9 +70,9 @@
       <text x="0" y="124" class="sans caption" fill="#666666">#B5EAD7</text>
     </g>
     <g transform="translate(770 0)">
-      <rect width="132" height="76" rx="3" fill="#FF6B6B"/>
+      <rect width="132" height="76" rx="3" fill="#EC5E56"/>
       <text x="0" y="102" class="sans small" fill="#1A1A1A">Coral</text>
-      <text x="0" y="124" class="sans caption" fill="#666666">#FF6B6B</text>
+      <text x="0" y="124" class="sans caption" fill="#666666">#EC5E56</text>
     </g>
   </g>
 
@@ -84,7 +84,7 @@
     <text x="69" y="80" class="logo" fill="#1A1A1A" text-anchor="middle" font-size="52">Rich</text>
   </g>
   <g transform="translate(1212 470)">
-    <rect width="138" height="128" rx="3" fill="#3ECDA5"/>
+    <rect width="138" height="128" rx="3" fill="#3FDEAE"/>
     <text x="69" y="80" class="logo" fill="#1A1A1A" text-anchor="middle" font-size="52">Rich</text>
   </g>
   <g transform="translate(1364 470)">
@@ -118,7 +118,7 @@
     <text x="16" y="30" class="sans caption" fill="#666666">TWO-TONE ICON</text>
     <circle cx="73" cy="82" r="30" fill="#FFFFFF"/>
     <path d="M58 76H88L84 94H62Z M64 76C65 68 69 64 73 64C77 64 81 68 82 76" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M69 76C69 71 71 68 73 67C76 69 77 72 77 76" fill="none" stroke="#3ECDA5" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M69 76C69 71 71 68 73 67C76 69 77 72 77 76" fill="none" stroke="#3FDEAE" stroke-width="2.6" stroke-linecap="round"/>
   </g>
 
   <g transform="translate(1128 762)">
@@ -143,18 +143,18 @@
   <g transform="translate(80 974)">
     <text x="0" y="22" class="sans eyebrow" fill="#1A1A1A">VOICE</text>
     <text x="102" y="22" class="sans small" fill="#666666">CALM</text>
-    <circle cx="167" cy="17" r="2.5" fill="#3ECDA5"/>
+    <circle cx="167" cy="17" r="2.5" fill="#3FDEAE"/>
     <text x="184" y="22" class="sans small" fill="#666666">DIRECT</text>
-    <circle cx="257" cy="17" r="2.5" fill="#3ECDA5"/>
+    <circle cx="257" cy="17" r="2.5" fill="#3FDEAE"/>
     <text x="274" y="22" class="sans small" fill="#666666">SPECIFIC</text>
-    <circle cx="366" cy="17" r="2.5" fill="#3ECDA5"/>
+    <circle cx="366" cy="17" r="2.5" fill="#3FDEAE"/>
     <text x="383" y="22" class="sans small" fill="#666666">PRIVATE</text>
     <text x="0" y="61" class="sans" fill="#1A1A1A" font-size="21" font-weight="600">本月已用 82%，还剩 ¥180。</text>
     <text x="310" y="61" class="sans small" fill="#666666">Describe the state. Never shame the choice.</text>
   </g>
 
   <rect x="1040" y="970" width="480" height="86" rx="3" fill="#1A1A1A"/>
-  <circle cx="1070" cy="997" r="8" fill="#3ECDA5"/>
+  <circle cx="1070" cy="997" r="8" fill="#3FDEAE"/>
   <text x="1090" y="1002" class="sans eyebrow" fill="#FFFFFF">INTERNAL WORKING IDENTITY</text>
   <text x="1070" y="1033" class="sans caption" fill="#BFC9C4">Name and design ownership clearance required before public release.</text>
 

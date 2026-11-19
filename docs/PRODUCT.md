@@ -13,7 +13,7 @@ clear two-level money hierarchy over account aggregation, advertising, or cloud 
 - **Honest first run:** no fake balances or transactions.
 - **Progressive detail:** categories work alone, while subcategories add precision when useful.
 
-The visual language uses mint `#3ECDA5`, near-black active controls, square/near-square content
+The visual language uses mint `#3FDEAE`, near-black active controls, square/near-square content
 cards, and rounded shapes only for controls, pills, sheets, and icons.
 
 ## First-run experience

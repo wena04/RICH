@@ -22,6 +22,9 @@ type MonthStepperProps = {
   accessibilityLabel?: string;
   buttonSize?: number;
   labelMinWidth?: number;
+  onLabelPress?: () => void;
+  labelAccessibilityLabel?: string;
+  labelExpanded?: boolean;
 };
 
 export function MonthStepper({
@@ -34,7 +37,16 @@ export function MonthStepper({
   accessibilityLabel = '月份',
   buttonSize = RICH_SIZE.minimumTouchTarget,
   labelMinWidth = 84,
+  onLabelPress,
+  labelAccessibilityLabel,
+  labelExpanded,
 }: MonthStepperProps) {
+  const labelBoxStyle = [
+    styles.labelBox,
+    { minWidth: labelMinWidth },
+    variant === 'pill' && styles.pill,
+  ];
+
   return (
     <View style={[styles.row, style]}>
       <Pressable
@@ -46,14 +58,28 @@ export function MonthStepper({
       >
         <FontAwesome name="chevron-left" size={12} color={TEXT_SECONDARY} />
       </Pressable>
-      <View
-        accessibilityLabel={`${accessibilityLabel} ${label}`}
-        style={[styles.labelBox, { minWidth: labelMinWidth }, variant === 'pill' && styles.pill]}
-      >
-        <Text numberOfLines={1} style={[styles.label, labelStyle]}>
-          {label}
-        </Text>
-      </View>
+      {onLabelPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={labelAccessibilityLabel ?? `${accessibilityLabel} ${label}`}
+          accessibilityState={{ expanded: labelExpanded }}
+          onPress={onLabelPress}
+          style={labelBoxStyle}
+        >
+          <Text numberOfLines={1} style={[styles.label, labelStyle]}>
+            {label}
+          </Text>
+        </Pressable>
+      ) : (
+        <View
+          accessibilityLabel={`${accessibilityLabel} ${label}`}
+          style={labelBoxStyle}
+        >
+          <Text numberOfLines={1} style={[styles.label, labelStyle]}>
+            {label}
+          </Text>
+        </View>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="下一个月"

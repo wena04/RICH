@@ -9,9 +9,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/icon-rich.png",
+      "image": "./assets/images/rich-start.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3ECDA5"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": false,
@@ -24,7 +24,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon-rich.png",
-        "backgroundColor": "#3ECDA5"
+        "backgroundColor": "#3FDEAE"
       },
       "package": "com.richapp.finance",
       "versionCode": 1
@@ -33,6 +33,9 @@
       "expo-router",
       "expo-sqlite"
     ],
+    "web": {
+      "favicon": "./assets/images/icon-rich.png"
+    },
     "experiments": {
       "typedRoutes": true
     }

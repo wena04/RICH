@@ -1,7 +1,6 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -41,10 +40,14 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityRole="tab"
         accessibilityState={{ selected: isHomeActive }}
       >
-        <FontAwesome
-          name="calendar-check-o"
-          size={26}
-          color={isHomeActive ? TAB_ICON_SELECTED : TEXT_MUTED}
+        <Image
+          source={
+            isHomeActive
+              ? require('../../assets/images/ui/tab-home-selected.png')
+              : require('../../assets/images/ui/tab-home.png')
+          }
+          resizeMode="contain"
+          style={styles.tabIcon}
         />
         <Text style={[styles.tabLabel, isHomeActive && styles.tabLabelActive]}>
           首页
@@ -75,10 +78,10 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityRole="tab"
         accessibilityState={{ selected: isChartsActive }}
       >
-        <FontAwesome
-          name="clock-o"
-          size={24}
-          color={isChartsActive ? TAB_ICON_SELECTED : TEXT_MUTED}
+        <Image
+          source={require('../../assets/images/ui/tab-budget.png')}
+          resizeMode="contain"
+          style={[styles.tabIcon, !isChartsActive && styles.tabIconInactive]}
         />
         <Text style={[styles.tabLabel, isChartsActive && styles.tabLabelActive]}>
           预算/计划
@@ -165,6 +168,8 @@ const styles = StyleSheet.create({
     color: TAB_ICON_SELECTED,
     fontWeight: '600',
   },
+  tabIcon: { width: 28, height: 28 },
+  tabIconInactive: { tintColor: TEXT_MUTED },
   activeMarker: { width: 18, height: 2, marginTop: -1, backgroundColor: PRIMARY_GREEN },
   fabContainer: {
     flex: 1,

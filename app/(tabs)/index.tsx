@@ -8,6 +8,7 @@ import {
   View,
   Text,
   Modal,
+  Image,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -28,9 +29,9 @@ import {
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { DashedDivider, MonthStepper, RichBrandName } from "@/components/rich";
+import { DashedDivider, RichBrandName } from "@/components/rich";
 
-const WEEKDAYS = ["一", "二", "三", "四", "五", "六", "日"];
+const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const MONTH_NAMES_CN = [
   "1月", "2月", "3月", "4月", "5月", "6月",
   "7月", "8月", "9月", "10月", "11月", "12月",
@@ -56,23 +57,16 @@ function dateHeaderCN(date: string): string {
 export default function HomeScreen() {
   const router = useRouter();
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const [year] = useState(today.getFullYear());
+  const [month] = useState(today.getMonth());
   const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(
     fmt(today.getFullYear(), today.getMonth(), today.getDate()),
   );
   const [sheetDate, setSheetDate] = useState<string | null>(null);
   const [showDaySheet, setShowDaySheet] = useState(false);
   const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
-
-  function changeMonth(delta: number) {
-    const next = new Date(year, month + delta, 1);
-    setYear(next.getFullYear());
-    setMonth(next.getMonth());
-    setSelectedDate(null);
-    setFilterDate(null);
-  }
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -136,9 +130,12 @@ export default function HomeScreen() {
   const daysInMonth = getDaysInMonth(year, month);
   const leadOffset = firstWeekdayMonFirst(year, month);
 
-  // Build calendar cells incl. leading blanks + trailing next-month fillers
-  const cells: ({ day: number } | { trail: number } | null)[] = [];
-  for (let i = 0; i < leadOffset; i++) cells.push(null);
+  // The original calendar always shows adjacent-month dates instead of blanks.
+  const cells: ({ day: number } | { lead: number } | { trail: number })[] = [];
+  const previousMonthDays = getDaysInMonth(year, month - 1);
+  for (let i = 0; i < leadOffset; i++) {
+    cells.push({ lead: previousMonthDays - leadOffset + i + 1 });
+  }
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d });
   let trail = 1;
   while (cells.length % 7 !== 0) cells.push({ trail: trail++ });
@@ -219,7 +216,11 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="查看账户"
           >
-            <FontAwesome name="chevron-down" size={11} color={TEXT_PRIMARY} />
+            <Image
+              source={require('../../assets/images/ui/header-account-menu.png')}
+              resizeMode="contain"
+              style={styles.brandMenuImage}
+            />
           </Pressable>
         </View>
         <Pressable
@@ -228,7 +229,11 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="更多设置"
         >
-          <FontAwesome name="user-o" size={16} color={TEXT_PRIMARY} />
+          <Image
+            source={require('../../assets/images/ui/header-profile.png')}
+            resizeMode="contain"
+            style={styles.avatarImage}
+          />
         </Pressable>
       </View>
 
@@ -239,16 +244,22 @@ export default function HomeScreen() {
       >
         {/* Calendar card */}
         <View style={styles.calCard}>
-          <View style={styles.calTop}>
-            <MonthStepper
-              label={`${year === today.getFullYear() ? "" : `${year}年`}${MONTH_NAMES_CN[month]}`}
-              onPrevious={() => changeMonth(-1)}
-              onNext={() => changeMonth(1)}
-              variant="pill"
-              buttonSize={44}
-              labelMinWidth={66}
-              labelStyle={styles.monthPillText}
-            />
+          <View style={[styles.calTop, !showCalendar && styles.calTopCollapsed]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${showCalendar ? '收起' : '展开'}${MONTH_NAMES_CN[month]}日历`}
+              accessibilityState={{ expanded: showCalendar }}
+              onPress={() => setShowCalendar((current) => !current)}
+              style={({ pressed }) => [
+                styles.monthTrigger,
+                pressed && styles.monthTriggerPressed,
+              ]}
+            >
+              <Text style={styles.monthPillText}>
+                {year === today.getFullYear() ? "" : `${year}年`}{MONTH_NAMES_CN[month]}
+              </Text>
+              <FontAwesome name="caret-down" size={13} color={TEXT_PRIMARY} />
+            </Pressable>
             <View style={styles.totals}>
               <View style={styles.totItem}>
                 <Text style={styles.totLabel}>总支出</Text>
@@ -261,28 +272,39 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={styles.weekRow}>
-            {WEEKDAYS.map((w) => (
-              <Text key={w} style={styles.weekLabel}>
-                {w}
-              </Text>
-            ))}
-          </View>
+          {showCalendar ? (
+            <>
+              <View style={styles.weekRow}>
+                {WEEKDAYS.map((w) => (
+                  <Text key={w} style={styles.weekLabel}>
+                    {w}
+                  </Text>
+                ))}
+              </View>
 
-          <View style={styles.grid}>
-            {cells.map((c, i) => {
-              if (c === null) return <View key={`b${i}`} style={styles.dayCell} />;
-              if ("trail" in c)
-                return (
-                  <View key={`t${i}`} style={styles.dayCell}>
-                    <View style={styles.dayPlain}>
-                      <Text style={styles.trailText}>{c.trail}</Text>
-                    </View>
-                  </View>
-                );
-              return renderDay(c.day);
-            })}
-          </View>
+              <View style={styles.grid}>
+                {cells.map((c, i) => {
+                  if ("lead" in c)
+                    return (
+                      <View key={`l${i}`} style={styles.dayCell}>
+                        <View style={styles.dayPlain}>
+                          <Text style={styles.adjacentMonthText}>{c.lead}</Text>
+                        </View>
+                      </View>
+                    );
+                  if ("trail" in c)
+                    return (
+                      <View key={`t${i}`} style={styles.dayCell}>
+                        <View style={styles.dayPlain}>
+                          <Text style={styles.adjacentMonthText}>{c.trail}</Text>
+                        </View>
+                      </View>
+                    );
+                  return renderDay(c.day);
+                })}
+              </View>
+            </>
+          ) : null}
         </View>
 
         {/* Grouped transaction list */}
@@ -303,23 +325,31 @@ export default function HomeScreen() {
           ) : null}
           {visibleGroups.length === 0 ? (
             <View style={styles.empty}>
+              {!filterDate ? (
+                <Image
+                  source={require('../../assets/images/ui/icon-emptybox.png')}
+                  resizeMode="contain"
+                  style={styles.emptyIllustration}
+                  accessible={false}
+                />
+              ) : null}
               <Text style={styles.emptyText}>
-                {filterDate ? '这一天还没有记录' : '本月还没有记录'}
+                {filterDate ? '这一天还没有记录' : '本月还没有收支记录'}
               </Text>
-              <Pressable
-                accessibilityRole="button"
-                style={styles.emptyAction}
-                onPress={() =>
-                  router.push({
-                    pathname: '/transaction/new',
-                    params: filterDate ? { date: filterDate } : undefined,
-                  })
-                }
-              >
-                <Text style={styles.emptyActionText}>
-                  {filterDate ? '记这一天' : '记第一笔'}
-                </Text>
-              </Pressable>
+              {filterDate ? (
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.emptyAction}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/transaction/new',
+                      params: { date: filterDate },
+                    })
+                  }
+                >
+                  <Text style={styles.emptyActionText}>记这一天</Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : (
             visibleGroups.map((g, gi) => (
@@ -487,21 +517,19 @@ const styles = StyleSheet.create({
   brandDd: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: TEXT_PRIMARY,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 12,
   },
+  brandMenuImage: { width: 44, height: 44 },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarImage: { width: 44, height: 44 },
 
   scroll: { flex: 1, backgroundColor: PRIMARY_GREEN },
   scrollContent: { flexGrow: 1, paddingBottom: 24 },
@@ -519,6 +547,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingHorizontal: 16,
   },
+  calTopCollapsed: { marginBottom: 0 },
+  monthTrigger: {
+    minWidth: 66,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+    backgroundColor: '#F7F7F7',
+  },
+  monthTriggerPressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
   monthPillText: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
   totals: { flexDirection: "row", marginLeft: "auto", alignItems: "center" },
   totItem: { alignItems: "flex-end" },
@@ -548,7 +589,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayText: { fontSize: 16, color: TEXT_PRIMARY, fontWeight: "500" },
-  trailText: { fontSize: 16, color: "#CCCCCC" },
+  adjacentMonthText: { fontSize: 16, color: "#CBCBD3" },
   dayPlain: {
     width: 40,
     height: 40,
@@ -620,6 +661,7 @@ const styles = StyleSheet.create({
   },
   clearFilterText: { fontSize: 10.5, color: TEXT_PRIMARY },
   empty: { paddingVertical: 60, alignItems: "center" },
+  emptyIllustration: { width: 80, height: 80, marginBottom: 20 },
   emptyText: { fontSize: 15, color: TEXT_SECONDARY },
   emptyAction: {
     marginTop: 16,

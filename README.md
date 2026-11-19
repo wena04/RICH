@@ -55,12 +55,12 @@ iOS or Android.
 
 ## Verification
 
-Verified on August 12, 2026:
+Verified on September 18, 2026:
 
 - TypeScript strict check passes: `npx tsc --noEmit`
 - Category artwork stays source-controlled as individual SVGs: run `npm run icons:generate`
   after editing an icon, and `npm run icons:check` to verify the app registry and gallery.
-- Unit suite passes: `npm test` — **37/37 tests**
+- Unit suite passes: `npm test` — **43/43 tests**
 - Expo production exports pass for iOS and Android
 - Expo config, SDK dependency check, and `git diff --check` pass
 

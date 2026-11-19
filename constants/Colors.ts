@@ -1,16 +1,18 @@
 /** Canonical light-only palette for RICH 记账. */
 
 // Brand
-export const PRIMARY_GREEN = '#3ECDA5';
-export const PRIMARY_GREEN_DARK = '#2BB890';
+// Sampled from the supplied Rich 1.1.0 app artwork and reference captures.
+export const PRIMARY_GREEN = '#3FDEAE';
+export const PRIMARY_GREEN_DARK = '#2C9B7A';
+export const BRAND_HIGHLIGHT = '#00FFB2';
 export const ACCESSIBLE_GREEN = '#14745B';
 
 // Status and data
-export const INCOME_GREEN = '#4CAF50';
-export const INCOME_TEXT_GREEN = '#247A3C';
+export const INCOME_GREEN = PRIMARY_GREEN;
+export const INCOME_TEXT_GREEN = PRIMARY_GREEN_DARK;
 export const BALANCE_ADJUST_BLUE = '#5C9CE6';
 export const WARNING_AMBER = '#E2A33A';
-export const DESTRUCTIVE_CORAL = '#FF6B6B';
+export const DESTRUCTIVE_CORAL = '#EC5E56';
 export const DESTRUCTIVE_TEXT = '#C43D4D';
 export const CHART_TEAL = '#61CFCB';
 export const CHART_BLUE = '#88A8EE';
@@ -21,20 +23,20 @@ export const EXPENSE_RED = DESTRUCTIVE_CORAL;
 
 // Surfaces and rules
 export const CARD_BACKGROUND = '#FFFFFF';
-export const PAGE_BACKGROUND = '#F4F4F4';
-export const LEDGER_PAPER = '#F5F6F7';
-export const KEYPAD_BACKGROUND = '#F8F8F8';
-export const CONTROL_BACKGROUND = '#F0F0F0';
+export const PAGE_BACKGROUND = '#F6F7F8';
+export const LEDGER_PAPER = '#F7F7F7';
+export const KEYPAD_BACKGROUND = '#F7F7F7';
+export const CONTROL_BACKGROUND = '#F7F7F7';
 export const CONTROL_PRESSED_BACKGROUND = '#ECECEC';
 export const CONTROL_DISABLED_BACKGROUND = '#777777';
-export const CATEGORY_FRAME_BACKGROUND = '#F7F8F7';
-export const BORDER_COLOR = '#E5E5E5';
+export const CATEGORY_FRAME_BACKGROUND = '#F7F7F7';
+export const BORDER_COLOR = '#EAEAEA';
 export const DASHED_RULE_COLOR = '#D8D8D8';
-export const ENTRY_GREEN = '#B5EAD7';
+export const ENTRY_GREEN = '#A8E9DD';
 
 // Text and decisive actions
-export const TEXT_PRIMARY = '#1A1A1A';
-export const TEXT_SECONDARY = '#666666';
+export const TEXT_PRIMARY = '#000000';
+export const TEXT_SECONDARY = '#777777';
 export const TEXT_MUTED = '#999999';
 export const ACTION_BACKGROUND = TEXT_PRIMARY;
 export const ACTION_FOREGROUND = CARD_BACKGROUND;
