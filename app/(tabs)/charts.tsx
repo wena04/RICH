@@ -22,9 +22,10 @@ import {
   WARNING_AMBER,
 } from '@/constants/Colors';
 import { getDb } from '@/src/db/db';
-import { getBudgetTabSummary } from '@/src/db/repo/envelopes';
+import { getBudgetTabSummary, reorderEnvelopes } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelopeSummary, BudgetTabSummary } from '@/src/domain/types';
 import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
+import { moveItem } from '@/src/features/budgets/order';
 import { PieChart } from '@/src/features/charts/PieChart';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
@@ -125,12 +126,58 @@ function EnvelopeRow({
   );
 }
 
+function SortRow({
+  summary,
+  first,
+  last,
+  onMove,
+}: {
+  summary: BudgetEnvelopeSummary;
+  first: boolean;
+  last: boolean;
+  onMove: (delta: number) => void;
+}) {
+  const { envelope } = summary;
+  return (
+    <View style={[styles.sortRow, !first && styles.envelopeDivider]}>
+      <View style={styles.envelopeIcon}>
+        <Text style={styles.envelopeEmoji}>{envelope.icon}</Text>
+      </View>
+      <Text style={[styles.envelopeName, styles.sortName]} numberOfLines={1}>
+        {envelope.name}
+      </Text>
+      <Pressable
+        onPress={() => onMove(-1)}
+        disabled={first}
+        style={({ pressed }) => [styles.sortButton, first && styles.sortButtonOff, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`上移${envelope.name}`}
+        accessibilityState={{ disabled: first }}
+      >
+        <FontAwesome name="chevron-up" size={13} color={TEXT_PRIMARY} />
+      </Pressable>
+      <Pressable
+        onPress={() => onMove(1)}
+        disabled={last}
+        style={({ pressed }) => [styles.sortButton, last && styles.sortButtonOff, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`下移${envelope.name}`}
+        accessibilityState={{ disabled: last }}
+      >
+        <FontAwesome name="chevron-down" size={13} color={TEXT_PRIMARY} />
+      </Pressable>
+    </View>
+  );
+}
+
 export default function BudgetScreen() {
   const router = useRouter();
   const [month] = useState(currentMonth());
   const [summary, setSummary] = useState<BudgetTabSummary | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const loadRequestRef = useRef(0);
+  const [sortOrder, setSortOrder] = useState<BudgetEnvelopeSummary[] | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   const refresh = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -140,6 +187,7 @@ export default function BudgetScreen() {
       const next = await getBudgetTabSummary(db, month);
       if (requestId !== loadRequestRef.current) return;
       setSummary(next);
+      setSortOrder(null);
       setLoadState('ready');
     } catch (error) {
       console.error('Failed to load budget summary:', error);
@@ -167,6 +215,36 @@ export default function BudgetScreen() {
   function openEnvelope(id: string) {
     router.push({ pathname: '/budget/envelope', params: { id } });
   }
+
+  async function finishSorting() {
+    if (!sortOrder) return;
+    setSavingOrder(true);
+    try {
+      const db = await getDb();
+      await reorderEnvelopes(
+        db,
+        sortOrder.map((item) => item.envelope.id),
+      );
+      await refresh();
+    } catch (error) {
+      console.error('Failed to save budget order:', error);
+      setSortOrder(null);
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
+  const archivedLink =
+    summary && summary.archivedCount > 0 ? (
+      <Pressable
+        onPress={() => router.push('/budget/archived')}
+        style={styles.helpLink}
+        accessibilityRole="link"
+      >
+        <Text style={styles.helpLinkText}>已归档 {summary.archivedCount} 项</Text>
+        <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+      </Pressable>
+    ) : null;
 
   function openHelp() {
     router.push({ pathname: '/budget/help', params: { topic: 'budget' } });
@@ -247,33 +325,77 @@ export default function BudgetScreen() {
                 <Text style={styles.listTitle}>我的预算</Text>
                 <Text style={styles.listMeta}>{monthLabel(month)} · {envelopes.length} 个预算</Text>
               </View>
-              <Pressable
-                onPress={openCreate}
-                accessibilityRole="button"
-                accessibilityLabel="新预算"
-                hitSlop={6}
-              >
-                <Image
-                  source={require('../../assets/images/budget/icon_budget_create.png')}
-                  style={styles.createPill}
-                  resizeMode="contain"
-                />
-              </Pressable>
+              {sortOrder ? (
+                <Pressable
+                  onPress={() => void finishSorting()}
+                  disabled={savingOrder}
+                  style={styles.doneButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="完成排序"
+                >
+                  <Text style={styles.doneText}>{savingOrder ? '保存中' : '完成'}</Text>
+                </Pressable>
+              ) : (
+                <View style={styles.listActions}>
+                  {envelopes.length > 1 ? (
+                    <Pressable
+                      onPress={() => setSortOrder(envelopes)}
+                      style={({ pressed }) => [styles.sortToggle, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                      accessibilityLabel="排序预算"
+                      hitSlop={6}
+                    >
+                      <Image
+                        source={require('../../assets/images/budget/icon_list_sort.png')}
+                        style={styles.sortIcon}
+                        accessible={false}
+                      />
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    onPress={openCreate}
+                    accessibilityRole="button"
+                    accessibilityLabel="新预算"
+                    hitSlop={6}
+                  >
+                    <Image
+                      source={require('../../assets/images/budget/icon_budget_create.png')}
+                      style={styles.createPill}
+                      resizeMode="contain"
+                    />
+                  </Pressable>
+                </View>
+              )}
             </View>
             <View style={styles.envelopeList}>
-              {envelopes.map((item, index) => (
-                <EnvelopeRow
-                  key={item.envelope.id}
-                  summary={item}
-                  first={index === 0}
-                  onPress={() => openEnvelope(item.envelope.id)}
-                />
-              ))}
+              {sortOrder
+                ? sortOrder.map((item, index) => (
+                    <SortRow
+                      key={item.envelope.id}
+                      summary={item}
+                      first={index === 0}
+                      last={index === sortOrder.length - 1}
+                      onMove={(delta) => setSortOrder((current) => (current ? moveItem(current, index, delta) : current))}
+                    />
+                  ))
+                : envelopes.map((item, index) => (
+                    <EnvelopeRow
+                      key={item.envelope.id}
+                      summary={item}
+                      first={index === 0}
+                      onPress={() => openEnvelope(item.envelope.id)}
+                    />
+                  ))}
             </View>
-            <Pressable onPress={openHelp} style={styles.helpLink} accessibilityRole="link">
-              <Text style={styles.helpLinkText}>看看别人怎么分预算</Text>
-              <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
-            </Pressable>
+            {!sortOrder ? (
+              <>
+                <Pressable onPress={openHelp} style={styles.helpLink} accessibilityRole="link">
+                  <Text style={styles.helpLinkText}>看看别人怎么分预算</Text>
+                  <FontAwesome name="chevron-right" size={10} color={TEXT_SECONDARY} />
+                </Pressable>
+                {archivedLink}
+              </>
+            ) : null}
           </>
         ) : (
           <>
@@ -285,6 +407,7 @@ export default function BudgetScreen() {
                 <Text style={styles.createButtonText}>+ 创建预算</Text>
               </Pressable>
             </View>
+            {archivedLink}
           </>
         )}
       </ScrollView>
@@ -375,6 +498,23 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 16, fontWeight: '700', color: TEXT_PRIMARY },
   listMeta: { marginTop: 2, fontSize: 11, color: TEXT_SECONDARY },
   createPill: { width: 74, height: 40 },
+  listActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sortToggle: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  sortIcon: { width: 22, height: 22 },
+  doneButton: { minWidth: 56, height: 40, alignItems: 'center', justifyContent: 'center' },
+  doneText: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
+  sortRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  sortName: { flex: 1 },
+  sortButton: {
+    width: 40,
+    height: 40,
+    marginLeft: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CATEGORY_FRAME_BACKGROUND,
+    borderRadius: 20,
+  },
+  sortButtonOff: { opacity: 0.3 },
   envelopeList: { marginHorizontal: 24 },
   envelopeRow: { flexDirection: 'row', paddingVertical: 16 },
   envelopeDivider: {

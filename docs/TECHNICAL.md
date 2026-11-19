@@ -68,29 +68,6 @@ On app startup:
 | created_at | TEXT    | ISO timestamp           |
 | updated_at | TEXT    | ISO timestamp           |
 
-#### `budgets` (migration v4)
-
-| Field       | Type    | Notes                          |
-| ----------- | ------- | ------------------------------ |
-| id          | TEXT PK | UUID with `budget_` prefix     |
-| period      | TEXT    | `YYYY-MM`, unique per month    |
-| total_cents | INTEGER | Optional overall monthly cap   |
-| created_at  | TEXT    | ISO timestamp                  |
-| updated_at  | TEXT    | ISO timestamp                  |
-
-#### `budget_categories` (migration v4)
-
-| Field        | Type    | Notes                              |
-| ------------ | ------- | ---------------------------------- |
-| id           | TEXT PK | UUID with `bc_` prefix             |
-| budget_id    | TEXT FK | References budgets (CASCADE)       |
-| category_id  | TEXT FK | References categories                |
-| limit_cents  | INTEGER | Monthly limit for this category    |
-| created_at   | TEXT    | ISO timestamp                      |
-| updated_at   | TEXT    | ISO timestamp                      |
-
-Constraint: `(budget_id, category_id)` unique. Spent amounts are computed at query time from `transactions` — no `budget_id` on transactions.
-
 #### `subcategories`
 
 | Field       | Type    | Notes                           |
@@ -130,8 +107,9 @@ Invariants:
 Reconstructed from the original Rich 1.1.0 backup schema (`budget`, `budget_log`, `deposit_plan`)
 and the in-app help artwork. In the original, a budget is a **named envelope that expenses are
 explicitly assigned to** from the transaction detail row 所属预算/计划 — it is not derived from
-categories. The v4/v6 category-limit tables above are superseded and unused by the app; a later
-migration drops them.
+categories. The earlier category-limit tables (`budgets`, `budget_categories`,
+`budget_subcategories`, migrations v4/v6) were dropped in migration v9; restoring an older full
+database backup runs the same migrations, so old backups upgrade cleanly.
 
 Logic lives in `src/features/budgets/envelopes.ts` (pure, unit-tested); SQL in `src/db/repo/envelopes.ts`.
 
@@ -167,6 +145,15 @@ which releases the current month's freeze. Deleting a budget that a plan draws o
   expenses (this month for monthly, all time for special). Negative remaining = overspent.
 - 结余 = this month's income − expenses (balance adjustments and transfers excluded).
 - 计划清单 total = saved amount across plans that are not cancelled or archived.
+
+#### Archive and order
+
+- Archived budgets leave the Budget tab and the 所属预算 picker; assigned expenses keep their link.
+  A budget with an active plan cannot be archived (`budget_has_active_plans`) or deleted (FK).
+- Only completed or ended plans can be archived (`plan_is_active`). Archived plans are excluded
+  from the 计划清单 total.
+- Budgets have a manual `sort_index` set from the Budget tab's sort mode. Plans are listed in
+  creation order (the original `deposit_plan` table had no sort column).
 
 Not yet modeled (no evidence beyond empty backup tables): original `plan_item` checklist entries,
 `accumulate_plan`, and assigning an expense to a plan rather than a budget.

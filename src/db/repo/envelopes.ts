@@ -235,7 +235,15 @@ export async function updateEnvelope(
   });
 }
 
+/** Archived budgets leave the list and the 所属预算 picker; their expenses keep the link. */
 export async function setEnvelopeArchived(db: AppDb, id: string, archived: boolean): Promise<void> {
+  if (archived) {
+    const active = await db.getFirstAsync<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM savings_plans WHERE source_envelope_id = ? AND status = 'active'",
+      [id],
+    );
+    if ((active?.n ?? 0) > 0) throw new Error('budget_has_active_plans');
+  }
   await db.runAsync('UPDATE budget_envelopes SET is_archived = ?, updated_at = ? WHERE id = ?', [
     archived ? 1 : 0,
     new Date().toISOString(),
@@ -425,7 +433,12 @@ export async function endSavingsPlan(
   );
 }
 
+/** Only completed or ended plans can be archived; active plans are still freezing money. */
 export async function setSavingsPlanArchived(db: AppDb, id: string, archived: boolean): Promise<void> {
+  if (archived) {
+    const plan = await getSavingsPlan(db, id);
+    if (plan?.status === 'active') throw new Error('plan_is_active');
+  }
   await db.runAsync('UPDATE savings_plans SET is_archived = ?, updated_at = ? WHERE id = ?', [
     archived ? 1 : 0,
     new Date().toISOString(),
@@ -476,11 +489,20 @@ export async function getMonthBalanceCents(db: AppDb, period: string): Promise<n
   return row?.balance_cents ?? 0;
 }
 
+export async function countArchived(db: AppDb): Promise<number> {
+  const row = await db.getFirstAsync<{ n: number }>(
+    `SELECT (SELECT COUNT(*) FROM budget_envelopes WHERE is_archived = 1)
+          + (SELECT COUNT(*) FROM savings_plans WHERE is_archived = 1) AS n`,
+  );
+  return row?.n ?? 0;
+}
+
 export async function getBudgetTabSummary(db: AppDb, period: string): Promise<BudgetTabSummary> {
-  const [balanceCents, envelopes, plans] = await Promise.all([
+  const [balanceCents, envelopes, plans, archivedCount] = await Promise.all([
     getMonthBalanceCents(db, period),
     getEnvelopeSummaries(db, period),
     getSavingsPlanSummaries(db, period),
+    countArchived(db),
   ]);
   return {
     period,
@@ -491,5 +513,6 @@ export async function getBudgetTabSummary(db: AppDb, period: string): Promise<Bu
     ),
     envelopes,
     plans,
+    archivedCount,
   };
 }

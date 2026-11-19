@@ -33,6 +33,7 @@ import {
   endSavingsPlan,
   getEnvelopeSummaries,
   getSavingsPlanSummaries,
+  setSavingsPlanArchived,
   updateSavingsPlanDetails,
 } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelopeSummary, SavingsPlanSummary } from '@/src/domain/types';
@@ -198,6 +199,20 @@ export default function PlanScreen() {
     }
   }
 
+  async function onToggleArchive() {
+    if (!summary) return;
+    setSaving(true);
+    try {
+      const db = await getDb();
+      await setSavingsPlanArchived(db, summary.plan.id, !summary.plan.isArchived);
+      router.back();
+    } catch (error) {
+      console.error('Failed to archive plan:', error);
+      Alert.alert('没有保存', '计划没有更新，请稍后再试。');
+      setSaving(false);
+    }
+  }
+
   function onCancelPlan() {
     if (!summary) return;
     Alert.alert(
@@ -353,6 +368,16 @@ export default function PlanScreen() {
         ) : null}
         {emojiGrid}
 
+        {!active ? (
+          <Pressable
+            onPress={() => void onToggleArchive()}
+            disabled={saving}
+            style={({ pressed }) => [styles.secondaryButton, styles.actionGap, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.secondaryButtonText}>{plan.isArchived ? '取消归档' : '归档计划'}</Text>
+          </Pressable>
+        ) : null}
         {active && !progress.isFullyFunded ? (
           <Pressable
             onPress={onCancelPlan}

@@ -326,4 +326,13 @@ export const migrations: Migration[] = [
       `CREATE INDEX IF NOT EXISTS idx_savings_plans_source ON savings_plans(source_envelope_id);`,
     ],
   },
+  {
+    // The v4/v6 category-limit budget model was replaced by budget envelopes (v8) and is unused.
+    version: 9,
+    statements: [
+      `DROP TABLE IF EXISTS budget_subcategories;`,
+      `DROP TABLE IF EXISTS budget_categories;`,
+      `DROP TABLE IF EXISTS budgets;`,
+    ],
+  },
 ];

@@ -94,6 +94,7 @@ existing patterns; they are **not** pixel-verified against Rich 1.1.0.
 | Budget/plan examples (`app/budget/help.tsx`) | All eight original help images | Plain header, horizontal paging |
 | 计划清单 (`app/budget/plans.tsx`) | Plan-help card layout (gray card, emoji, 冻结预算「…」¥/月, target, `0/N`), `plan_clock` / `plan_clock_finish`, `icon_no_plan` | Budget list header/footer patterns |
 | Create plan / plan detail (`app/budget/plan.tsx`) | Fields from the backup `deposit_plan` schema, `icon_plan_finish` | Budget editor form, account-sheet picker |
+| Budget sort mode, 已归档 (`app/budget/archived.tsx`) | `icon_list_sort`; `sort_index` / `is_archived` in the backup schema | **Deviation:** up/down buttons instead of the original drag-to-reorder |
 
 Browser check (production web export, 393 × 852 and 375 × 667): empty state → create monthly →
 create special → populated list → edit amount → reload persists → examples; no console errors.

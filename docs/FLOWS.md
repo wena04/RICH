@@ -29,6 +29,7 @@
 | `budget/help` | default | headerShown: false. Original example pages (`?topic=budget\|plan`). |
 | `budget/plans` | default | headerShown: false. 计划清单 list. |
 | `budget/plan` | default | headerShown: false. Create (no params) or detail (`?id=`) a savings plan. |
+| `budget/archived` | default | headerShown: false. Archived budgets and plans with 恢复. |
 | `transaction/new` | **modal** | Add screen. |
 
 ### Tab layout — `app/(tabs)/_layout.tsx`
@@ -86,6 +87,8 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 | **+ 创建预算** button | `router.push('/budget/envelope')` → new budget. |
 | 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/envelope?id=…`. |
 | **+ 新预算** pill | `router.push('/budget/envelope')`. |
+| Sort icon (`icon_list_sort`, 2+ budgets) | Sort mode: ↑/↓ per row, 完成 → `reorderEnvelopes`. |
+| 已归档 N 项 | Shown when anything is archived → `/budget/archived`. |
 | 看看别人怎么分预算 | `/budget/help?topic=budget`. |
 
 ### 计划清单 — `app/budget/plans.tsx`
@@ -104,6 +107,7 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 | Detail: 完成计划 | Shown once fully funded → `endSavingsPlan(completed)`. |
 | Detail: 结束计划 | Confirm → `endSavingsPlan(cancelled)`; this month's freeze returns to the budget. |
 | Detail: name/icon/description | Editable; 保存修改 appears when changed. |
+| Detail: 归档计划 / 取消归档 | Completed or ended plans only → `setSavingsPlanArchived` → back. |
 
 ### 新建/编辑预算 — `app/budget/envelope.tsx`
 | Element | Trigger → Result |
@@ -111,6 +115,7 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 | 月度预算 / 专项预算 toggle | Create only; type is fixed after creation. |
 | 示例 | `/budget/help?topic=budget`. |
 | 保存 | Validates (name ≤ 10, amount > 0, description ≤ 30) → `createEnvelope` / `updateEnvelope` → back. Monthly amount edits apply from this month. |
+| 归档预算 / 取消归档 (edit only) | `setEnvelopeArchived` → back. Blocked while a plan freezes the budget. |
 | 删除该预算 (edit only) | Confirm → `deleteEnvelope`; assigned expenses become unassigned. Blocked while a plan draws on it. |
 
 ### 趋势图 — `app/trends.tsx`

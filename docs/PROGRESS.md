@@ -4,9 +4,10 @@ Living implementation, source-parity, and verification status for Rich记账.
 
 **Last updated:** November 18, 2026
 
-**Phase:** original Rich 1.1.0 interaction recovery, visual parity, and native-device QA
+**Phase:** original Rich 1.1.0 budget/plan model complete; native-device QA and release prep next
 
-**Latest pushed checkpoint:** `cbe7696` — Match original RICH UI assets and interactions
+**Latest pushed checkpoint:** `e6c4f0a` — history cleanup (private screenshots purged); budget/plan
+slices 3–5 committed locally after it
 
 ## Current objective
 
@@ -110,7 +111,7 @@ Completed against the latest pushed workspace on November 18, 2026:
 
 ```text
 TypeScript:              npx tsc --noEmit              PASS
-Unit tests:              npm test                      PASS (66/66)
+Unit tests:              npm test                      PASS (68/68)
 Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
 Original PNG extraction: file/catalog audit            PASS (125 files)
 Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
@@ -151,8 +152,16 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
      amount, finish-month preview) and shows progress, completion (`icon_plan_finish`), and 结束计划.
      Target/monthly/source are fixed once started. Verified in the web export with a controlled
      clock: 0/10 → 4/10 (¥2000) → 已攒够 → 完成计划, with the source budget's freeze released.
-   - [ ] Slice 5 — archive and drag reorder (original used `JXMovableCellTableView`); then drop the
-     v4/v6 budget tables.
+   - [x] **Slice 5 — archive, reorder, cleanup**: archive/restore budgets (blocked while a plan
+     freezes them) and ended plans; `app/budget/archived.tsx` lists both with 恢复. Budget sort mode
+     uses the original `icon_list_sort` with up/down controls instead of the original drag gesture
+     (no gesture library in the project; buttons are also VoiceOver-friendly). Migration v9 drops
+     the v4/v6 tables; a populated v7 database was upgraded through v9 with integrity and
+     foreign-key checks passing. All earlier browser flows re-run without errors.
+
+   The original budget/plan model is now complete. Remaining unknowns, documented rather than
+   guessed: original `plan_item` checklist entries and `accumulate_plan` (empty in the backup), and
+   assigning an expense to a plan rather than a budget.
 3. Match and verify the compiled native launch/loading sequence, including load/read/write/success
    states and a recoverable startup-error state. The artwork is available, but the native transition
    still needs device capture and comparison.
@@ -174,6 +183,7 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
 - No cloud sync, recurring entries, reminders, receipt attachments, search, authentication, or
   multi-currency conversion is currently implemented in the replica.
 - Transfer rows are atomic but still lack a shared transfer-group ID for linked editing/deletion.
+- CSV v1/v2 export does not carry budget assignments or plans; the full database backup does.
 
 ## References
 

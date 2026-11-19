@@ -32,6 +32,7 @@ import {
   deleteEnvelope,
   getEnvelope,
   getEnvelopeAmountHistory,
+  setEnvelopeArchived,
   updateEnvelope,
 } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelope, BudgetEnvelopeKind } from '@/src/domain/types';
@@ -164,6 +165,24 @@ export default function BudgetEnvelopeScreen() {
     } catch (error) {
       console.error('Failed to save budget:', error);
       Alert.alert('保存失败', '预算没有保存，请稍后再试。');
+      setSaving(false);
+    }
+  }
+
+  async function onToggleArchive() {
+    if (!existing) return;
+    setSaving(true);
+    try {
+      const db = await getDb();
+      await setEnvelopeArchived(db, existing.id, !existing.isArchived);
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        existing.isArchived ? '无法恢复' : '无法归档',
+        String(error).includes('budget_has_active_plans')
+          ? '有计划正在冻结这个预算，请先结束相关计划。'
+          : '预算没有更新，请稍后再试。',
+      );
       setSaving(false);
     }
   }
@@ -347,6 +366,19 @@ export default function BudgetEnvelopeScreen() {
               })}
             </View>
 
+            {isEdit && existing ? (
+              <Pressable
+                onPress={() => void onToggleArchive()}
+                disabled={saving}
+                style={({ pressed }) => [styles.archiveButton, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityHint={
+                  existing.isArchived ? '恢复到预算列表' : '从预算列表和所属预算选择中隐藏，保留支出记录'
+                }
+              >
+                <Text style={styles.archiveText}>{existing.isArchived ? '取消归档' : '归档预算'}</Text>
+              </Pressable>
+            ) : null}
             {isEdit ? (
               <Pressable
                 onPress={onDelete}
@@ -485,8 +517,17 @@ const styles = StyleSheet.create({
   },
   emojiWrapActive: { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#1A1A1A' },
   emojiText: { fontSize: 24 },
-  deleteButton: {
+  archiveButton: {
     marginTop: 32,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: TEXT_PRIMARY,
+  },
+  archiveText: { fontSize: 15, fontWeight: '600', color: TEXT_PRIMARY },
+  deleteButton: {
+    marginTop: 12,
     minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',

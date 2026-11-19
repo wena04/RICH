@@ -52,6 +52,7 @@ derived real data; final on-device pixel review is tracked separately.
   reached; progress, completion, and early ending.
 - Progress, remaining or overspent state, and threshold colors per budget; 结余 for the month.
 - Original budget and plan example pages.
+- Archive/restore budgets and ended plans; manual budget order.
 - Six-month income/expense trends, category distribution, and subcategory drill-down.
 
 ### Data ownership and recovery
@@ -73,7 +74,6 @@ derived real data; final on-device pixel review is tracked separately.
 | `budget_envelopes` | Monthly/special budget, emoji, name, description, archive/order |
 | `budget_envelope_amounts` | Amount history per budget (effective month) |
 | `savings_plans` | Target, monthly freeze from a monthly budget, status |
-| `budgets`, `budget_categories`, `budget_subcategories` | Legacy category-limit model (v4/v6); unused, dropped in slice 5 |
 | `app_meta` | Last-used account, target asset, and starter-taxonomy marker |
 
 Foreign keys protect referenced rows, and triggers prevent assigning a transaction's subcategory to
@@ -97,6 +97,7 @@ the wrong parent category.
 | `/budget/help` | Budget/plan examples |
 | `/budget/plans` | 计划清单 |
 | `/budget/plan` | Create plan / plan detail |
+| `/budget/archived` | 已归档 budgets and plans |
 | `/trends` | 趋势图 |
 | `/import-export` | 数据管理 |
 | `/about`, `/privacy` | Product and privacy information |

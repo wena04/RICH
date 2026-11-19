@@ -99,6 +99,7 @@ export type BudgetTabSummary = {
   plansSavedCents: number; // 计划清单 total
   envelopes: BudgetEnvelopeSummary[];
   plans: SavingsPlanSummary[];
+  archivedCount: number; // archived budgets + plans
 };
 
 export type Transaction = {
