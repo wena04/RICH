@@ -110,7 +110,7 @@ Completed against the latest pushed workspace on November 18, 2026:
 
 ```text
 TypeScript:              npx tsc --noEmit              PASS
-Unit tests:              npm test                      PASS (58/58)
+Unit tests:              npm test                      PASS (66/66)
 Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
 Original PNG extraction: file/catalog audit            PASS (125 files)
 Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
@@ -145,7 +145,12 @@ Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
      row). The old category-limit editor, repo, allocation logic, and its tests were removed; the
      v4/v6 tables remain until slice 5. Verified in the web export: add expense → assign → Budget
      tab spend/remaining → unassign.
-   - [ ] Slice 4 — 计划清单: plan list, create plan, freeze progress, completion artwork.
+   - [x] **Slice 4 — 计划清单**: the 计划清单 card opens `app/budget/plans.tsx` (original example card
+     layout, `plan_clock`/`plan_clock_finish` status icons extracted from `Assets.car`, `icon_no_plan`
+     empty state); `app/budget/plan.tsx` creates a plan (target, monthly budget to freeze, monthly
+     amount, finish-month preview) and shows progress, completion (`icon_plan_finish`), and 结束计划.
+     Target/monthly/source are fixed once started. Verified in the web export with a controlled
+     clock: 0/10 → 4/10 (¥2000) → 已攒够 → 完成计划, with the source budget's freeze released.
    - [ ] Slice 5 — archive and drag reorder (original used `JXMovableCellTableView`); then drop the
      v4/v6 budget tables.
 3. Match and verify the compiled native launch/loading sequence, including load/read/write/success

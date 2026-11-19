@@ -27,6 +27,8 @@
 | `categories/add` | default | headerShown: false. Icon picker for custom categories. |
 | `budget/envelope` | default | headerShown: false. Create (no params) or edit (`?id=`) a budget. |
 | `budget/help` | default | headerShown: false. Original example pages (`?topic=budget\|plan`). |
+| `budget/plans` | default | headerShown: false. 计划清单 list. |
+| `budget/plan` | default | headerShown: false. Create (no params) or detail (`?id=`) a savings plan. |
 | `transaction/new` | **modal** | Add screen. |
 
 ### Tab layout — `app/(tabs)/_layout.tsx`
@@ -77,7 +79,7 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 ### 预算/计划 tab — `app/(tabs)/charts.tsx`
 | Element | Trigger → Result |
 |---|---|
-| 计划清单 card (left) | Display only (plan list arrives in slice 4). Total saved by active/completed plans. |
+| 计划清单 card (left) | Total saved by active/completed plans and active count. Tap → `/budget/plans`. |
 | 结余 row | Display only. Shows real current-month (income − expense). |
 | 趋势图 row (right, with mini donut) | `router.push('/trends')` → 趋势图 screen. |
 | Empty-state donut + legend | Original `icon_budget_progress` artwork when no budget exists. |
@@ -85,6 +87,23 @@ Note: day-tap filtering is active — the list shows only the selected day when 
 | 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/envelope?id=…`. |
 | **+ 新预算** pill | `router.push('/budget/envelope')`. |
 | 看看别人怎么分预算 | `/budget/help?topic=budget`. |
+
+### 计划清单 — `app/budget/plans.tsx`
+| Element | Trigger → Result |
+|---|---|
+| 已攒 total | Saved by active/completed, non-archived plans. |
+| Plan card | Emoji, name, target, 冻结预算「…」¥/月, deposits `n/N` or 已攒够/已完成/已结束. Tap → `/budget/plan?id=…`. |
+| + 创建计划 / 示例 | `/budget/plan` / `/budget/help?topic=plan`. Empty state uses `icon_no_plan`. |
+
+### 新建计划 / 计划详情 — `app/budget/plan.tsx`
+| Element | Trigger → Result |
+|---|---|
+| 冻结预算 row | Sheet of monthly budgets with their monthly amount (+ 新预算). Required. |
+| 每月冻结 / 目标金额 | Preview `共 N 期 … 预计 YYYY年M月 攒够`. Freeze ≤ target and ≤ the budget's amount. |
+| 开始计划 | `createSavingsPlan` from this month → back. |
+| Detail: 完成计划 | Shown once fully funded → `endSavingsPlan(completed)`. |
+| Detail: 结束计划 | Confirm → `endSavingsPlan(cancelled)`; this month's freeze returns to the budget. |
+| Detail: name/icon/description | Editable; 保存修改 appears when changed. |
 
 ### 新建/编辑预算 — `app/budget/envelope.tsx`
 | Element | Trigger → Result |

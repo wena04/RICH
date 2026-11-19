@@ -92,6 +92,8 @@ existing patterns; they are **not** pixel-verified against Rich 1.1.0.
 | Populated Budget tab (`我的预算` list) | `icon_budget_create` (`+ 新预算` pill), `icon_month_budget` / `icon_special_budget` badges, help-page row layout (emoji · name · amount · description) | Budget tab header/summary card, `ProgressBar` |
 | Create/edit budget (`app/budget/envelope.tsx`) | Budget types and fields from the backup schema; emoji icons from help examples | Add-entry type toggle and large amount line, `添加自定义类目` icon grid, coral delete button from 支出编辑 |
 | Budget/plan examples (`app/budget/help.tsx`) | All eight original help images | Plain header, horizontal paging |
+| 计划清单 (`app/budget/plans.tsx`) | Plan-help card layout (gray card, emoji, 冻结预算「…」¥/月, target, `0/N`), `plan_clock` / `plan_clock_finish`, `icon_no_plan` | Budget list header/footer patterns |
+| Create plan / plan detail (`app/budget/plan.tsx`) | Fields from the backup `deposit_plan` schema, `icon_plan_finish` | Budget editor form, account-sheet picker |
 
 Browser check (production web export, 393 × 852 and 375 × 667): empty state → create monthly →
 create special → populated list → edit amount → reload persists → examples; no console errors.

@@ -342,6 +342,29 @@ export async function listSavingsPlans(
   return rows.map(toPlan);
 }
 
+export async function getSavingsPlan(db: AppDb, id: string): Promise<SavingsPlan | null> {
+  const row = await db.getFirstAsync<PlanRow>(
+    `SELECT ${PLAN_COLUMNS} FROM savings_plans WHERE id = ?`,
+    [id],
+  );
+  return row ? toPlan(row) : null;
+}
+
+/**
+ * Plans keep their target, monthly freeze, and source budget once started (progress is
+ * derived from them); only the descriptive fields are editable.
+ */
+export async function updateSavingsPlanDetails(
+  db: AppDb,
+  id: string,
+  details: { name: string; icon: string; description: string | null },
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE savings_plans SET name = ?, icon = ?, description = ?, updated_at = ? WHERE id = ?',
+    [details.name.trim(), details.icon, details.description?.trim() || null, new Date().toISOString(), id],
+  );
+}
+
 export type CreateSavingsPlanInput = {
   name: string;
   icon: string;

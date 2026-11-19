@@ -48,7 +48,8 @@ derived real data; final on-device pixel review is tracked separately.
   keeps past months unchanged) or 专项预算 (one total across all time).
 - Expenses are assigned to a budget from the transaction detail row 所属预算/计划; spend is derived
   from assigned expenses.
-- Savings plans can freeze part of a monthly budget each month (data model only; UI in slice 4).
+- 计划清单 savings plans freeze a fixed amount from a monthly budget each month until the target is
+  reached; progress, completion, and early ending.
 - Progress, remaining or overspent state, and threshold colors per budget; 结余 for the month.
 - Original budget and plan example pages.
 - Six-month income/expense trends, category distribution, and subcategory drill-down.
@@ -94,6 +95,8 @@ the wrong parent category.
 | `/categories/add` | Category/icon creator |
 | `/budget/envelope` | Create/edit budget |
 | `/budget/help` | Budget/plan examples |
+| `/budget/plans` | 计划清单 |
+| `/budget/plan` | Create plan / plan detail |
 | `/trends` | 趋势图 |
 | `/import-export` | 数据管理 |
 | `/about`, `/privacy` | Product and privacy information |

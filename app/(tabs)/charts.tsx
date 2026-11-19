@@ -181,12 +181,22 @@ export default function BudgetScreen() {
       </View>
 
       <View style={styles.summaryCard}>
-        <View style={styles.summaryLeft}>
+        <Pressable
+          style={({ pressed }) => [styles.summaryLeft, pressed && styles.pressed]}
+          onPress={() => router.push('/budget/plans')}
+          accessibilityRole="button"
+          accessibilityLabel={`计划清单，已攒 ${ready ? centsToYuan(summary.plansSavedCents) : '—'} 元`}
+        >
           <Text style={styles.planLabel}>计划清单</Text>
+          {ready && summary.plans.length ? (
+            <Text style={styles.planCount}>
+              {summary.plans.filter((item) => item.plan.status === 'active').length} 个进行中
+            </Text>
+          ) : null}
           <Text style={styles.planAmount}>
             ¥ {ready ? centsToYuan(summary.plansSavedCents) : '—'}
           </Text>
-        </View>
+        </Pressable>
         <View style={styles.summaryRight}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryKey}>结余</Text>
@@ -303,6 +313,7 @@ const styles = StyleSheet.create({
   },
   planLabel: { fontSize: 15, fontWeight: '700', color: TEXT_PRIMARY },
   planAmount: { fontSize: 13, fontWeight: '600', color: TEXT_PRIMARY, textAlign: 'right' },
+  planCount: { marginTop: 4, fontSize: 11, color: TEXT_SECONDARY },
   summaryRight: { flex: 1 },
   summaryRow: {
     flex: 1,

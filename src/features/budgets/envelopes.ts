@@ -22,7 +22,7 @@ export function monthsBetween(from: string, to: string): number {
   return periodIndex(to) - periodIndex(from);
 }
 
-function addPeriods(period: string, delta: number): string {
+export function addPeriods(period: string, delta: number): string {
   const index = periodIndex(period) + delta;
   const year = Math.floor(index / 12);
   const month = (index % 12) + 1;
