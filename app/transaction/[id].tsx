@@ -32,17 +32,16 @@ import {
   getEnvelope,
   getEnvelopeSummaries,
 } from '@/src/db/repo/envelopes';
-import { listAccounts } from '@/src/db/repo/accounts';
 import { getCategoryById, getSubcategoryById } from '@/src/db/repo/categories';
 import { deleteTransaction, getTransaction } from '@/src/db/repo/transactions';
 import type { BudgetEnvelopeSummary, TransactionType } from '@/src/domain/types';
 import { centsToCurrencyString } from '@/src/utils/money';
-import { formatIsoDateCN } from '@/src/utils/date';
 
 function titleFor(type: TransactionType): string {
-  if (type === 'income') return '收入详情';
+  // Original titles: the detail screen is the edit entry point.
+  if (type === 'income') return '收入编辑';
   if (type === 'balance_adjustment') return '余额调整';
-  return '支出详情';
+  return '支出编辑';
 }
 function deleteLabelFor(type: TransactionType): string {
   if (type === 'income') return '删除该笔收入';
@@ -60,8 +59,6 @@ export default function TransactionDetailScreen() {
   const [categoryName, setCategoryName] = useState('');
   const [categoryIcon, setCategoryIcon] = useState<string | null>(null);
   const [subcategoryName, setSubcategoryName] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [date, setDate] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [budgetLabel, setBudgetLabel] = useState('');
   const [budgetEnvelopeId, setBudgetEnvelopeId] = useState<string | null>(null);
@@ -83,9 +80,6 @@ export default function TransactionDetailScreen() {
       setType(tx.type);
       setAmountCents(tx.amountCents);
       setNote(tx.note);
-      setDate(tx.date);
-      const accounts = await listAccounts(db);
-      setAccountName(accounts.find((account) => account.id === tx.accountId)?.name ?? '未知账户');
       if (tx.categoryId) {
         const cat = await getCategoryById(db, tx.categoryId);
         setCategoryName(cat?.name ?? '');
@@ -215,7 +209,7 @@ export default function TransactionDetailScreen() {
               onPress={() => router.push(`/transaction/edit/${id}`)}
             >
               <View style={styles.iconCircle}>
-                <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={22} />
+                <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={19} />
               </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
@@ -235,22 +229,8 @@ export default function TransactionDetailScreen() {
               >
                 ¥ {displayAmount}
               </Text>
-              <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+              <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
             </Pressable>
-
-            <View style={styles.cardDivider} />
-
-            <View style={styles.metaGrid}>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>日期</Text>
-                <Text style={styles.metaValue}>{date ? formatIsoDateCN(date) : '—'}</Text>
-              </View>
-              <View style={styles.metaRule} />
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>账户</Text>
-                <Text style={styles.metaValue} numberOfLines={1}>{accountName}</Text>
-              </View>
-            </View>
 
             <View style={styles.cardDivider} />
 
@@ -271,7 +251,7 @@ export default function TransactionDetailScreen() {
                 {budgetLabel}
               </Text>
               {canAssignBudget ? (
-                <FontAwesome name="chevron-right" size={14} color={TEXT_SECONDARY} />
+                <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
               ) : null}
             </Pressable>
           </View>
@@ -283,7 +263,6 @@ export default function TransactionDetailScreen() {
             style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
             onPress={onDelete}
           >
-            <FontAwesome name="trash-o" size={15} color={ACTION_FOREGROUND} />
             <Text style={styles.deleteText}>{deleteLabelFor(type)}</Text>
           </Pressable>
         </ScrollView>
@@ -349,11 +328,10 @@ const styles = StyleSheet.create({
   retryText: { ...RICH_TYPE.body, color: ACTION_FOREGROUND, fontWeight: '600' },
   card: {
     backgroundColor: CARD_BACKGROUND,
-    borderRadius: RICH_RADIUS.card,
     overflow: 'hidden',
   },
   row: {
-    minHeight: 78,
+    minHeight: 84,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: RICH_SPACING.md,
@@ -361,25 +339,25 @@ const styles = StyleSheet.create({
   },
   controlPressed: { backgroundColor: CONTROL_BACKGROUND },
   iconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: CONTROL_BACKGROUND,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F7F7F7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: RICH_SPACING.sm,
   },
   rowInfo: { flex: 1, minWidth: 0, marginRight: RICH_SPACING.xs },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: TEXT_PRIMARY },
-  rowSub: { ...RICH_TYPE.label, color: TEXT_SECONDARY, marginTop: 3 },
+  rowTitle: { fontSize: 15, color: TEXT_PRIMARY },
+  rowSub: { fontSize: 13, color: '#888888', marginTop: 6 },
   amount: {
-    ...RICH_TYPE.amount,
     maxWidth: '43%',
     flexShrink: 1,
     marginRight: RICH_SPACING.xs,
-    fontSize: 16,
+    fontSize: 15,
     color: TEXT_PRIMARY,
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   cardDivider: {
     height: StyleSheet.hairlineWidth,
@@ -421,14 +399,11 @@ const styles = StyleSheet.create({
   planValueAssigned: { color: TEXT_PRIMARY, fontWeight: '600' },
   contentSpacer: { flexGrow: 1, minHeight: RICH_SPACING.xl },
   deleteButton: {
-    minHeight: 48,
-    flexDirection: 'row',
-    gap: RICH_SPACING.xs,
+    minHeight: 56,
     backgroundColor: DESTRUCTIVE_CORAL,
-    borderRadius: RICH_RADIUS.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   deletePressed: { opacity: 0.82 },
-  deleteText: { color: ACTION_FOREGROUND, fontSize: 15, fontWeight: '600' },
+  deleteText: { color: ACTION_FOREGROUND, fontSize: 16 },
 });

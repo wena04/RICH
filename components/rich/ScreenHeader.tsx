@@ -1,6 +1,6 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import type { ReactNode } from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -60,7 +60,11 @@ export function ScreenHeader({
           onPress={onBack}
           style={[styles.action, { width: actionSlotWidth }]}
         >
-          <FontAwesome name="chevron-left" size={18} color={TEXT_PRIMARY} />
+          <Image
+            source={require('../../assets/images/ui/nav_icon_back_black.png')}
+            style={{ width: 16, height: 16 }}
+            accessible={false}
+          />
         </Pressable>
       ) : (
         <View style={[styles.action, { width: actionSlotWidth }]} />

@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +18,8 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { AssetGoalIllustration, ScreenHeader } from '@/components/rich';
+import { AccountIcon, AssetGoalIllustration, ScreenHeader } from '@/components/rich';
+import { RICH_NUMERAL_FONT } from '@/constants/Design';
 import { Text, View } from '@/components/Themed';
 import {
   ACCESSIBLE_GREEN,
@@ -66,21 +68,7 @@ const ACCOUNT_TYPE_CN: Record<AccountType, string> = {
   investment: '投资',
 };
 
-const ACCOUNT_ICONS: Record<AccountType, string> = {
-  cash: 'money',
-  bank: 'bank',
-  credit: 'credit-card',
-  stored_value: 'ticket',
-  investment: 'line-chart',
-};
 
-const ICON_COLORS: Record<AccountType, string> = {
-  cash: ACCESSIBLE_GREEN,
-  bank: '#5277C7',
-  credit: '#B86B12',
-  stored_value: '#7159C7',
-  investment: '#147D78',
-};
 
 const ACCOUNT_TYPES: AccountType[] = [
   'cash',
@@ -99,8 +87,9 @@ export default function AccountsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const compact = width < 360;
-  const illustrationWidth = Math.min(146, Math.max(108, Math.round(width * 0.34)));
-  const illustrationHeight = Math.round(illustrationWidth * (182 / 146));
+  // Original hero art is about 150 × 186pt on a 393pt-wide screen.
+  const illustrationWidth = Math.min(150, Math.max(110, Math.round(width * 0.38)));
+  const illustrationHeight = Math.round(illustrationWidth * (186 / 150));
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [loadError, setLoadError] = useState('');
@@ -312,13 +301,16 @@ export default function AccountsScreen() {
             style={({ pressed }) => [styles.goalRow, pressed && styles.controlPressed]}
             onPress={onEditGoal}
           >
-            <View style={styles.goalCopy}>
-              <View style={styles.goalFlag} />
-              <Text numberOfLines={1} style={styles.goalLabel}>目标资产</Text>
-            </View>
-            <FontAwesome name="pencil" size={12} color={TEXT_PRIMARY} />
+            <View style={styles.goalLeader} />
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.goalLabel}>
+              目标资产 ¥{centsToYuan(goalCents)}
+            </Text>
+            <Image
+              source={require('../assets/images/ui/icon_edit_black.png')}
+              style={styles.goalEdit}
+              accessible={false}
+            />
           </Pressable>
-          <Text numberOfLines={1} style={styles.goalAmount}>¥{centsToYuan(goalCents)}</Text>
           <Text style={styles.totalLabel}>已有总资产</Text>
           <Text
             numberOfLines={1}
@@ -326,7 +318,7 @@ export default function AccountsScreen() {
             minimumFontScale={0.65}
             style={styles.totalValue}
           >
-            {formatCurrency(totalAssets)}
+            {formatCurrency(totalAssets).replace(/\s/g, '')}
           </Text>
         </View>
       </View>
@@ -381,7 +373,7 @@ export default function AccountsScreen() {
                   <View style={styles.groupCopy}>
                     <Text style={styles.groupName}>{groupName}</Text>
                     <Text numberOfLines={1} style={styles.groupTotal}>
-                      {formatCurrency(groupTotals[groupName] ?? 0)}
+                      ¥ {centsToYuan(groupTotals[groupName] ?? 0)}
                     </Text>
                   </View>
                   <Pressable
@@ -408,44 +400,35 @@ export default function AccountsScreen() {
                       style={({ pressed }) => [styles.accountRow, pressed && styles.rowPressed]}
                       onPress={() => openEdit(account)}
                     >
-                      <View
-                        style={[
-                          styles.accountIcon,
-                          { backgroundColor: `${ICON_COLORS[account.type]}20` },
-                        ]}
-                      >
-                        <FontAwesome
-                          name={ACCOUNT_ICONS[account.type] as any}
-                          size={16}
-                          color={ICON_COLORS[account.type]}
-                        />
+                      <View style={styles.accountIcon}>
+                        <AccountIcon type={account.type} size={24} />
                       </View>
                       <View style={styles.accountCopy}>
                         <Text numberOfLines={1} style={styles.accountName}>{account.name}</Text>
-                        <Text style={styles.accountType}>{ACCOUNT_TYPE_CN[account.type]}</Text>
                       </View>
+                      {/* Original rows show the bare balance (no ¥). */}
                       <Text numberOfLines={1} style={styles.accountBalance}>
-                        {formatCurrency(account.balanceCents)}
+                        {centsToYuan(account.balanceCents)}
                       </Text>
-                      <FontAwesome name="chevron-right" size={11} color={TEXT_SECONDARY} />
+                      <FontAwesome name="angle-right" size={20} color={TEXT_PRIMARY} />
                     </Pressable>
                   ))
-                ) : (
-                  <Text style={styles.emptyGroup}>尚未添加，点右上角开始</Text>
-                )}
+                ) : null}
               </View>
             ))}
 
-            <Pressable
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.xferButton, pressed && styles.primaryPressed]}
-              onPress={onTransfer}
-            >
-              <Text style={styles.xferButtonText}>账户转账</Text>
-            </Pressable>
           </>
         )}
       </ScrollView>
+      {loadState !== 'loading' ? (
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.xferButton, pressed && styles.primaryPressed]}
+          onPress={onTransfer}
+        >
+          <Text style={styles.xferButtonText}>账户转账</Text>
+        </Pressable>
+      ) : null}
 
       {/* Add Account Modal */}
       <Modal
@@ -517,11 +500,11 @@ export default function AccountsScreen() {
                       <View
                         style={[
                           styles.typeIcon,
-                          { backgroundColor: `${ICON_COLORS[t]}20` },
+                          
                           t === newType && styles.typeIconActive,
                         ]}
                       >
-                        <FontAwesome name={ACCOUNT_ICONS[t] as any} size={20} color={ICON_COLORS[t]} />
+                        <AccountIcon type={t} size={28} />
                       </View>
                       <Text style={[styles.typeName, t === newType && styles.typeNameActive]}>
                         {ACCOUNT_TYPE_CN[t]}
@@ -605,11 +588,11 @@ export default function AccountsScreen() {
                       <View
                         style={[
                           styles.typeIcon,
-                          { backgroundColor: `${ICON_COLORS[t]}20` },
+                          
                           t === editType && styles.typeIconActive,
                         ]}
                       >
-                        <FontAwesome name={ACCOUNT_ICONS[t] as any} size={20} color={ICON_COLORS[t]} />
+                        <AccountIcon type={t} size={28} />
                       </View>
                       <Text style={[styles.typeName, t === editType && styles.typeNameActive]}>
                         {ACCOUNT_TYPE_CN[t]}
@@ -717,24 +700,28 @@ const styles = StyleSheet.create({
   assetSummary: {
     flexDirection: 'row',
     marginHorizontal: RICH_SPACING.lg,
-    marginBottom: RICH_SPACING.md,
-    gap: RICH_SPACING.sm,
+    marginBottom: 24,
+    gap: 18,
     backgroundColor: 'transparent',
   },
   assetSummaryCompact: { marginHorizontal: RICH_SPACING.md, gap: RICH_SPACING.sm },
   assetInfo: {
     flex: 1,
     minWidth: 0,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 14,
+    paddingBottom: 18,
     backgroundColor: 'transparent',
   },
   goalRow: {
-    minHeight: 36,
+    minHeight: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
     backgroundColor: 'transparent',
   },
+  goalLeader: { width: 34, height: StyleSheet.hairlineWidth * 2, marginLeft: -40, backgroundColor: TEXT_PRIMARY },
+  goalEdit: { width: 24, height: 24 },
   goalCopy: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'transparent' },
   goalFlag: {
     width: 0,
@@ -746,11 +733,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
     borderLeftColor: DESTRUCTIVE_CORAL,
   },
-  goalLabel: {
-    ...RICH_TYPE.label,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
+  goalLabel: { flexShrink: 1, fontSize: 14.5, color: TEXT_PRIMARY },
   goalAmount: {
     ...RICH_TYPE.amount,
     marginTop: -2,
@@ -758,22 +741,22 @@ const styles = StyleSheet.create({
     color: TEXT_PRIMARY,
   },
   totalLabel: {
-    marginTop: RICH_SPACING.lg,
-    ...RICH_TYPE.sectionTitle,
+    marginTop: 'auto',
+    fontSize: 16,
+    fontWeight: '600',
     color: TEXT_PRIMARY,
   },
   totalValue: {
-    ...RICH_TYPE.amount,
-    marginTop: RICH_SPACING.xxs,
-    fontSize: 28,
-    fontWeight: '700',
+    marginTop: 14,
+    fontFamily: RICH_NUMERAL_FONT,
+    fontSize: 40,
     color: TEXT_PRIMARY,
   },
   scrollContent: {
     flex: 1,
     backgroundColor: 'transparent',
   },
-  scrollBody: { flexGrow: 1, paddingTop: RICH_SPACING.xs, paddingBottom: 40 },
+  scrollBody: { flexGrow: 1, paddingTop: 0, paddingBottom: 96 },
   controlPressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
   primaryPressed: { opacity: 0.82 },
   statePanel: {
@@ -820,48 +803,38 @@ const styles = StyleSheet.create({
   errorRetryText: { ...RICH_TYPE.label, fontWeight: '700', color: DESTRUCTIVE_TEXT },
   accountGroup: {
     marginHorizontal: RICH_SPACING.md,
-    marginBottom: RICH_SPACING.sm,
+    marginBottom: 20,
     backgroundColor: CARD_BACKGROUND,
-    borderRadius: RICH_RADIUS.card,
     overflow: 'hidden',
   },
   groupHeader: {
-    minHeight: 56,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: RICH_SPACING.md,
-    paddingRight: RICH_SPACING.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER_COLOR,
+    paddingLeft: 14,
+    paddingRight: 14,
     backgroundColor: 'transparent',
   },
   groupCopy: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', backgroundColor: 'transparent' },
-  groupName: {
-    ...RICH_TYPE.label,
-    color: TEXT_SECONDARY,
-  },
+  groupName: { fontSize: 14, color: '#8A8A8A' },
   groupTotal: {
-    ...RICH_TYPE.amount,
     minWidth: 0,
     flexShrink: 1,
-    marginLeft: RICH_SPACING.xs,
-    fontSize: 13,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#8A8A8A',
+    fontVariant: ['tabular-nums'],
   },
   addGroupButton: {
-    minWidth: 64,
-    minHeight: RICH_SIZE.minimumTouchTarget,
+    minWidth: 68,
+    height: 30,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: RICH_RADIUS.pill,
-    borderWidth: 1,
-    borderColor: BORDER_COLOR,
+    borderRadius: 15,
+    backgroundColor: '#F2F3F5',
   },
-  addGroupText: {
-    ...RICH_TYPE.label,
-    color: TEXT_SECONDARY,
-  },
+  addGroupText: { fontSize: 14, color: '#333333' },
   emptyGroup: {
     paddingHorizontal: RICH_SPACING.md,
     paddingVertical: RICH_SPACING.md,
@@ -869,12 +842,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   accountRow: {
-    minHeight: 62,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: RICH_SPACING.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER_COLOR,
+    paddingHorizontal: 14,
   },
   rowPressed: { backgroundColor: CONTROL_BACKGROUND },
   accountIcon: {
@@ -886,35 +857,27 @@ const styles = StyleSheet.create({
     marginRight: RICH_SPACING.sm,
   },
   accountCopy: { flex: 1, minWidth: 0, backgroundColor: 'transparent' },
-  accountName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TEXT_PRIMARY,
-  },
+  accountName: { fontSize: 15, color: TEXT_PRIMARY },
   accountType: { marginTop: 2, ...RICH_TYPE.caption, color: TEXT_MUTED },
   accountBalance: {
-    ...RICH_TYPE.amount,
-    maxWidth: 118,
-    marginRight: RICH_SPACING.xs,
-    fontSize: 13.5,
-    fontWeight: '600',
+    maxWidth: 140,
+    marginRight: 12,
+    fontSize: 15,
     color: TEXT_PRIMARY,
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   xferButton: {
-    minHeight: 48,
-    marginHorizontal: 40,
-    marginTop: RICH_SPACING.xs,
+    position: 'absolute',
+    alignSelf: 'center',
+    bottom: 36,
+    width: 274,
+    height: 44,
     backgroundColor: ACTION_BACKGROUND,
-    borderRadius: RICH_RADIUS.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  xferButtonText: {
-    color: ACTION_FOREGROUND,
-    fontSize: 15,
-    fontWeight: '600',
-  },
+  xferButtonText: { color: ACTION_FOREGROUND, fontSize: 16 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

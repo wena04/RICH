@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,9 +27,9 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "@/constants/Colors";
-import { RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from "@/constants/Design";
+import { RICH_NUMERAL_FONT, RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from "@/constants/Design";
 import { DatePickerModal } from "@/components/DatePickerModal";
-import { DashedDivider, MoneyNumpad, ScreenHeader } from "@/components/rich";
+import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
 import { getDb } from "@/src/db/db";
 import { listAccounts } from "@/src/db/repo/accounts";
 import { createTransaction } from "@/src/db/repo/transactions";
@@ -146,11 +147,10 @@ export default function TransferScreen() {
   function Selector({ which }: { which: "from" | "to" }) {
     const id = which === "from" ? fromId : toId;
     const label = which === "from" ? "选择转出账户" : "选择转入账户";
-    const eyebrow = which === "from" ? "转出账户" : "转入账户";
     const name = nameOf(id);
+    const chosen = accounts.find((a) => a.id === id) ?? null;
     return (
       <View style={styles.selectorGroup}>
-        <Text style={styles.selectorEyebrow}>{eyebrow}</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}，当前${name ?? '未选择'}`}
@@ -158,17 +158,17 @@ export default function TransferScreen() {
           style={({ pressed }) => [styles.sel, pressed && styles.controlPressed]}
           onPress={() => setPicking(picking === which ? null : which)}
         >
-          <View style={styles.selIcon}>
-            <FontAwesome name="bank" size={13} color={TEXT_SECONDARY} />
-          </View>
-          <Text numberOfLines={1} style={[styles.selLabel, name && styles.selLabelActive]}>
+          {chosen ? (
+            <View style={styles.selIconChosen}>
+              <AccountIcon type={chosen.type} size={22} />
+            </View>
+          ) : (
+            <View style={styles.selIcon} />
+          )}
+          <Text numberOfLines={1} style={styles.selLabel}>
             {name ?? label}
           </Text>
-          <FontAwesome
-            name={picking === which ? "caret-up" : "caret-down"}
-            size={14}
-            color={TEXT_SECONDARY}
-          />
+          <View style={[styles.caret, picking === which && styles.caretUp]} />
         </Pressable>
         {picking === which && (
           <View style={styles.dropdown}>
@@ -189,11 +189,7 @@ export default function TransferScreen() {
                   setPicking(null);
                 }}
               >
-                <FontAwesome
-                  name={a.type === "cash" ? "money" : "bank"}
-                  size={13}
-                  color={TEXT_SECONDARY}
-                />
+                <AccountIcon type={a.type} size={20} />
                 <Text numberOfLines={1} style={styles.optionText}>{a.name}</Text>
                 {a.id === id ? (
                   <FontAwesome name="check" size={12} color={PRIMARY_GREEN} />
@@ -215,23 +211,29 @@ export default function TransferScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
-      <ScreenHeader
-        title="账户转账"
-        onBack={() => router.back()}
-        backgroundColor={PRIMARY_GREEN}
-        actionWidth={96}
-        right={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`选择转账日期，当前${dateLabel}`}
-            style={({ pressed }) => [styles.dateButton, pressed && styles.controlPressed]}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text numberOfLines={1} style={styles.dateText}>{dateLabel}</Text>
-            <FontAwesome name="chevron-down" size={9} color={TEXT_SECONDARY} />
-          </Pressable>
-        }
-      />
+      <View style={styles.header}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="返回"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Image
+            source={require("../../assets/images/ui/nav_icon_back_black.png")}
+            style={styles.backIcon}
+            accessible={false}
+          />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`选择转账日期，当前${dateLabel}`}
+          style={({ pressed }) => [styles.dateButton, pressed && styles.controlPressed]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text numberOfLines={1} style={styles.dateText}>{dateLabel}</Text>
+          <View style={styles.caret} />
+        </Pressable>
+      </View>
 
       <DatePickerModal
         visible={showDatePicker}
@@ -245,7 +247,7 @@ export default function TransferScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.amountBox}>
-          <Text style={styles.amountLabel}>转账金额</Text>
+          <View style={styles.amountLine}>
           <Text
             accessibilityLabel={`转账金额 ${amountStr} 元`}
             adjustsFontSizeToFit
@@ -253,9 +255,10 @@ export default function TransferScreen() {
             numberOfLines={1}
             style={styles.amount}
           >
-            ¥{amountStr}
-            <Text style={styles.cursor}>|</Text>
+            ¥{amountStr === "0" && !pendingOp ? "" : amountStr}
           </Text>
+          <View style={styles.cursor} />
+          </View>
           {pendingOp && pendingValue != null ? (
             <Text style={styles.pendingText}>
               ¥{centsToYuan(Math.round(pendingValue * 100))} {pendingOp} 当前输入
@@ -274,14 +277,22 @@ export default function TransferScreen() {
         >
           <Selector which="from" />
           <View style={styles.arrow}>
-            <FontAwesome name="angle-double-down" size={18} color={TEXT_SECONDARY} />
+            <Image
+              source={require("../../assets/images/ui/icon_doule_arrow_bottom.png")}
+              style={styles.arrowIcon}
+              accessible={false}
+            />
           </View>
           <Selector which="to" />
         </ScrollView>
 
         <View style={styles.pad}>
           <View style={styles.noteRow}>
-            <FontAwesome name="pencil" size={14} color={TEXT_SECONDARY} />
+            <Image
+              source={require("../../assets/images/ui/icon_edit_black.png")}
+              style={styles.noteIcon}
+              accessible={false}
+            />
             <TextInput
               accessibilityLabel="转账备注"
               style={styles.noteInput}
@@ -290,12 +301,11 @@ export default function TransferScreen() {
               onFocus={() => setNoteFocused(true)}
               onBlur={() => setNoteFocused(false)}
               onSubmitEditing={() => setNoteFocused(false)}
-              placeholder="添加备注（可选）"
-              placeholderTextColor={TEXT_SECONDARY}
+              placeholder="添加备注"
+              placeholderTextColor="#B8B8B8"
               maxLength={100}
               returnKeyType="done"
             />
-            <Text style={styles.noteCount}>{note.length}/100</Text>
           </View>
           {!noteFocused ? (
             <View style={styles.numpadWrap}>
@@ -309,7 +319,7 @@ export default function TransferScreen() {
                 onConfirm={onConfirm}
                 confirmDisabled={!canConfirm || saving}
                 confirmLabel={saving ? "保存中" : "确定"}
-                keyHeight={52}
+                keyHeight={56}
               />
             </View>
           ) : null}
@@ -324,35 +334,54 @@ const styles = StyleSheet.create({
   keyboardArea: { flex: 1, backgroundColor: CARD_BACKGROUND },
   controlPressed: { opacity: 0.76 },
   dateButton: {
-    maxWidth: 96,
-    minHeight: RICH_SIZE.minimumTouchTarget,
+    minHeight: 32,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: RICH_SPACING.xxs,
-    paddingHorizontal: RICH_SPACING.xs,
-    backgroundColor: CARD_BACKGROUND,
-    borderRadius: RICH_RADIUS.pill,
+    gap: 6,
+    paddingHorizontal: 13,
+    borderRadius: 16,
+    backgroundColor: "#F2F3F5",
   },
-  dateText: { ...RICH_TYPE.label, flexShrink: 1, fontWeight: "600", color: TEXT_PRIMARY },
+  dateText: { fontSize: 15, color: TEXT_PRIMARY },
   amountBox: {
     width: "100%",
     maxWidth: 430,
     alignSelf: "center",
     paddingHorizontal: RICH_SPACING.xl,
-    paddingTop: RICH_SPACING.md,
-    paddingBottom: RICH_SPACING.xs,
+    paddingTop: 22,
+    paddingBottom: 14,
   },
   amountLabel: { ...RICH_TYPE.label, fontWeight: "600", color: TEXT_SECONDARY },
   amount: {
-    ...RICH_TYPE.amount,
-    marginTop: RICH_SPACING.xxs,
-    fontSize: 42,
-    fontWeight: "300",
+    fontFamily: RICH_NUMERAL_FONT,
+    fontSize: 44,
     color: TEXT_PRIMARY,
-    letterSpacing: -1,
   },
-  cursor: { color: PRIMARY_GREEN },
+  cursor: { width: 1.5, height: 44, marginLeft: 4, backgroundColor: TEXT_PRIMARY },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  backButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  backIcon: { width: 16, height: 16 },
+  amountLine: { flexDirection: "row", alignItems: "center" },
+  caret: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: TEXT_PRIMARY,
+  },
+  caretUp: { transform: [{ rotate: "180deg" }] },
+  selIconChosen: { width: 22, height: 22, alignItems: "center", justifyContent: "center" },
+  arrowIcon: { width: 11, height: 12.7 },
+  noteIcon: { width: 28, height: 28 },
   pendingText: {
     ...RICH_TYPE.caption,
     marginTop: RICH_SPACING.xxs,
@@ -380,25 +409,26 @@ const styles = StyleSheet.create({
     color: TEXT_SECONDARY,
   },
   sel: {
-    minHeight: 52,
+    alignSelf: "center",
+    width: "70%",
+    maxWidth: 280,
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: CONTROL_BACKGROUND,
-    borderRadius: RICH_RADIUS.pill,
-    paddingHorizontal: RICH_SPACING.md,
+    gap: 10,
+    backgroundColor: "#F5F6F8",
+    borderRadius: 22,
+    paddingHorizontal: 12,
   },
   selIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: CARD_BACKGROUND,
-    marginRight: RICH_SPACING.sm,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#E6E6E6",
   },
-  selLabel: { flex: 1, minWidth: 0, fontSize: 15, color: TEXT_SECONDARY },
+  selLabel: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: "500", color: TEXT_PRIMARY },
   selLabelActive: { color: TEXT_PRIMARY, fontWeight: "600" },
-  arrow: { alignItems: "center", paddingVertical: RICH_SPACING.xs },
+  arrow: { alignItems: "center", paddingVertical: 14 },
   dropdown: {
     marginTop: RICH_SPACING.xxs,
     marginHorizontal: RICH_SPACING.xs,
@@ -428,23 +458,22 @@ const styles = StyleSheet.create({
   },
   pad: {
     backgroundColor: KEYPAD_BACKGROUND,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER_COLOR,
   },
   noteRow: {
     width: "100%",
     maxWidth: 430,
-    minHeight: 52,
+    minHeight: 54,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    gap: RICH_SPACING.xs,
+    justifyContent: "center",
+    gap: 8,
     paddingHorizontal: RICH_SPACING.md,
   },
   noteInput: {
-    ...RICH_TYPE.body,
-    flex: 1,
-    minWidth: 0,
+    minWidth: 76,
+    maxWidth: "75%",
+    fontSize: 15,
     color: TEXT_PRIMARY,
     paddingVertical: 0,
   },

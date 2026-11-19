@@ -27,6 +27,19 @@ export function AssetGoalIllustration({
       source={require('../../assets/images/ui/asset-canvas.png')}
       style={[styles.frame, { width, height }]}
     >
+      {/* Original rays layer (icon_shine), centred on the castle dome. */}
+      <Image
+        resizeMode="contain"
+        source={require('../../assets/images/ui/asset-shine.png')}
+        style={{
+          position: 'absolute',
+          left: width * 0.395 - width * 0.85,
+          top: height * 0.34 - width * 0.875,
+          width: width * 1.7,
+          height: width * 1.75,
+          opacity: 0.9,
+        }}
+      />
       <Image
         resizeMode="contain"
         source={require('../../assets/images/ui/asset-castle.png')}
