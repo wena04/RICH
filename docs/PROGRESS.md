@@ -1,93 +1,169 @@
 # Progress
 
-Living implementation and verification status for Rich记账.
+Living implementation, source-parity, and verification status for Rich记账.
 
-**Last updated:** September 18, 2026
+**Last updated:** November 18, 2026
 
-**Phase:** native release hardening and on-device visual QA
+**Phase:** original Rich 1.1.0 interaction recovery, visual parity, and native-device QA
 
-## Current status
+**Latest pushed checkpoint:** `cbe7696` — Match original RICH UI assets and interactions
 
-The current offline-first scope is implemented end to end. A fresh install now presents a clean
-ledger—no fake balances or demo transactions—plus one usable cash account and an idempotent,
-student-friendly category/subcategory starter taxonomy.
+## Current objective
 
-Recent work moved the app beyond the earlier MVP model:
+Recreate the supplied Rich记账 1.1.0 app as faithfully as the available evidence allows: original
+branding, icons, screen composition, empty states, category hierarchy, expandable interactions, and
+budget/plan flows. Preserve the repo's offline-first and privacy-first behavior while replacing
+approximations with assets and behavior verified from the packaged app, screenshots, and backup
+schema.
 
-- Adopted the approved Rich wordmark/app icon and documented the mint/ink brand system.
-- Completed responsive visual passes for Home, budgets, trends, accounts, category/icon management,
-  the complete ledger, and transaction create/detail/edit/transfer/adjustment flows.
-- Surfaced **我的 → 全部账单**, replacing the hidden English legacy list with a Chinese-first dated
-  ledger and transaction-detail links.
-- Changed new-transaction category selection from mutable names to stable database IDs, preventing
-  renamed or deleted categories from being silently recreated.
-- Made unbudgeted-child and unclassified spending visible inside the parent budget envelope.
-- Added typed `expense | income | both` categories across migration, repositories, management,
-  entry, editing, and budget filtering.
-- Added starter child categories for food, transport, learning, housing, entertainment,
-  subscriptions, health, and travel without generating financial history.
-- Added hierarchical parent/child budgets with persisted child allocations, derived real spending,
-  effective parent limits, and visible unallocated remainder without double counting.
-- Made paired account transfers atomic with SQLite rollback on either-side failure.
-- Rebuilt transaction editing in the current visual language with type, signed adjustment amount,
-  date picker, typed category path, account, note, save, and delete.
-- Improved Home and budget empty states, transaction metadata, category filtering, accessibility
-  state, responsive trend width, app icon/configuration, and native release metadata.
-- Added focused hierarchical-budget tests and changed the test command to avoid the prior `tsx` IPC
-  restriction.
-- Restored the supplied Rich 1.1.0 app icon, title artwork, mint/highlight palette, header controls,
-  tab artwork, and asset-goal illustration as the visual source of truth.
+This is not an attempt to recover or copy unavailable Swift source code. The App Store executable is
+encrypted, so screenshots, runtime observation, asset catalogs, property lists, and the backup schema
+are the reliable sources of truth.
 
-## Current architecture
+## Supplied source material and boundaries
 
-- SQLite is the source of truth; no backend, analytics, sign-in, or automatic sync.
-- Money uses integer cents; dates are local ISO calendar strings.
-- Budgets are monthly parent envelopes with optional child allocations. Spending is derived from
-  transactions, not stored twice.
-- Transfers are matched negative/positive balance adjustments committed in one transaction, so they
-  do not affect income/expense analytics.
-- Full database export/restore is the lossless device-migration path.
-- Native runtime targets iOS/Android; `npm run web` provides a convenient Expo SQLite alpha preview.
+The off-repo transferable reference bundle `RICH-original-reference-bundle-2026-11-18.zip`
+contains:
+
+- `RichNote.app` — runnable macOS wrapper around the supplied iOS app.
+- `Rich记账 1.1.0.ipa` — packaged original application and resources.
+- `Rich记账.imazingapp` — private device backup used to understand schema and saved app state.
+- `original-interaction-screenshots/` — captured original Home, add-entry, transaction, assets, and
+  transfer states.
+
+The `.ipa`/`.app` executable has `cryptid 1`; it does not expose the original Swift implementation or
+view hierarchy. The iMazing backup is research evidence, not the normal migration/import format for
+this replica. It can contain real financial records and account/session information and must stay
+private.
+
+## Completed original-app parity work
+
+- Restored the supplied Rich app icon, title/start artwork, wordmark, mint/highlight palette, header
+  controls, profile/menu controls, tab artwork, and asset-goal imagery.
+- Matched the first-entry Home state to the supplied original screenshot:
+  - calendar expanded on entry;
+  - `MON` through `SUN` labels;
+  - leading and trailing adjacent-month dates;
+  - original current-day ring/dot treatment;
+  - original `icon_emptybox` artwork;
+  - exact `本月还没有收支记录` copy;
+  - no invented first-entry CTA.
+- Extracted 125 original category/UI PNG files from `Assets.car`.
+- Converted `TallyTypeinfo.plist` into an 18-section, 134-item catalog covering 122 unique
+  catalog-referenced icon names.
+- Added the generated original-icon registry and name mapping used by the runtime category grid and
+  full icon picker.
+- Added semantic SVG fallbacks underneath original PNGs so interrupted image loading cannot leave
+  blank category circles; the original PNG replaces the fallback after loading.
+- Restored the original expense and income category order and complete four-row initial viewport.
+- Implemented the original-style add-entry interactions:
+  - expense/income switch;
+  - amount calculator and confirm state;
+  - account picker, note editing, and date picker;
+  - selected-category ring;
+  - original three-dot subcategory affordance;
+  - inline expandable subcategory tray with original icons;
+  - subcategory selection, collapse, and add-subcategory flow.
+- Restored expandable parent/child rows in `自定义`, with subcategory edit/add behavior and the
+  original black `+ 添加自定义` footer. Opening category management from entry preserves the current
+  expense/income context.
+- Replaced the reconstructed budget example donut with the original `icon_budget_progress` asset.
+- Extracted and preserved the supplied month/special budget, creation, tips, help, plan, empty, and
+  completion artwork under `assets/images/budget/` for the remaining budget/plan implementation.
+- Verified Home, add expense, category management/picker, budget empty state, and asset management in
+  the local production web export. The current visual-QA report ends with `final result: passed`.
+
+## Existing functional product work
+
+- A fresh install starts with no fake balances or demo transactions, one usable cash account, and an
+  idempotent category/subcategory starter taxonomy.
+- SQLite-backed accounts, transactions, category/subcategory management, transfer, adjustment,
+  import/export, budgets, trend views, and full ledger navigation are implemented.
+- New-transaction selection uses stable category IDs, so renamed or deleted categories are not
+  silently recreated.
+- Categories support typed `expense | income | both` visibility across migration, repositories,
+  management, entry, editing, and budget filtering.
+- Hierarchical budgets persist child allocations, derive real spending, preserve unallocated parent
+  amounts, and avoid double counting.
+- Paired account transfers are committed atomically with rollback if either side fails.
+- Transaction editing supports type, signed adjustment amount, date, category path, account, note,
+  save, and delete.
+
+## Current architecture and trust boundaries
+
+- SQLite is the source of truth; there is no backend, analytics, sign-in, or automatic cloud sync in
+  the replica.
+- Money uses integer cents; dates use local ISO calendar strings.
+- Budgets currently use monthly parent envelopes with optional child allocations. Spending is
+  derived from transactions rather than stored twice.
+- Transfers are matched negative/positive balance adjustments committed in one database
+  transaction, so they do not affect income/expense analytics.
+- CSV remains the normal user-facing exchange/import format, matching the existing workflow.
+- Full database export/restore is an advanced lossless backup option. The iMazing package is not an
+  in-app migration format.
+- Real CSV exports, SQLite files, iMazing backups, IPA files, and screenshots containing private
+  financial data are excluded from Git.
 
 ## Verification
 
-Completed against the current workspace on September 18, 2026:
+Completed against the latest pushed workspace on November 18, 2026:
 
 ```text
-TypeScript:       npx tsc --noEmit                         PASS
-Unit tests:       npm test                                 PASS (43/43)
-Category icons:   npm run icons:check                      PASS (114 SVGs)
-Expo config:      npx expo config --type public            PASS
-Patch hygiene:    git diff --check                         PASS
+TypeScript:              npx tsc --noEmit              PASS
+Unit tests:              npm test                      PASS (43/43)
+Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
+Original PNG extraction: file/catalog audit            PASS (125 files)
+Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
+Patch hygiene:           git diff --check              PASS
+Visual QA:               design-qa.md                  PASS
+Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
 ```
 
-## Remaining release work
+## Remaining source-parity work
 
-1. Run every reachable route from `docs/FLOWS.md` on target iPhones, including small-screen keyboard,
-   safe-area, modal, long-label, and empty/filled states.
-2. Capture Home, 记一笔, transaction detail/edit, 预算/计划, 趋势图, 资产管理, 自定义, transfer,
-   and data-management screenshots at reference sizes; record and fix material visual deltas.
-3. Exercise fresh install, migration, CSV exchange, database restore, atomic transfer rollback, and
-   category-kind changes with real native SQLite data.
-4. Complete the App Store metadata, privacy answers, signing/build, TestFlight, and submission checks
-   in [Apple Release 2026](APPLE_RELEASE_2026.md).
+1. Finish logging into the runnable original app through the user's approved WeChat account, then
+   capture the exact expanded/collapsed subcategory states, selection behavior, category editing,
+   account/date sheets, and other interaction transitions not visible in the supplied screenshots.
+   WeChat approval must be completed by the user whenever macOS requires direct access or a phone
+   confirmation.
+2. Replace the current functional budget editor/model with the original Rich concepts and screens:
+   month budget, special budget, named envelopes, icon/name/description fields, recurrence/cycle
+   configuration, deposit plans, accumulation plans, plan items, archive/reorder behavior, and the
+   original help/onboarding pages.
+3. Match and verify the compiled native launch/loading sequence, including load/read/write/success
+   states and a recoverable startup-error state. The artwork is available, but the native transition
+   still needs device capture and comparison.
+4. Capture and compare every reachable route from `docs/FLOWS.md` on target iPhones, including
+   small-screen keyboard, safe-area, modal, long-label, and empty/filled states.
+5. Exercise fresh install, schema migration, CSV exchange, database restore, transfer rollback, and
+   category-kind changes using real native SQLite behavior without committing any private data.
+6. Complete App Store metadata, privacy answers, signing/build, TestFlight, and submission checks in
+   [Apple Release 2026](APPLE_RELEASE_2026.md).
 
 ## Known limitations
 
+- The original Swift source and view hierarchy are unavailable because the packaged executable is
+  encrypted.
+- The current budget implementation is useful and tested but is not yet the original Rich
+  budget/plan model.
+- The local web export is a convenient inspection surface; final iOS safe-area, status-bar,
+  keyboard, launch, and SQLite behavior require native-device verification.
 - No cloud sync, recurring entries, reminders, receipt attachments, search, authentication, or
-  multi-currency conversion.
+  multi-currency conversion is currently implemented in the replica.
 - Transfer rows are atomic but still lack a shared transfer-group ID for linked editing/deletion.
-- The native SQLite app is not a supported web build.
-- Automated screenshot regression should follow approval of the on-device reference captures.
 
 ## References
 
-- [Product](PRODUCT.md) — current behavior and trust rules
-- [Features](FEATURES.md) — implemented surface and persisted model
-- [Flows](FLOWS.md) — route/action walkthrough checklist
-- [Components](COMPONENTS.md) — shared visual contracts
-- [Apple Release 2026](APPLE_RELEASE_2026.md) — current release requirements
-- [Competitive Research 2026](COMPETITIVE_RESEARCH_2026.md) — market evidence and product direction
+- [Design QA](../design-qa.md) — screenshot comparisons, interaction checks, and current pass result.
+- [First-entry and budget-flow audit](../audit/first-entry-budget-flow/report.md) — evidence-backed
+  fidelity gaps and original budget-model findings.
+- [Original screenshot index](reference/rich-screens/README.md) — private local reference inventory
+  and design takeaways.
+- [Product](PRODUCT.md) — current behavior and trust rules.
+- [Features](FEATURES.md) — implemented surface and persisted model.
+- [Flows](FLOWS.md) — route/action walkthrough checklist.
+- [Components](COMPONENTS.md) — shared visual contracts.
+- [Apple Release 2026](APPLE_RELEASE_2026.md) — current release requirements.
 
-Do not commit real CSV exports, SQLite databases, or user backup files. Do not commit or push unless
-explicitly requested.
+Do not commit real CSV exports, SQLite databases, IPA files, iMazing backups, login/session material,
+or screenshots containing private financial data. Do not commit or push unless explicitly requested.
