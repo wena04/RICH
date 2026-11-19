@@ -127,6 +127,13 @@ fixed add entry (subcategory tray on every category, 添加子类 page with icon
 numerals), category management, Home + day sheet, transaction detail, 资产管理, and transfer. See
 `design-qa.md` → "Original-parity pass". Migration v10 adds `subcategories.icon`.
 
+Second pass (same day): whole-screen alignment against the captures (shifted by the original's
+59pt safe area) fixed the tab bar, header heights and back-chevron position, Home header/calendar/
+list geometry, day sheet, Budget tab, detail, 资产管理, add entry, and transfer; unselected
+category art now dims to 50% like the original. All icon-font glyphs were replaced with original
+`Assets.car` artwork (`RichChevron` for chevrons). See `design-qa.md` → "Icon and geometry pass".
+Budget/plan creation screens remain designed rather than verified (no captures exist).
+
 ## Remaining source-parity work
 
 1. ~~Log into the runnable original app through WeChat to capture missing interactions.~~ Dropped

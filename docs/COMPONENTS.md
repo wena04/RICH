@@ -75,8 +75,9 @@ Source: `components/rich/ScreenHeader.tsx`
 
 | Property | Contract |
 |---|---|
-| Height | Minimum 64 px |
-| Left/right action | 40 x 40 px by default; `actionWidth` may reserve more room for text actions |
+| Height | Minimum 44 px (standard iOS bar; the original screens use it) |
+| Left/right action | 44 px slots by default; `actionWidth` may reserve more room for text actions |
+| Back | Original `nav_icon_back_black` art, 16 px, left-aligned 16 px from the screen edge |
 | Title | Absolutely centered, one line, 17/600 |
 | Subtitle | Optional 10.5 px line below title |
 | Background | White or `PRIMARY_GREEN`, supplied by the screen |
@@ -87,6 +88,17 @@ Use on pushed screens with a centered title. Contextual composer headers such as
 
 Current users: 资产管理, 自定义, 添加自定义类目, 设置分类预算, 趋势图, transaction detail,
 调整余额, 数据管理, 关于应用, 隐私政策, 我的.
+
+### `RichChevron`
+
+Source: `components/rich/RichChevron.tsx`
+
+- Original chevron artwork: `dark` (black `icon_right_unfold`, `icon_unfold_left`, `icon_fold`,
+  `icon_unfold`) and `muted` (#777777 `icon_arrow_unfold`, `icon_small_gray_back`).
+- Negative margins collapse each PNG's transparent canvas padding, so the chevron takes up only its
+  glyph's footprint in layout. `scale` multiplies the original size.
+- Use instead of icon-font chevrons. Rows matched pixel-for-pixel against a capture (detail,
+  资产管理) place `icon_right_unfold` directly with measured padding.
 
 ### `MonthStepper`
 

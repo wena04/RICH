@@ -100,6 +100,30 @@ Known remaining differences: the selected category's interior stays #F7F7F7 (the
 white) because the artwork bakes in its circle; the starter subcategory set differs from the
 owner's personal categories by design (fresh installs get the student starter taxonomy).
 
+## Icon and geometry pass (November 19, 2026, second pass)
+
+The first pass compared screens element by element. This pass aligned whole screens: the
+original captures come from a 393pt device with a 59pt top safe area, so each capture was shifted
+up 59pt (the add and transfer screens instead by their header row, which the original places 8.3pt
+below the safe area) and every element was measured against the web export at 3×. Every
+FontAwesome glyph was also replaced with artwork from the original `Assets.car` (116 UI images
+extracted; `components/rich/RichChevron.tsx` wraps the chevron set).
+
+| Screen | Was | Now (matches original) |
+| --- | --- | --- |
+| Tab bar | 28pt icons, budget tab used `icon_clock`, green underline, bold 12pt labels, drawn `+` with shadow, 62pt bar | `tab_home`/`tab_calendar` (+ selected) at 40pt, 10pt labels (#000 selected / #929292), `add_new` 60pt button 14pt above a 49pt bar with a #C0C0C0 hairline |
+| Screen headers | 64pt tall; back chevron centred in its touch slot (14pt too far right) | 44pt bar; `nav_icon_back_black` 16pt from the edge (all ScreenHeader and budget/category screens) |
+| Home | Title art 18pt low; 44pt account/profile buttons; 16pt card margins; tall calendar header; 30pt day circles; future days black; mint strip above the tab bar | Title art at 11.3pt, 40pt buttons, 20pt card margins, measured month pill/totals/weekday/row offsets, 28pt circles and bands, future days #777777, list fonts/margins/dashes from the original; white list to the tab bar |
+| Day sheet | Thin X in a drawn circle; sheet flush with the card | `close_clear` art; sheet 5.3pt below the card top; button 21pt above the home indicator |
+| Budget tab | 60pt header; bold 15pt 计划清单; drawn trend donut; 280pt example art; bold button | 46pt header; 19pt 计划清单, 15pt 结余/趋势图, `icon_trend_chart_small`; 210×98 `icon_budget_progress`; 284×44 regular-weight button; measured empty-state spacing |
+| Detail | 16pt margins, 84pt row, 未归入 shown | 24.3pt margins, 74.7/55.7pt rows, `icon_right_unfold`, blank until assigned |
+| 资产管理 | Total 40pt; 18pt info gap; 66pt group headers; text 添加 pills; 24pt account icons | Total 31pt; info column 30pt right of the art; 60.7pt headers; `create_item` pill art; 20pt account art, hairline row rules, `icon_right_unfold` |
+| Add entry / transfer | Header 21.7pt low; 44pt amount; 4/4 dashes; 32pt pills | Header 8.2pt below the safe area; 35pt amount with a 40pt cursor; 7/6.7 #E3E3E3 dashes; 54×24.7 pills; 48pt category art on a 72.9pt column pitch; unselected category art at 50% opacity once one is selected (measured: strokes #7F7F7F, disc #FBFBFB); `icon_describe` note icon; 272.4pt transfer selectors |
+| Icons elsewhere | FontAwesome chevrons, plus, times, check, ellipsis, carets, warning, menu icons | Original `icon_arrow_unfold`/`icon_small_gray_back`/`icon_fold`/`icon_unfold`, `icon_add_custom` (添加子类), `icon_cancel`, `symbol_add`, `btn_select`, `icon_three_dot`, `icon_menu_normal`/`icon_menu_selected`, `icon_warning`, and `icon_clipboard_list`/`icon_asset_management`/`icon_sort`/`icon_data_export`/`icon_clipboard`/`icon_help_center`/`icon_agreement`/`icon_change_money`/`icon_add` for menus |
+
+The menu-icon choices on 我的 and 数据管理 are judgement calls: those screens have no original
+capture, so each row uses the closest-named original artwork.
+
 ## Budget envelopes (November 18, 2026) — designed, not source-verified
 
 The original populated budget list and create/edit budget pages have no screenshots, and the app
