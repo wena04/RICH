@@ -95,8 +95,9 @@ private.
 - SQLite is the source of truth; there is no backend, analytics, sign-in, or automatic cloud sync in
   the replica.
 - Money uses integer cents; dates use local ISO calendar strings.
-- Budgets currently use monthly parent envelopes with optional child allocations. Spending is
-  derived from transactions rather than stored twice.
+- Budgets follow the original Rich model: named monthly/special envelopes that expenses are assigned
+  to, plus savings plans that freeze part of a monthly budget. Spending is derived from transactions
+  rather than stored twice.
 - Transfers are matched negative/positive balance adjustments committed in one database
   transaction, so they do not affect income/expense analytics.
 - CSV remains the normal user-facing exchange/import format, matching the existing workflow.
@@ -107,17 +108,18 @@ private.
 
 ## Verification
 
-Completed against the latest pushed workspace on November 18, 2026:
+Completed on November 19, 2026 (local workspace):
 
 ```text
-TypeScript:              npx tsc --noEmit              PASS
-Unit tests:              npm test                      PASS (68/68)
-Generated SVG registry:  npm run icons:check           PASS (114 SVGs)
-Original PNG extraction: file/catalog audit            PASS (125 files)
-Original icon catalog:   plist/catalog audit           PASS (18 sections, 134 items, 122 unique)
-Patch hygiene:           git diff --check              PASS
-Visual QA:               design-qa.md                  PASS
-Privacy staging scan:    no IPA/iMazing/CSV/DB files   PASS
+TypeScript:              npx tsc --noEmit                         PASS
+Unit + storage tests:    npm test                                 PASS (74/74, incl. 7 SQLite integration tests)
+Category icon registry:  npm run icons:check                      PASS (123 vector glyphs)
+Icon fidelity vs original rasters at 3x                            mean IoU 0.955, colour Δ 1.4/255
+Native bundles:          npx expo export --platform ios,android   PASS (Hermes, both platforms)
+Expo doctor:             17/18 checks; 3 patch-level SDK bumps pending (expo, expo-constants, expo-file-system)
+Web walkthrough:         15 flows incl. reload persistence        PASS, no page errors
+Patch hygiene:           git diff --check                         PASS
+Privacy staging scan:    no IPA/iMazing/CSV/DB files              PASS
 ```
 
 ## Original-parity pass — November 19, 2026
@@ -133,6 +135,69 @@ list geometry, day sheet, Budget tab, detail, 资产管理, add entry, and trans
 category art now dims to 50% like the original. All icon-font glyphs were replaced with original
 `Assets.car` artwork (`RichChevron` for chevrons). See `design-qa.md` → "Icon and geometry pass".
 Budget/plan creation screens remain designed rather than verified (no captures exist).
+
+## Icons, Android readiness, and storage — November 19, 2026
+
+- **Category icons separated into disc + glyph.** The 123 original category rasters (glyph baked onto
+  a #F7F7F7 disc) were converted into vector glyphs with the disc removed exactly; screens now draw
+  the disc, the selection ring (1.7pt, inside the disc — the original's interior is #F7F7F7, not
+  white as earlier noted), and the 50% dimming. Visually identical to the originals at 3×, sharper
+  when scaled, recolourable, and 420 KB instead of 880 KB. The retired hand-drawn SVG set and the
+  original PNGs left the app; the picker now stores original icon names, and a user's chosen icon
+  now wins over the name lookup (before, a subcategory named like a built-in showed the built-in art).
+  Pipeline and layout: `docs/reference/rich-screens/icon-catalog.md`.
+- **Files reorganized:** `assets/icons/categories/` (SVG masters) · `components/icons/` (component +
+  generated art) · `src/domain/categoryIcons/` (catalog, resolution, legacy ids) · `scripts/icons/`
+  (trace, generate, Assets.car extractor). Unused Expo template images were removed.
+- **Android:** every screen used React Native's iOS-only `SafeAreaView` (Android content would sit
+  under the status bar) — switched to `react-native-safe-area-context`. Modals now handle the Android
+  back button; the day sheet draws under the status bar so it lines up with the header; the
+  记一笔/账户转账 header tuck adapts to the status bar (Dynamic Island iPhones vs notch iPhones and
+  Android); note fields and account sheets avoid the keyboard on both platforms (Android is
+  edge-to-edge in SDK 54); the adaptive launcher icon was cropping "Rich" and now uses a safe-zone
+  foreground. Both native bundles compile. Device QA on a real iPhone and Android phone is still
+  needed (keyboard, safe areas, launcher icon).
+- **Storage:** new integration tests run the real migrations and repositories on SQLite: fresh
+  install, relaunch from the saved file, deleted categories stay deleted, schema invariants
+  (100-char notes, ON DELETE RESTRICT), budgets/plans, an upgrade from a v7 database, and CSV
+  round-trip. On device the database is `rich.db` under `Documents/SQLite/` on iOS and `files/SQLite/` on Android (expo-sqlite defaults):
+  it survives relaunches and updates, is removed on uninstall, and is included in iCloud/iTunes and
+  Android device backups unless that is changed. Starter subcategories now keep their designed order.
+- **Budget emoji kept:** budgets and plans use emoji like the original; the brand guide now scopes
+  the no-emoji rule to category surfaces.
+
+## Future idea needing user research: a personal AI assistant for logging
+
+Idea (owner, November 19, 2026): let people pick an AI assistant of their choice and connect phone
+workflows so a purchase can be logged with help — e.g. an iOS Shortcuts / Wallet transaction
+automation or an Android notification or share intent hands the purchase to RICH, the assistant
+drafts amount, category, subcategory, and note, and the person confirms.
+
+Not built; it conflicts with current non-goals (no backend, no bank integrations, no ML
+categorization in `docs/REQUIREMENTS.md`) and needs an explicit scope decision first. Questions to
+research before deciding:
+
+1. **Does it defeat the point of manual logging?** RICH's value is the deliberate moment of
+   recording ("make money choices visible"). Test whether a draft-then-confirm flow keeps that
+   awareness, or whether people stop looking. Compare a fully manual group, a confirm-a-draft group,
+   and an auto-log group over a few weeks: logging consistency, recall of monthly spend, and whether
+   budgets change behaviour.
+2. **Which moments need help?** Where does manual logging actually fail — forgetting cash, batches
+   after a trip, split bills, subscriptions? Help may be most useful for catch-up and review rather
+   than every purchase.
+3. **Privacy and local-first.** Purchase data is sensitive. Options to compare: on-device models
+   (Apple's on-device foundation model, Gemini Nano on Android) that keep data on the phone; a
+   bring-your-own-key provider the person chooses, with exactly what is sent shown first; or no AI
+   at all, only Shortcuts/intent hooks that pre-fill the add screen. Any network option must be opt-in
+   and must not become a RICH backend.
+4. **Platform reality.** What iOS Shortcuts/Wallet automations and Android intents can deliver
+   (merchant, amount, time) without bank connections; the App Store and Play policies for both.
+5. **Trust and correction.** How a person sees and fixes a wrong draft; nothing is saved without a
+   confirm.
+
+A low-risk first step, if research supports it: a "pre-fill the add screen" deep link (amount,
+note, date) callable from Shortcuts or an Android share, with no AI involved — the person still
+chooses the category and taps 确定.
 
 ## Remaining source-parity work
 
@@ -194,10 +259,8 @@ Budget/plan creation screens remain designed rather than verified (no captures e
 
 - The original Swift source and view hierarchy are unavailable because the packaged executable is
   encrypted.
-- The current budget implementation is useful and tested but is not yet the original Rich
-  budget/plan model.
-- The local web export is a convenient inspection surface; final iOS safe-area, status-bar,
-  keyboard, launch, and SQLite behavior require native-device verification.
+- The local web export is a convenient inspection surface; final iOS and Android safe-area,
+  status-bar, keyboard, launcher-icon, and SQLite behavior require native-device verification.
 - No cloud sync, recurring entries, reminders, receipt attachments, search, authentication, or
   multi-currency conversion is currently implemented in the replica.
 - Transfer rows are atomic but still lack a shared transfer-group ID for linked editing/deletion.

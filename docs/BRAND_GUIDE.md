@@ -223,16 +223,31 @@ one clear hierarchy rather than three competing cards.
 
 ### Category icons
 
-- Draw on a 24 × 24 grid with a 1.7 px RICH Ink stroke, round caps, and round joins.
-- Use no fill unless the individual construction requires it.
-- Add at most one meaningful RICH Mint detail; the accent should clarify the object, not decorate it.
-- Make each object recognizable at the actual 20–26 px product size, not only while zoomed in.
-- Use 16 px only in compact ledger rows; place grid icons in a 40–48 px light-gray circle.
+The category set is the original Rich 1.1.0 artwork, kept as vectors with the background separated
+(see `docs/reference/rich-screens/icon-catalog.md`). New or refined icons follow the original
+construction:
+
+- 48-unit canvas drawn for a 48 pt disc; the glyph sits in roughly the central 24 pt.
+- Black (`#000000`) line work about 1.7 pt wide with rounded ends, plus at most one accent detail in
+  the original accent green `#02B17B` (deeper than RICH Mint so it holds on the #F7F7F7 disc).
+- Glyph only: never bake the #F7F7F7 disc, a ring, or a shadow into the art. The disc, selection
+  ring (1.7 pt black, inside the disc), and 50% dimming are drawn by the screen.
+- Make each object recognizable at 34 pt (ledger rows), not only at 48 pt.
 - Keep mass, detail density, and baseline consistent across the family.
 - Never mix emoji, filled platform glyphs, or an unrelated icon pack into a RICH category grid.
 
 Source artwork lives in `assets/icons/categories/`; `assets/icons/gallery.html` is the visual QA
-sheet. Test a new icon beside its full category family and in the real five-column picker.
+sheet (idle, dimmed, selected). Test a new icon beside its full family and in the real five-column
+grid.
+
+### Budget and plan emoji
+
+Budgets and savings plans use an emoji as their identity (🍚 日常开销, ✈️ 夏日旅行计划), as the original
+app did in its budget and plan examples. This is a deliberate exception to the no-emoji rule above:
+the rule protects the category grid's single drawn family, while a budget is a personal envelope the
+person names and decorates. Offer the curated emoji set in the editor; don't mix emoji into category
+surfaces. Emoji render with the platform font (Apple Color Emoji on iOS, Noto on Android), so the
+same budget looks slightly different on each platform; that is expected.
 
 ### Illustration
 

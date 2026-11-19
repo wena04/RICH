@@ -23,7 +23,8 @@ Rich记账 — a Chinese-language, offline-first personal finance app for iOS (R
 | Screenshot-vs-implementation QA | `design-qa.md`, `design-qa-assets/` |
 | Original icon catalog and screenshot notes | `docs/reference/rich-screens/` |
 | Original budget/plan artwork (help, tips, empty, completion) | `assets/images/budget/` |
-| Original category/UI PNGs | `assets/images/category-original/` |
+| Category icons (original glyphs as SVG masters; disc drawn in code) | `assets/icons/categories/`, pipeline + catalog in `docs/reference/rich-screens/icon-catalog.md` |
+| Original UI artwork (tab bar, chevrons, keypad, illustrations) | `assets/images/ui/`, `assets/images/budget/`, `assets/images/accounts/` |
 | Original app bundle, IPA, iMazing backup, 13 interaction screenshots | `~/Desktop/RICH-reference/RICH-original-reference-bundle/` (off-repo, private) |
 | Swift Student Challenge companion playground | `swift-student-challenge/` (separate from the Expo app) |
 
@@ -37,8 +38,9 @@ npm run web              # quick laptop preview (web SQLite is Expo alpha — no
 npx tsc --noEmit         # strict type check
 npm test                 # all unit tests (node --import tsx --test src/__tests__/*.test.ts)
 node --import tsx --test src/__tests__/money.test.ts   # single test file
-npm run icons:generate   # regenerate SVG category icon registry after editing an icon
-npm run icons:check      # verify icon registry/gallery matches sources
+npm run icons:generate   # rebuild the category icon registry + gallery after editing an SVG
+npm run icons:check      # verify the generated icon files match the SVG sources
+npm run icons:trace -- <dir>   # re-trace the original rasters (kept off-repo) into SVGs
 ```
 
 ## Architecture
@@ -50,11 +52,12 @@ Local-first: SQLite is the only source of truth. No backend, sign-in, analytics,
   - `migrations.ts` — versioned list of SQL migrations. Schema changes are made by **appending a new migration version**, never editing old ones. Invariants (typed transactions, note ≤ 100 chars, FK `ON DELETE RESTRICT`) are enforced with SQL CHECKs and triggers.
   - `repo/` — repositories (accounts, transactions, categories, budgets, meta). UI goes through repos, not raw SQL.
   - `starter.ts` / `seed.ts` — idempotent first-run bootstrap: one cash account plus starter categories; must never recreate categories the user deleted, and never create demo transactions or fake balances.
-- `src/domain/` — typed finance model. Categories have a kind `expense | income | both` that filters every surface (entry, management, budgets). `originalCategoryCatalog.json` is the catalog converted from the original app's `TallyTypeinfo.plist`.
+- `src/domain/` — typed finance model. Categories have a kind `expense | income | both` that filters every surface (entry, management, budgets). `categoryIcons/catalog.json` is the icon library converted from the original app's `TallyTypeinfo.plist`.
 - `src/features/` — budgets, charts aggregations, CSV v1/v2 and whole-DB import/export.
   - **Budgets follow the original Rich model** (migration v8): named monthly/special envelopes that expenses are explicitly assigned to (`transactions.budget_envelope_id`, set from the detail row 所属预算/计划), plus savings plans that freeze a monthly budget toward a target. Logic in `budgets/envelopes.ts`, SQL in `src/db/repo/envelopes.ts`. The legacy v4/v6 category-limit tables were dropped in migration v9. Model details and archive/order rules are in `docs/TECHNICAL.md`.
   - Spend is always derived from transactions, never stored twice.
-- `components/rich/` — the RICH visual system (headers, month stepper, numpad, progress bars). `*.generated.ts` icon registries are produced by `scripts/generate-*-icons.mjs`; edit the SVG/PNG sources and regenerate, don't hand-edit.
+- `components/rich/` — the RICH visual system (headers, month stepper, numpad, progress bars, `RichChevron`). `components/icons/` — `CategoryIcon` and its generated registry (`scripts/icons/generate-category-icons.mjs`); edit the SVG sources and regenerate, don't hand-edit. Icon resolution (stored id → name → legacy id → 其他) lives in `src/domain/categoryIcons/`.
+- Screens use `SafeAreaView` from `react-native-safe-area-context` (React Native's own is iOS-only), and Modals set `onRequestClose` for the Android back button.
 
 Key invariants spread across files:
 

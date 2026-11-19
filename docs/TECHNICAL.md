@@ -231,10 +231,14 @@ app/
 └── import-export.tsx
 
 components/
-├── CategoryIcon.tsx     # Themeable SVG category icon registry
-└── DatePickerModal.tsx  # Date picker for add screen
+├── icons/CategoryIcon.tsx            # Original category glyph (SVG), no disc
+├── icons/categoryArt.generated.ts    # Generated SVG markup by icon name
+├── rich/                             # Visual system (headers, RichChevron, numpad, sheets)
+└── DatePickerModal.tsx               # Date picker for add screen
 
-assets/icons/categories/ # Source SVG files (112)
+assets/icons/categories/  # 123 original glyphs as SVG masters (npm run icons:generate)
+assets/images/ui/         # Original 3× UI artwork (tab bar, chevrons, keypad, …)
+scripts/icons/            # trace / generate / extract tooling for the icon pipeline
 
 src/
 ├── db/

@@ -31,25 +31,32 @@ with occasional mint (#3FDEAE) accent detail.
 - **其他分类**: 工作, 保险, 捐赠, 利息, 其他
 - **收入相关**: 工资薪水, 生活费, 收红包, 兼职外快, 奖金, 投资理财, 报销, 退款返款, 保险, 其他收益
 
-## Current implementation
+## Current implementation (November 19, 2026)
 
-- `assets/images/category-original/` contains the 122 category PNGs named by the original
-  `TallyTypeinfo.plist`, plus the supplied `还钱`, settings, and three-dot assets used by the
-  captured add-entry flow. These are direct extractions from the supplied `Assets.car` rather
-  than redraws.
-- `src/domain/originalCategoryCatalog.json` preserves the original 18-section, 134-item catalog
-  and its `iconName` values. `components/originalCategoryIconRegistry.generated.ts` supplies the
-  static React Native image registry and exact category-name mapping.
-- `components/CategoryIcon.tsx` prefers the original PNG for known RICH categories. The 114 SVGs
-  in `assets/icons/categories/` remain only as a safe fallback for imported or user-created names
-  that have no corresponding original asset.
-- `scripts/generate-original-category-icons.mjs` regenerates the original PNG registry with
-  `npm run icons:original:generate`; `scripts/generate-category-icons.mjs` continues to maintain
-  the fallback SVG registry.
-- `src/domain/categoryIconCatalog.ts` is the typed source for all 18 sections and 134 picker
-  choices, including the distinct 奖金 (briefcase + ¥) and 员工奖金 (trophy + ¥) treatments.
-- `src/domain/categoryIcons.ts` provides semantic fallbacks for built-in categories, common imports
-  and starter subcategories.
-- Idle grid icons, mint accents, circular frames, the original settings glyph, and the original
-  three-dot subcategory badges now come from the supplied app itself. Selected categories keep
-  the native-looking black selection ring applied by the screen layout.
+Category art is the original Rich 1.1.0 artwork, converted to vectors with the disc separated:
+
+- `assets/icons/categories/icon_*.svg` — 123 original glyphs (black `#000000` + accent `#02B17B`,
+  48-unit viewBox, no background). These are the editable masters. They were traced from the
+  original 3× rasters by `npm run icons:trace <dir>` (`scripts/icons/trace-original-category-icons.mjs`):
+  the #F7F7F7 disc is removed exactly (colour-to-alpha), the two inks are traced separately at 4×,
+  and the black layer extends under touching accent pixels so the junctions don't seam. Measured
+  against the originals at 3×: mean IoU 0.955, mean colour difference 1.4/255 over the disc (the
+  differences are anti-aliasing at stroke edges). `icon_huankuan` was a 34pt original that the app
+  scaled to the 48pt tile; it is stored at that scaled size, as the original drew it.
+- The disc, selection ring, and dimming are drawn in code: #F7F7F7 circle, a 1.7pt black ring
+  inside the disc when selected (the interior stays #F7F7F7, as measured), and 50% opacity for the
+  other categories once one is selected.
+- `npm run icons:generate` writes `components/icons/categoryArt.generated.ts` (SVG markup),
+  `src/domain/categoryIcons/names.generated.ts` (valid names) and `assets/icons/gallery.html`
+  (idle / dimmed / selected QA sheet); `npm run icons:check` fails when they are stale.
+- `src/domain/categoryIcons/catalog.json` is the original 18-section, 134-item 添加自定义类目 library
+  (`TallyTypeinfo.plist`). The picker stores the original `icon_*` name.
+- `src/domain/categoryIcons/index.ts` resolves what to draw: the stored original icon, else the
+  original icon for a known category name (catalog + aliases for starter/income names), else a
+  legacy semantic id written by earlier builds (`food`, `bus`, …), else 其他.
+- The original rasters (and the retired hand-drawn SVG set, recoverable from git history before
+  this change) are no longer in the app. The rasters are kept off-repo in
+  `~/Desktop/RICH-reference/original-category-rasters/`; `scripts/icons/extract-assets-car.swift`
+  documents how they were pulled from `Assets.car`.
+- UI artwork that is not a category glyph (`icon_setting` for 管理分类, `icon_three_dot` badges,
+  tab bar, chevrons, keypad) stays as original 3× PNGs in `assets/images/ui/`.

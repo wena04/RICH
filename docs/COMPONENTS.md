@@ -147,14 +147,18 @@ owned by each flow; the component owns only presentation and input events.
 
 ### `CategoryIcon`
 
-Source: `components/CategoryIcon.tsx`
+Source: `components/icons/CategoryIcon.tsx`
 
-- 114 custom `react-native-svg` icons.
-- Outline color `#1A1A1A`; detail/accent color `#3FDEAE`.
-- Prefer a stored icon ID. Category-name lookup is a fallback for migrated/seeded records.
-- Standard sizes: 16 px in compact ledger rows, 20-26 px in grids/cards.
-- Standard category frame: 40-48 px light-gray circle. Selected frame: dark outline or mint border.
-- Do not substitute generic emoji or FontAwesome icons for a known category icon.
+- Draws one of the 123 original glyphs (vector, `react-native-svg`) with no background.
+- `size` is the art canvas in points: 48 in the entry grid and 自定义 subcategory row, 40 in the
+  subcategory tray and 自定义 category rows, 34 in ledger rows and the detail card.
+- The caller draws the frame: a #F7F7F7 circle the same size as `size`; selected adds a 1.7pt black
+  ring inside the circle (interior stays #F7F7F7); unselected entries dim to 50% once another
+  category is selected. In the #F7F7F7 subcategory tray the circle is omitted.
+- Original inks by default (#000000, accent #02B17B); `color` / `accentColor` recolour them.
+- Resolution order: stored original icon → original icon for the category name → legacy id from an
+  earlier build → 其他 (`src/domain/categoryIcons`).
+- Do not substitute emoji or icon-font glyphs for a category icon.
 
 ### `DatePickerModal`
 

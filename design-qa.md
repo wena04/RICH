@@ -96,9 +96,11 @@ pixel analysis (`/tmp` tooling, not committed). Fixed:
 | 资产管理 | No rays; red flag marker; bold amounts; outlined 添加; type subtitles; inline 账户转账 | `icon_shine` rays, leader line + edit icon, rounded-numeral total, original account artwork, bare balances, filled 添加 pills, floating 账户转账 |
 | Transfer | Green title bar, field labels, full-width selectors, 0/100 counter | White header with 今天 pill, centered pill selectors, double-arrow artwork, centered 添加备注 |
 
-Known remaining differences: the selected category's interior stays #F7F7F7 (the original shows
-white) because the artwork bakes in its circle; the starter subcategory set differs from the
-owner's personal categories by design (fresh installs get the student starter taxonomy).
+Known remaining difference: the starter subcategory set differs from the owner's personal
+categories by design (fresh installs get the student starter taxonomy). (Correction, later the same
+day: the original's selected category interior is #F7F7F7 with a 1.7pt inner ring, not white; the
+separated disc now reproduces it exactly. The web preview draws that ring at 1pt because Chromium
+rounds border widths; native renders 1.7pt.)
 
 ## Icon and geometry pass (November 19, 2026, second pass)
 
