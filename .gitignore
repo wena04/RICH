@@ -17,6 +17,8 @@ backups/
 backup/
 *.ipa
 *.imazingapp
+*.zip
+RICH-original-reference-bundle*/
 **/*backup*.csv
 **/*export*.csv
 **/*backup*.db
