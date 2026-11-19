@@ -8,11 +8,11 @@ import {
   Image,
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';

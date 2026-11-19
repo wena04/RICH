@@ -165,7 +165,7 @@ export async function listSubcategories(db: AppDb, categoryId: string): Promise<
     SELECT id, name, category_id, icon
     FROM subcategories
     WHERE category_id = ?
-    ORDER BY created_at ASC, name ASC
+    ORDER BY created_at ASC, rowid ASC
     `,
     [categoryId]
   );

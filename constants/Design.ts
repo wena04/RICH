@@ -40,3 +40,15 @@ export const RICH_SIZE = {
   fab: 58,
   minimumTouchTarget: 44,
 } as const;
+
+/**
+ * How far the 记一笔 / 账户转账 header row tucks up into the safe area. The original sits its
+ * 24.7pt pills just under the status bar: on Dynamic Island iPhones the safe area (59pt) is 5pt
+ * taller than the status bar (54pt), so the 44pt row moves up 13.8pt (measured); on notch iPhones
+ * and Android the safe area is the status bar, so it moves up only enough to keep the pills 1pt
+ * below it. Web previews have no inset and don't move.
+ */
+export function composerHeaderTuck(safeAreaTop: number): number {
+  if (safeAreaTop <= 0) return 0;
+  return safeAreaTop >= 54 ? 13.8 : Math.min(safeAreaTop, 8.65);
+}

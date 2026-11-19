@@ -7,10 +7,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "icons:generate": "node scripts/generate-category-icons.mjs",
-    "icons:check": "node scripts/generate-category-icons.mjs --check",
-    "icons:original:generate": "node scripts/generate-original-category-icons.mjs",
-    "test": "node --import tsx --test src/__tests__/*.test.ts"
+    "icons:generate": "node scripts/icons/generate-category-icons.mjs",
+    "icons:check": "node scripts/icons/generate-category-icons.mjs --check",
+    "test": "node --import tsx --test src/__tests__/*.test.ts",
+    "icons:trace": "node scripts/icons/trace-original-category-icons.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -39,7 +39,10 @@
   "devDependencies": {
     "@types/papaparse": "^5.5.2",
     "@types/react": "~19.1.0",
+    "@types/sql.js": "^1.16.0",
+    "potrace": "^2.1.8",
     "react-test-renderer": "19.1.0",
+    "sql.js": "^1.13.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   },

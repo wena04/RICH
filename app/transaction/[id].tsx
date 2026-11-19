@@ -7,11 +7,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   View,
   Text,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   ACTION_FOREGROUND,
@@ -23,7 +23,7 @@ import {
   TEXT_SECONDARY,
 } from '@/constants/Colors';
 import { RICH_RADIUS, RICH_SPACING, RICH_TYPE } from '@/constants/Design';
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryIcon } from '@/components/icons/CategoryIcon';
 import { BudgetPickerSheet, ScreenHeader } from '@/components/rich';
 import { getDb } from '@/src/db/db';
 import {
@@ -210,7 +210,7 @@ export default function TransactionDetailScreen() {
               onPress={() => router.push(`/transaction/edit/${id}`)}
             >
               <View style={styles.iconCircle}>
-                <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={19} />
+                <CategoryIcon id={categoryIcon ?? undefined} name={categoryName} size={34} />
               </View>
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle} numberOfLines={1}>

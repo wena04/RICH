@@ -1,81 +1,83 @@
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { CATEGORY_ICON_IDS, CATEGORY_ICON_XML } from '../../components/categoryIconRegistry.generated';
-import { CATEGORY_ICON_CATALOG_ITEMS, CATEGORY_ICON_SECTIONS } from '../domain/categoryIconCatalog';
 import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../domain/categories';
-import { iconIdForCategory } from '../domain/categoryIcons';
+import {
+  CATEGORY_ICON_CATALOG_ITEMS,
+  CATEGORY_ICON_NAMES,
+  CATEGORY_ICON_SECTIONS,
+  FALLBACK_CATEGORY_ICON,
+  ICON_BY_CATEGORY_NAME,
+  LEGACY_ICON_IDS,
+  isCategoryIconName,
+  resolveCategoryIconName,
+} from '../domain/categoryIcons';
 
-describe('category icon semantics', () => {
-  it('maps the main bookkeeping categories to distinct icons', () => {
-    assert.equal(iconIdForCategory('餐饮'), 'food');
-    assert.equal(iconIdForCategory('交通'), 'bus');
-    assert.equal(iconIdForCategory('住房'), 'house');
-    assert.equal(iconIdForCategory('医疗'), 'medkit');
+const iconDirectory = path.join(process.cwd(), 'assets/icons/categories');
+
+describe('category icons', () => {
+  it('registers exactly the vector artwork on disk', () => {
+    const onDisk = readdirSync(iconDirectory)
+      .filter((file) => /^icon_[a-z0-9]+\.svg$/.test(file))
+      .map((file) => file.slice(0, -4))
+      .sort();
+    assert.deepEqual([...CATEGORY_ICON_NAMES].sort(), onDisk);
+    assert.equal(onDisk.length, 123);
   });
 
-  it('gives starter subcategories useful icons without storing another column', () => {
-    assert.equal(iconIdForCategory('校园餐饮'), 'bowl');
-    assert.equal(iconIdForCategory('咖啡'), 'coffee');
-    assert.equal(iconIdForCategory('公交地铁'), 'metro');
-    assert.equal(iconIdForCategory('水电网'), 'drop');
+  it('keeps every glyph free of a baked-in disc and limited to the two original inks', () => {
+    for (const name of CATEGORY_ICON_NAMES) {
+      const svg = readFileSync(path.join(iconDirectory, `${name}.svg`), 'utf8');
+      assert.match(svg, /viewBox="0 0 48 48"/, name);
+      const fills = new Set([...svg.matchAll(/fill="([^"]+)"/g)].map((m) => m[1]));
+      assert.ok(fills.has('#000000'), `${name} has no ink layer`);
+      for (const fill of fills) assert.ok(['#000000', '#02B17B'].includes(fill), `${name} uses ${fill}`);
+      assert.doesNotMatch(svg, /#F7F7F7/i, `${name} still contains the disc`);
+    }
   });
 
-  it('keeps income aliases visually consistent', () => {
-    assert.equal(iconIdForCategory('工资薪水'), 'wallet');
-    assert.equal(iconIdForCategory('兼职外快'), 'clockyen');
-    assert.equal(iconIdForCategory('投资理财'), 'chart');
-    assert.equal(iconIdForCategory('退款返款'), 'refund');
-  });
-
-  it('uses the sealed-envelope icon for received red packets', () => {
-    assert.equal(iconIdForCategory('收红包'), 'redpacket');
-  });
-
-  it('falls back safely for custom names', () => {
-    assert.equal(iconIdForCategory('我的自定义'), 'grid');
-    assert.equal(iconIdForCategory(null), 'grid');
-  });
-
-  it('keeps the full custom-category catalog registered and semantically addressable', () => {
-    const registered = new Set<string>(CATEGORY_ICON_IDS);
-    const iconForRepeatedLabel = new Map<string, string>();
-
+  it('uses the original 添加自定义类目 library, with art for every entry', () => {
     assert.equal(CATEGORY_ICON_SECTIONS.length, 18);
     assert.equal(CATEGORY_ICON_CATALOG_ITEMS.length, 134);
-
-    for (const { section, label, iconId } of CATEGORY_ICON_CATALOG_ITEMS) {
-      assert.ok(registered.has(iconId), `${section} / ${label} references missing icon ${iconId}`);
-      assert.equal(iconIdForCategory(label), iconId, `${section} / ${label} has a mismatched name fallback`);
-
-      const previousIcon = iconForRepeatedLabel.get(label);
-      assert.ok(!previousIcon || previousIcon === iconId, `${label} uses both ${previousIcon} and ${iconId}`);
-      iconForRepeatedLabel.set(label, iconId);
+    for (const { section, label, iconName } of CATEGORY_ICON_CATALOG_ITEMS) {
+      assert.ok(isCategoryIconName(iconName), `${section} / ${label} → ${iconName}`);
     }
   });
 
-  it('keeps every default category icon registered', () => {
-    const registered = new Set<string>(CATEGORY_ICON_IDS);
+  it('draws every default category with original artwork', () => {
     for (const category of [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES]) {
-      assert.ok(registered.has(category.icon), `${category.name} references missing icon ${category.icon}`);
+      assert.ok(isCategoryIconName(category.icon), `${category.name} stores ${category.icon}`);
+      assert.equal(resolveCategoryIconName(category.icon, category.name), category.icon);
     }
   });
 
-  it('keeps generated runtime icons in exact sync with individual SVG sources', () => {
-    const iconDirectory = path.join(process.cwd(), 'assets/icons/categories');
-    const sourceIds = readdirSync(iconDirectory)
-      .filter((filename) => /^ic-[a-z0-9]+\.svg$/.test(filename))
-      .map((filename) => filename.slice(3, -4))
-      .sort();
+  it('prefers the icon a person chose over the name lookup', () => {
+    assert.equal(ICON_BY_CATEGORY_NAME['咖啡'], 'icon_kafei');
+    assert.equal(resolveCategoryIconName('icon_shuiguo', '咖啡'), 'icon_shuiguo');
+  });
 
-    assert.deepEqual([...CATEGORY_ICON_IDS].sort(), sourceIds);
-    assert.equal(Object.keys(CATEGORY_ICON_XML).length, sourceIds.length);
+  it('resolves names, then legacy ids, then 其他', () => {
+    assert.equal(resolveCategoryIconName(null, '餐饮'), 'icon_canyin');
+    assert.equal(resolveCategoryIconName(null, '公交地铁'), 'icon_ditie');
+    // A legacy id shared by two concepts follows the category name when the name is known…
+    assert.equal(resolveCategoryIconName('redpacket', '收红包'), 'icon_shouhongbao');
+    // …and its own mapping otherwise.
+    assert.equal(resolveCategoryIconName('coffee', 'Starbucks'), 'icon_kafei');
+    assert.equal(resolveCategoryIconName('unknown-id', '我的自定义'), FALLBACK_CATEGORY_ICON);
+    assert.equal(resolveCategoryIconName(null, null), FALLBACK_CATEGORY_ICON);
+  });
+
+  it('maps every id written by earlier builds to existing artwork', () => {
+    assert.equal(Object.keys(LEGACY_ICON_IDS).length, 114);
+    for (const [legacy, iconName] of Object.entries(LEGACY_ICON_IDS)) {
+      assert.ok(isCategoryIconName(iconName), `${legacy} → ${iconName}`);
+    }
   });
 
   it('keeps the two bonus concepts visually distinct', () => {
-    assert.equal(iconIdForCategory('奖金'), 'briefcaseyen');
-    assert.equal(iconIdForCategory('员工奖金'), 'trophyyen');
+    assert.equal(resolveCategoryIconName(null, '奖金'), 'icon_jiangjin');
+    assert.equal(resolveCategoryIconName(null, '员工奖金'), 'icon_yuangongjiangjin');
   });
 });

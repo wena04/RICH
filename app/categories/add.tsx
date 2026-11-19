@@ -6,13 +6,13 @@ import {
   Image,
   Pressable,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   View,
   Text,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
   ACCESSIBLE_GREEN,
@@ -21,7 +21,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "@/constants/Colors";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { getDb } from "@/src/db/db";
 import {
   createCategory,
@@ -29,7 +29,7 @@ import {
   getCategoryByName,
   getSubcategoryByName,
 } from "@/src/db/repo/categories";
-import { CATEGORY_ICON_SECTIONS } from "@/src/domain/categoryIconCatalog";
+import { CATEGORY_ICON_SECTIONS } from "@/src/domain/categoryIcons";
 import type { CategoryKind } from "@/src/domain/types";
 
 export default function AddCategoryScreen() {
@@ -156,8 +156,7 @@ export default function AddCategoryScreen() {
                       <CategoryIcon
                         id={id}
                         name={label}
-                        size={25}
-                        color={active ? '#181A19' : '#858B88'}
+                        size={46}
                       />
                     </View>
                     <Text style={[styles.itemLabel, active && styles.itemLabelActive]}>
@@ -235,7 +234,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 5,
   },
-  iconWrapActive: { backgroundColor: "#FFFFFF", borderWidth: 2, borderColor: "#1A1A1A" },
+  // Original selection treatment: ring inside the disc, disc stays #F7F7F7.
+  iconWrapActive: { borderWidth: 1.7, borderColor: "#000000" },
   itemLabel: { fontSize: 10, color: "#4E5350" },
   itemLabelActive: { color: "#181A19", fontWeight: "600" },
 });

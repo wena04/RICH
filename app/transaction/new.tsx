@@ -3,19 +3,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TextInput,
   useWindowDimensions,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { Text, View } from "@/components/Themed";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
 import {
@@ -45,7 +45,7 @@ import type {
 } from "@/src/domain/types";
 import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/src/domain/categories";
 import { formatIsoDateCN, isIsoDate, isoDateToday } from "@/src/utils/date";
-import { RICH_NUMERAL_FONT } from "@/constants/Design";
+import { RICH_NUMERAL_FONT, composerHeaderTuck } from "@/constants/Design";
 import { centsToYuan } from "@/src/utils/money";
 import { newId } from "@/src/utils/id";
 import { RichChevron } from '@/components/rich/RichChevron';
@@ -317,7 +317,7 @@ export default function NewTransactionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header: the original sits this row just under the status bar, 8.2pt below the safe area. */}
-      <View style={[styles.header, { marginTop: -Math.min(insets.top, 13.8) }]}>
+      <View style={[styles.header, { marginTop: -composerHeaderTuck(insets.top) }]}>
         <Pressable
           onPress={() => router.back()}
           style={styles.backButton}
@@ -383,6 +383,8 @@ export default function NewTransactionScreen() {
         </Pressable>
       </View>
 
+      {/* Keeps the note field above the software keyboard on iOS and on Android (edge-to-edge). */}
+      <KeyboardAvoidingView style={styles.keyboardArea} behavior="padding">
       <DatePickerModal
         visible={showDatePicker}
         value={date}
@@ -443,12 +445,10 @@ export default function NewTransactionScreen() {
                         accessibilityLabel="管理分类"
                       >
                         <View style={[styles.categoryIcon, styles.manageIcon]}>
-                          <CategoryIcon
-                            id="icon_setting"
-                            name="管理分类"
-                            size={25}
-                            color="#FFFFFF"
-                            accentColor="#FFFFFF"
+                          <Image
+                            source={require("../../assets/images/ui/icon_setting.png")}
+                            style={styles.manageArt}
+                            accessible={false}
                           />
                         </View>
                         <Text style={styles.categoryName}>管理分类</Text>
@@ -474,8 +474,7 @@ export default function NewTransactionScreen() {
                           <CategoryIcon
                             id={cat.iconId ?? undefined}
                             name={cat.name}
-                            size={26.7}
-                            color={selectedCategoryId === cat.id ? '#181A19' : '#858B88'}
+                            size={48}
                           />
                           {selectedCategoryId === cat.id ? (
                             <View pointerEvents="none" style={styles.categoryRing} />
@@ -499,7 +498,7 @@ export default function NewTransactionScreen() {
                               style={styles.catBadge}
                             >
                               <Image
-                                source={require('../../assets/images/category-original/icon_three_dot.png')}
+                                source={require('../../assets/images/ui/icon_three_dot.png')}
                                 resizeMode="contain"
                                 style={styles.catBadgeImage}
                                 accessible={false}
@@ -539,8 +538,7 @@ export default function NewTransactionScreen() {
                               <CategoryIcon
                                 id={s.icon ?? undefined}
                                 name={s.name}
-                                size={22}
-                                color={active ? '#181A19' : '#858B88'}
+                                size={40}
                               />
                               {active ? <View pointerEvents="none" style={styles.subItemRing} /> : null}
                             </View>
@@ -620,7 +618,12 @@ export default function NewTransactionScreen() {
           </View>
         </View>
 
-        <Modal visible={showAccountPicker} animationType="slide" transparent>
+        <Modal
+          visible={showAccountPicker}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowAccountPicker(false)}
+        >
           <View style={styles.accountSheetOverlay}>
             <Pressable
               style={styles.accountSheetBackdrop}
@@ -689,6 +692,7 @@ export default function NewTransactionScreen() {
         )}
       </View>
 
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -698,6 +702,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  keyboardArea: { flex: 1 },
   // Header geometry measured from the original at 3x: back art at 20pt, 54×24.7 type pills
   // from 57.7pt with a 16.6pt gap, date pill 24.3pt from the right edge.
   header: {
@@ -839,24 +844,17 @@ const styles = StyleSheet.create({
   },
   amountLine: { flexDirection: "row", alignItems: "center" },
   // Drawn above the original artwork, whose opaque circle covered a plain border.
+  // Original selection: a 1.7pt black ring inside the 48pt disc; the disc stays #F7F7F7.
   categoryRing: {
-    position: "absolute",
-    top: -1.5,
-    left: -1.5,
-    right: -1.5,
-    bottom: -1.5,
-    borderRadius: 25.5,
-    borderWidth: 2.5,
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 24,
+    borderWidth: 1.7,
     borderColor: "#000000",
   },
   subItemRing: {
-    position: "absolute",
-    top: -1,
-    left: -1,
-    right: -1,
-    bottom: -1,
-    borderRadius: 21,
-    borderWidth: 2,
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
+    borderWidth: 1.7,
     borderColor: "#000000",
   },
   barIcon: { width: 30, height: 30 },
@@ -870,6 +868,8 @@ const styles = StyleSheet.create({
   manageIcon: {
     backgroundColor: PRIMARY_GREEN,
   },
+  // icon_setting is a 30pt gear drawn in ink; the tile shows it white at 1.5x on the mint disc.
+  manageArt: { width: 45, height: 45, tintColor: "#FFFFFF" },
   catBadge: {
     position: "absolute",
     top: -2,
@@ -1032,11 +1032,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 3,
-  },
-  subItemIconSelected: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#1A1A1A",
   },
   subItemName: {
     fontSize: 12,

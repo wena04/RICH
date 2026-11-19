@@ -1,21 +1,21 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { 
-  Alert, 
+import {
+  Alert,
   Image,
-  Pressable, 
-  StyleSheet, 
-  TextInput, 
+  Pressable,
+  StyleSheet,
+  TextInput,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryIcon } from '@/components/icons/CategoryIcon';
 import { 
   PRIMARY_GREEN, 
   TEXT_PRIMARY, 
@@ -247,7 +247,7 @@ export default function CategoriesScreen() {
                   <CategoryIcon
                     id={category.icon ?? undefined}
                     name={category.name}
-                    size={22}
+                    size={40}
                   />
                 </View>
 
@@ -262,7 +262,7 @@ export default function CategoriesScreen() {
                 onPress={() => openEditCategory(category)}
               >
                 <Image
-                  source={require('../assets/images/category-original/icon_three_dot.png')}
+                  source={require('../assets/images/ui/icon_three_dot.png')}
                   style={styles.menuDots}
                   accessible={false}
                 />
@@ -282,7 +282,7 @@ export default function CategoriesScreen() {
                     accessibilityLabel={`编辑子分类${sub.name}`}
                   >
                     <View style={styles.subcategoryIcon}>
-                      <CategoryIcon id={sub.icon ?? undefined} name={sub.name} size={27} />
+                      <CategoryIcon id={sub.icon ?? undefined} name={sub.name} size={48} />
                     </View>
                     <Text style={styles.subcategoryName} numberOfLines={1}>
                       {sub.name}
@@ -328,7 +328,12 @@ export default function CategoriesScreen() {
       </View>
 
       {/* Edit Category Modal */}
-      <Modal visible={showEditModal} animationType="slide" transparent>
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -393,7 +398,12 @@ export default function CategoriesScreen() {
       </Modal>
 
       {/* Edit Subcategory Modal */}
-      <Modal visible={showSubEditModal} animationType="slide" transparent>
+      <Modal
+        visible={showSubEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowSubEditModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -516,6 +526,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: '#F7F7F7',
     alignItems: 'center',
     justifyContent: 'center',
   },

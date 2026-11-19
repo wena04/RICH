@@ -4,10 +4,8 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TextInput,
   View,
@@ -24,9 +22,9 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "@/constants/Colors";
-import { RICH_NUMERAL_FONT, RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE } from "@/constants/Design";
+import { RICH_NUMERAL_FONT, RICH_RADIUS, RICH_SIZE, RICH_SPACING, RICH_TYPE, composerHeaderTuck } from "@/constants/Design";
 import { DatePickerModal } from "@/components/DatePickerModal";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AccountIcon, DashedDivider, MoneyNumpad } from "@/components/rich";
 import { getDb } from "@/src/db/db";
 import { listAccounts } from "@/src/db/repo/accounts";
@@ -215,7 +213,7 @@ export default function TransferScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={PRIMARY_GREEN} />
 
       {/* Header: like the add screen, the original sits this row 8.3pt below the safe area. */}
-      <View style={[styles.header, { marginTop: -Math.min(insets.top, 13.8) }]}>
+      <View style={[styles.header, { marginTop: -composerHeaderTuck(insets.top) }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="返回"
@@ -248,7 +246,7 @@ export default function TransferScreen() {
 
       <KeyboardAvoidingView
         style={styles.keyboardArea}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
       >
         <View style={styles.amountBox}>
           <View style={styles.amountLine}>

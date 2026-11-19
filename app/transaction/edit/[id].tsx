@@ -4,7 +4,6 @@ import {
   Image,
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,8 +12,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryIcon } from '@/components/icons/CategoryIcon';
 import { DatePickerModal } from '@/components/DatePickerModal';
 import { AccountIcon, RichChevron, ScreenHeader } from '@/components/rich';
 import {
@@ -326,8 +326,7 @@ export default function EditTransactionScreen() {
                       <CategoryIcon
                         id={category.icon ?? undefined}
                         name={category.name}
-                        size={20}
-                        color={active ? '#181A19' : '#858B88'}
+                        size={36}
                       />
                     </View>
                     <Text
@@ -595,9 +594,8 @@ const styles = StyleSheet.create({
     backgroundColor: CATEGORY_FRAME_BACKGROUND,
   },
   categoryIconActive: {
-    backgroundColor: CARD_BACKGROUND,
-    borderWidth: 1.5,
-    borderColor: TEXT_PRIMARY,
+    borderWidth: 1.7,
+    borderColor: '#000000',
   },
   categoryText: { ...RICH_TYPE.caption, marginTop: 5, color: TEXT_SECONDARY },
   categoryTextActive: { color: TEXT_PRIMARY, fontWeight: '700' },

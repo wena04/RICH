@@ -4,13 +4,13 @@ import {
   Image,
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   SectionList,
   StatusBar,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryIcon } from '@/components/icons/CategoryIcon';
 import { ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import {
@@ -191,7 +191,7 @@ export default function TransactionsScreen() {
                   <CategoryIcon
                     id={item.category?.icon ?? (item.type === 'balance_adjustment' ? 'wallet' : undefined)}
                     name={item.category?.name ?? label}
-                    size={21}
+                    size={38}
                   />
                 </View>
                 <View style={styles.rowCopy}>
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4F6F5',
+    backgroundColor: '#F7F7F7',
   },
   rowCopy: { flex: 1, minWidth: 0, backgroundColor: 'transparent' },
   rowTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },

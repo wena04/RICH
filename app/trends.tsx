@@ -4,12 +4,12 @@ import {
   Image,
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, View } from '@/components/Themed';
 import { MonthStepper } from '@/components/rich/MonthStepper';

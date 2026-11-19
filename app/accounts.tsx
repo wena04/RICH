@@ -5,18 +5,16 @@ import {
   Image,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   TextInput,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   Modal,
   useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountIcon, AssetGoalIllustration, ScreenHeader } from '@/components/rich';
 import { RICH_NUMERAL_FONT } from '@/constants/Design';
@@ -451,7 +449,7 @@ export default function AccountsScreen() {
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setShowAddModal(false)} />
           <View style={styles.modalContent}>
@@ -539,7 +537,7 @@ export default function AccountsScreen() {
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setShowEditModal(false)} />
           <View style={styles.modalContent}>
@@ -653,7 +651,7 @@ export default function AccountsScreen() {
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setShowGoalModal(false)} />
           <View style={styles.modalContent}>

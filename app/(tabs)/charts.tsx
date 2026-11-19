@@ -4,11 +4,11 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProgressBar } from '@/components/rich';
 import { Text, View } from '@/components/Themed';

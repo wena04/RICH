@@ -4,10 +4,10 @@ import {
   type ImageSourcePropType,
   StyleSheet,
   Pressable,
-  SafeAreaView,
   StatusBar,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';

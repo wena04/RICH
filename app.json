@@ -23,7 +23,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon-rich.png",
+        "foregroundImage": "./assets/images/icon-rich-android-foreground.png",
         "backgroundColor": "#3FDEAE"
       },
       "package": "com.richapp.finance",

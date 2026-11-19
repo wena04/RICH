@@ -5,11 +5,11 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Text, View } from "@/components/Themed";
 import {

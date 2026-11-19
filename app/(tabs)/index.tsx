@@ -3,7 +3,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  SafeAreaView,
   StatusBar,
   View,
   Text,
@@ -13,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   CONTROL_PRESSED_BACKGROUND,
@@ -29,7 +28,7 @@ import {
   TransactionListItem,
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { DashedDivider, RichBrandName } from "@/components/rich";
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -400,7 +399,7 @@ export default function HomeScreen() {
                       <CategoryIcon
                         id={t.category?.icon ?? undefined}
                         name={t.category?.name}
-                        size={19}
+                        size={34}
                       />
                     </View>
                     <View style={styles.txInfo}>
@@ -430,7 +429,15 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={showDaySheet} animationType="slide" transparent>
+      <Modal
+        visible={showDaySheet}
+        animationType="slide"
+        transparent
+        // Android: draw under the status bar so the sheet lines up with the header measured outside the modal.
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={() => setShowDaySheet(false)}
+      >
         <View style={styles.sheetOverlay}>
           <Pressable
             style={styles.sheetBackdrop}
@@ -488,7 +495,7 @@ export default function HomeScreen() {
                           <CategoryIcon
                             id={t.category?.icon ?? undefined}
                             name={t.category?.name}
-                            size={19}
+                            size={34}
                           />
                         </View>
                         <View style={styles.txInfo}>

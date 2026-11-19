@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MoneyNumpad, ScreenHeader } from "@/components/rich";
 import { Text, View } from "@/components/Themed";
 import {

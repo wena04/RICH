@@ -7,12 +7,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   TextInput,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BudgetPickerSheet, DashedDivider, ProgressBar } from '@/components/rich';
 import { Text, View } from '@/components/Themed';

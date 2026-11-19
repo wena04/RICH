@@ -1,4 +1,5 @@
-import { ActivityIndicator, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_BACKGROUND, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 
