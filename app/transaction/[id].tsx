@@ -181,7 +181,7 @@ export default function TransactionDetailScreen() {
 
   function onCreateBudget() {
     setShowBudgetPicker(false);
-    router.push('/budget/envelope');
+    router.push('/budget/create');
   }
 
   const canAssignBudget = type === 'expense';

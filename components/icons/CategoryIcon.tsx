@@ -32,8 +32,9 @@ export function CategoryIcon({ id, name, size = 48, color, accentColor }: Catego
   const iconName = resolveCategoryIconName(id, name);
   const xml = useMemo(() => {
     let source = CATEGORY_ART_XML[iconName];
-    if (color) source = source.replaceAll(`fill="${CATEGORY_ART_INK}"`, `fill="${color}"`);
-    if (accentColor) source = source.replaceAll(`fill="${CATEGORY_ART_ACCENT}"`, `fill="${accentColor}"`);
+    // Traced glyphs paint with fills, redrawn ones with strokes: recolour both.
+    if (color) source = source.replace(new RegExp(`(fill|stroke)="${CATEGORY_ART_INK}"`, 'g'), `$1="${color}"`);
+    if (accentColor) source = source.replace(new RegExp(`(fill|stroke)="${CATEGORY_ART_ACCENT}"`, 'g'), `$1="${accentColor}"`);
     return source;
   }, [iconName, color, accentColor]);
   return <SvgXml xml={xml} width={size} height={size} />;

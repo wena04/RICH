@@ -43,6 +43,17 @@ Category art is the original Rich 1.1.0 artwork, converted to vectors with the d
   against the originals at 3×: mean IoU 0.955, mean colour difference 1.4/255 over the disc (the
   differences are anti-aliasing at stroke edges). `icon_huankuan` was a 34pt original that the app
   scaled to the 48pt tile; it is stored at that scaled size, as the original drew it.
+- **Redrawn glyphs** (owner request, November 19, 2026): where the original artwork itself was
+  rough, the glyph is redrawn by hand as stroked SVG in the same construction (1.5-unit strokes,
+  round caps/joins, black + `#02B17B`, about a 24-unit box centred on the disc). A badge that
+  overlaps an object cuts a gap with a `clipPath` hole, as the originals do. Redrawn files contain
+  `<desc>redrawn</desc>`; `icons:trace` skips them. Redrawn so far: 场地租金 / 房贷 (same art in the
+  original; house without the hooked chimney), 车检 / 车贷 (car with whole wheels), 车险, 打车,
+  打赏 (closed coin ring, clearer hand), 电器; then 父母 (stooped elder, cap brim and cane in green),
+  亲子游 (grown-up and child holding hands), 鞋子, 晚餐 (ham with its cut face and bone), 买菜
+  (carrot), 夜宵 (pizza slice), 饰品 (necklace with a green pendant). Glyphs that came out small are
+  scaled about their centre with the stroke compensated so every line stays 1.5 units. Before/after
+  renders come from `/tmp/rich-verify/pairzoom.mjs` and `allicons.mjs` (not committed).
 - The disc, selection ring, and dimming are drawn in code: #F7F7F7 circle, a 1.7pt black ring
   inside the disc when selected (the interior stays #F7F7F7, as measured), and 50% opacity for the
   other categories once one is selected.

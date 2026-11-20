@@ -9,7 +9,7 @@ import { migrateDb } from '../db/migrate';
 import { ensureAtLeastOneAccount, listAccountsWithBalances } from '../db/repo/accounts';
 import { createSubcategory, getCategoryByName, listSubcategories } from '../db/repo/categories';
 import { assignTransactionToEnvelope, createEnvelope } from '../db/repo/envelopes';
-import { createTransaction, listTransactions } from '../db/repo/transactions';
+import { createTransaction, listRecordMonths, listTransactions } from '../db/repo/transactions';
 import { ensureStarterTaxonomy } from '../db/starter';
 import { getMonthlyTotals } from '../features/charts/aggregations';
 import { buildBreakdown, getCategoryBreakdown, wholePercents } from '../features/charts/breakdown';
@@ -132,6 +132,11 @@ describe('category breakdown', () => {
     const june = await getCategoryBreakdown(db, { type: 'expense', start: '2026-06-01', endExclusive: '2026-07-01' });
     const slice = june.categories[0].subcategories.find((s) => s.name === '奶茶');
     assert.equal(slice?.icon, 'icon_yinliao');
+  });
+
+  it('lists the months that have records', async () => {
+    const { db } = await seeded();
+    assert.deepEqual(await listRecordMonths(db), ['2026-05', '2026-06']);
   });
 
   it('fills months without records with zeros', async () => {

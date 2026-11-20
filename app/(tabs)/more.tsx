@@ -16,11 +16,13 @@ import { RichChevron } from '@/components/rich/RichChevron';
 
 interface MenuItemProps {
   icon: ImageSourcePropType;
+  /** The artwork's own size in points (its 3x PNG width ÷ 3), so every glyph keeps its drawn scale. */
+  size: 24 | 28;
   label: string;
   onPress: () => void;
 }
 
-function MenuItem({ icon, label, onPress }: MenuItemProps) {
+function MenuItem({ icon, size, label, onPress }: MenuItemProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -28,7 +30,9 @@ function MenuItem({ icon, label, onPress }: MenuItemProps) {
       style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
       onPress={onPress}
     >
-      <Image source={icon} style={styles.menuIcon} accessible={false} />
+      <View style={styles.menuIconSlot}>
+        <Image source={icon} style={{ width: size, height: size }} accessible={false} />
+      </View>
       <Text style={styles.menuLabel}>{label}</Text>
       <RichChevron tone="muted" />
     </Pressable>
@@ -51,17 +55,20 @@ export default function MoreScreen() {
           
           <View style={styles.menuGroup}>
             <MenuItem
-              icon={require('../../assets/images/ui/icon_clipboard_list.png')}
+              icon={require('../../assets/images/ui/icon_slices.png')}
+              size={28}
               label="全部账单"
               onPress={() => router.push('/transactions')}
             />
             <MenuItem 
               icon={require('../../assets/images/ui/icon_asset_management.png')}
+              size={24}
               label="账户管理" 
               onPress={() => router.push('/accounts')} 
             />
             <MenuItem 
               icon={require('../../assets/images/ui/icon_sort.png')}
+              size={24}
               label="分类管理" 
               onPress={() => router.push('/categories')} 
             />
@@ -73,15 +80,12 @@ export default function MoreScreen() {
           <Text style={styles.sectionTitle}>数据</Text>
           
           <View style={styles.menuGroup}>
-            <MenuItem 
+            {/* One screen (数据管理) holds both export and import. */}
+            <MenuItem
               icon={require('../../assets/images/ui/icon_data_export.png')}
-              label="导出数据" 
-              onPress={() => router.push('/import-export')} 
-            />
-            <MenuItem 
-              icon={require('../../assets/images/ui/icon_clipboard.png')}
-              label="导入数据" 
-              onPress={() => router.push('/import-export')} 
+              size={28}
+              label="导入与导出"
+              onPress={() => router.push('/import-export')}
             />
           </View>
         </View>
@@ -93,11 +97,13 @@ export default function MoreScreen() {
           <View style={styles.menuGroup}>
             <MenuItem 
               icon={require('../../assets/images/ui/icon_help_center.png')}
+              size={28}
               label="关于应用" 
               onPress={() => router.push('/about')}
             />
             <MenuItem 
               icon={require('../../assets/images/ui/icon_agreement.png')}
+              size={24}
               label="隐私政策" 
               onPress={() => router.push('/privacy')}
             />
@@ -152,10 +158,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F5F5F5',
   },
   menuItemPressed: { backgroundColor: '#F2F5F3' },
-  menuIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
+  // A 28pt slot: 24pt and 28pt originals centre on the same axis.
+  menuIconSlot: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   menuLabel: {
     flex: 1,

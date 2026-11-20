@@ -25,7 +25,8 @@
 | `transaction/edit/[id]` | default | Polished transaction editor. |
 | `transaction/adjust`, `transaction/transfer` | default | Balance and transfer flows. |
 | `categories/add` | default | headerShown: false. Icon picker for custom categories. |
-| `budget/envelope` | default | headerShown: false. Create (no params) or edit (`?id=`) a budget. |
+| `budget/create`, `budget/create-name`, `budget/create-amount` | default | headerShown: false. The original budget-creation wizard. |
+| `budget/envelope` | default | headerShown: false. Edit (`?id=`) a budget; without an id it redirects to the wizard. |
 | `budget/detail` | default | headerShown: false. One budget (`?id=`): remaining, category/subcategory breakdown, records. |
 | `records` | default | headerShown: false. Records behind a chart row or budget (`?type&start&end&categoryId&subcategoryId&envelopeId`, `subcategoryId=none` = 未细分). |
 | `budget/help` | default | headerShown: false. Original example pages (`?topic=budget\|plan`). |
@@ -70,8 +71,8 @@ Only **two** visible tabs + a center FAB. `more` and `transactions` have no tab 
 |---|---|
 | Brand dropdown chevron (next to "Rich记账") | `router.push('/accounts')` → 资产管理 screen. |
 | Avatar (top-right) | `router.push('/more')` → 我的 screen. |
-| Month ‹ / › arrows | `goPrevMonth` / `goNextMonth` — loads transactions for that month. Real. |
-| Month pill ("6月 ▼") | Display only (navigation via arrows). |
+| Month pill ("6月 ▼"; "2025年6月" for another year) | Opens the original **选择时间** sheet (`MonthPickerSheet`): month and year wheels, Cancel / OK (取消 / 确定 on a Chinese phone). OK shows that month; future months allowed, as in the original. |
+| Swipe up / down on the summary card | Folds / unfolds the calendar (VoiceOver: 收起日历 / 展开日历 actions). Taps on days still open the day sheet. |
 | Calendar day cell tap | Opens the original **day sheet** over the summary card (dimmed header, floating ✕, that day's group, 添加一笔支出/收入 → `/transaction/new?date=…`). |
 | Transaction row tap | `router.push('/transaction/${t.id}')` → Detail. |
 | "总支出 / 总收入" totals | Display only. |
@@ -84,9 +85,9 @@ Only **two** visible tabs + a center FAB. `more` and `transactions` have no tab 
 | 结余 row | Display only. Shows real current-month (income − expense). |
 | 趋势图 row (right, with mini donut) | `router.push('/trends')` → 趋势图 screen. |
 | Empty-state donut + legend | Original `icon_budget_progress` artwork when no budget exists. |
-| **+ 创建预算** button | `router.push('/budget/envelope')` → new budget. |
+| **+ 创建预算** button | `router.push('/budget/create')` → the original three-step wizard: 选择你想创建的预算类型 (专项/月度 cards, 下一步) → 输入预算名称 (emoji + name) → 设置预算金额 (green keypad, 完成 → back here). |
 | 我的预算 rows | Emoji, name, monthly/special badge, amount, spent/frozen/remaining. Tap → `/budget/detail?id=…`. |
-| **+ 新预算** pill | `router.push('/budget/envelope')`. |
+| **+ 新预算** pill | `router.push('/budget/create')` (wizard). |
 | Sort icon (`icon_list_sort`, 2+ budgets) | Sort mode (`SortableList`): drag a row's ≡ handle, or long-press the row and drag; ↑/↓ per row (also VoiceOver). Scrolling pauses while dragging. 完成 → `reorderEnvelopes`. |
 | 已归档 N 项 | Shown when anything is archived → `/budget/archived`. |
 | 看看别人怎么分预算 | `/budget/help?topic=budget`. |
@@ -133,7 +134,8 @@ Fully wired to real data; no dead buttons here.
 ### 预算明细 — `app/budget/detail.tsx`
 | Element | Trigger → Result |
 |---|---|
-| 编辑 | `/budget/envelope?id=…`. If the budget is deleted there, the detail shows 这个预算已删除. |
+| 编辑 | `/budget/envelope?id=…`. If the budget is deleted there, the detail closes too. |
+| 删除该预算 (coral bar) | Confirm → `deleteEnvelope` → back to the list. Blocked while a plan freezes the budget. |
 | Month ‹ / › (monthly budgets) | Between the budget's start month and this month. Special budgets show all time. |
 | Summary | 本月剩余 / 超支, progress, 本月预算 · 已用 · 计划冻结 · 已用比例. |
 | 支出构成 | The assigned expenses by category → subcategory (same list as 趋势图); rows open `/records` limited to the budget. |

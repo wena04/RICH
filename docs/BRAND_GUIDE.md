@@ -228,8 +228,11 @@ The category set is the original Rich 1.1.0 artwork, kept as vectors with the ba
 construction:
 
 - 48-unit canvas drawn for a 48 pt disc; the glyph sits in roughly the central 24 pt.
-- Black (`#000000`) line work about 1.7 pt wide with rounded ends, plus at most one accent detail in
-  the original accent green `#02B17B` (deeper than RICH Mint so it holds on the #F7F7F7 disc).
+- Black (`#000000`) line work 1.5 units wide (as measured: 4–5 px on the 144 px originals) with
+  rounded ends and joins, plus accent details in the original green `#02B17B` (deeper than RICH
+  Mint so it holds on the #F7F7F7 disc).
+- A badge over an object (a ¥ coin on a house, a magnifier on a car) keeps a 1.1-unit gap: the
+  object stops short of the badge instead of running under it.
 - Glyph only: never bake the #F7F7F7 disc, a ring, or a shadow into the art. The disc, selection
   ring (1.7 pt black, inside the disc), and 50% dimming are drawn by the screen.
 - Make each object recognizable at 34 pt (ledger rows), not only at 48 pt.

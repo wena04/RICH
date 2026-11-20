@@ -11,7 +11,7 @@
 // Usage: node scripts/icons/trace-original-category-icons.mjs <dir-of-original-3x-pngs>
 // The rasters come from the original app bundle's Assets.car (see extract-assets-car.swift); they are
 // kept off-repo with the rest of the private reference bundle.
-import { readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Jimp from 'jimp';
@@ -126,6 +126,9 @@ for (const name of names) {
     const accentPath = await trace(maskImage(accent, W, H));
     if (accentPath) paths.push(`<path fill="${ACCENT}" fill-rule="evenodd" d="${toViewBox(accentPath, scale)}"/>`);
   }
-  writeFileSync(path.join(outDir, `${name}.svg`), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${paths.join('')}</svg>\n`);
+  const target = path.join(outDir, `${name}.svg`);
+  // Glyphs redrawn by hand replace the traced original on purpose; never overwrite them.
+  if (existsSync(target) && readFileSync(target, 'utf8').includes('<desc>redrawn</desc>')) continue;
+  writeFileSync(target, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${paths.join('')}</svg>\n`);
 }
 console.log(`traced ${names.length} icons into ${path.relative(repoRoot, outDir)}`);

@@ -532,7 +532,7 @@ export default function PlanScreen() {
         }}
         onCreate={() => {
           setShowSourcePicker(false);
-          router.push('/budget/envelope');
+          router.push('/budget/create');
         }}
         onClose={() => setShowSourcePicker(false)}
       />

@@ -169,6 +169,7 @@ export default function ImportExportScreen() {
 
   function ActionRow({
     icon,
+    size,
     title,
     detail,
     onPress,
@@ -176,6 +177,8 @@ export default function ImportExportScreen() {
     divider = false,
   }: {
     icon: ImageSourcePropType;
+    /** The artwork's own size in points (3x PNG width ÷ 3), so glyphs keep their drawn scale. */
+    size: number;
     title: string;
     detail: string;
     onPress: () => void;
@@ -189,7 +192,7 @@ export default function ImportExportScreen() {
         style={({ pressed }) => [styles.actionRow, divider && styles.divider, pressed && styles.pressed]}
       >
         <View style={styles.actionIcon}>
-          <Image source={icon} style={styles.actionArt} accessible={false} />
+          <Image source={icon} style={{ width: size, height: size }} accessible={false} />
         </View>
         <View style={styles.actionCopy}>
           <Text style={[styles.actionTitle, danger && styles.dangerText]}>{title}</Text>
@@ -212,12 +215,14 @@ export default function ImportExportScreen() {
         <View style={styles.section}>
           <ActionRow
             icon={require('../assets/images/ui/icon_data_export.png')}
+            size={28}
             title="导出完整备份"
             detail="保留账户、分类、子分类、预算和全部记录"
             onPress={onExportDb}
           />
           <ActionRow
             icon={require('../assets/images/ui/icon_change_money.png')}
+            size={34}
             title="从备份恢复"
             detail="选择数据库文件并覆盖当前设备数据"
             onPress={onImportDb}
@@ -230,12 +235,14 @@ export default function ImportExportScreen() {
         <View style={styles.section}>
           <ActionRow
             icon={require('../assets/images/ui/icon_clipboard_list.png')}
+            size={28}
             title="导出完整 CSV"
             detail="包含账户、分类、子分类和稳定 ID"
             onPress={onExportCsvV2}
           />
           <ActionRow
             icon={require('../assets/images/ui/icon_clipboard.png')}
+            size={24}
             title="导出旧版 CSV"
             detail="用于兼容早期 RICH 数据格式"
             onPress={onExportCsvV1}
@@ -262,6 +269,7 @@ export default function ImportExportScreen() {
           </View>
           <ActionRow
             icon={require('../assets/images/ui/icon_add.png')}
+            size={24}
             title="选择 CSV 并导入"
             detail="旧版格式没有账户列，所有记录会进入上方账户"
             onPress={onImportCsvV1}
@@ -284,8 +292,7 @@ const styles = StyleSheet.create({
   actionRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#DDDDDD' },
   pressed: { backgroundColor: '#F7F7F7' },
-  actionIcon: { width: 36, alignItems: 'flex-start' },
-  actionArt: { width: 24, height: 24 },
+  actionIcon: { width: 44, alignItems: 'center', marginLeft: -4 },
   actionCopy: { flex: 1, paddingRight: 12 },
   actionTitle: { fontSize: 14, fontWeight: '600', color: TEXT_PRIMARY },
   actionDetail: { marginTop: 4, fontSize: 10.5, lineHeight: 15, color: TEXT_SECONDARY },

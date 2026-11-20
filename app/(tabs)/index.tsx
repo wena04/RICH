@@ -13,6 +13,7 @@ import {
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 import {
   CONTROL_PRESSED_BACKGROUND,
@@ -23,11 +24,13 @@ import {
 } from "@/constants/Colors";
 import { getDb } from "@/src/db/db";
 import {
+  listRecordMonths,
   listTransactions,
   TransactionListItem,
 } from "@/src/db/repo/transactions";
 import { centsToYuan } from "@/src/utils/money";
 import { RichBrandName } from "@/components/rich";
+import { MonthPickerSheet } from "@/components/rich/MonthPickerSheet";
 import { LedgerDayHeader, LedgerDays, LedgerRow, groupLedgerByDay } from "@/components/rich/LedgerList";
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -52,8 +55,11 @@ function fmt(year: number, month: number, day: number): string {
 export default function HomeScreen() {
   const router = useRouter();
   const today = new Date();
-  const [year] = useState(today.getFullYear());
-  const [month] = useState(today.getMonth());
+  // The month Home shows; the month pill opens a picker to change it.
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [recordMonths, setRecordMonths] = useState<ReadonlySet<string>>(new Set());
   const [filterDate, setFilterDate] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(
@@ -71,10 +77,15 @@ export default function HomeScreen() {
   const loadTransactions = useCallback(async () => {
     try {
       const db = await getDb();
-      const all = await listTransactions(db);
-      const start = fmt(year, month, 1);
-      const end = fmt(year, month, getDaysInMonth(year, month));
-      setTransactions(all.filter((t) => t.date >= start && t.date <= end));
+      const [monthRecords, months] = await Promise.all([
+        listTransactions(db, {
+          start: fmt(year, month, 1),
+          endExclusive: fmt(month === 11 ? year + 1 : year, (month + 1) % 12, 1),
+        }),
+        listRecordMonths(db),
+      ]);
+      setTransactions(monthRecords);
+      setRecordMonths(new Set(months));
       setLoadState("ready");
     } catch (e) {
       console.error("Failed to load transactions:", e);
@@ -110,6 +121,40 @@ export default function HomeScreen() {
     () => (filterDate ? groups.filter((group) => group.date === filterDate) : groups),
     [filterDate, groups],
   );
+
+  function showMonth(nextYear: number, nextMonth: number) {
+    setShowMonthPicker(false);
+    if (nextYear === year && nextMonth === month) return;
+    setLoadState("loading");
+    setTransactions([]);
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setFilterDate(null);
+    const isThisMonth = nextYear === today.getFullYear() && nextMonth === today.getMonth();
+    setSelectedDate(isThisMonth ? fmt(nextYear, nextMonth, today.getDate()) : null);
+  }
+
+  // Swipe up on the card folds the calendar away (as in the original's list view); swipe down
+  // brings it back. Taps on days still go through: the pan needs 12pt of vertical travel.
+  const calendarSwipe = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .activeOffsetY([-12, 12])
+        .failOffsetX([-24, 24])
+        .onEnd((event) => {
+          if (event.translationY < -24) setShowCalendar(false);
+          else if (event.translationY > 24) setShowCalendar(true);
+        }),
+    [],
+  );
+
+  const firstRecordYear = useMemo(() => {
+    let first = today.getFullYear();
+    for (const ym of recordMonths) first = Math.min(first, Number(ym.slice(0, 4)));
+    return first;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordMonths]);
 
   const daysInMonth = getDaysInMonth(year, month);
   const leadOffset = firstWeekdayMonFirst(year, month);
@@ -232,13 +277,20 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Calendar card */}
-        <View style={[styles.calCard, !showCalendar && styles.calCardCollapsed]}>
+        <GestureDetector gesture={calendarSwipe}>
+        <View
+          style={[styles.calCard, !showCalendar && styles.calCardCollapsed]}
+          accessibilityActions={[
+            { name: showCalendar ? "collapse" : "expand", label: showCalendar ? "收起日历" : "展开日历" },
+          ]}
+          onAccessibilityAction={() => setShowCalendar((current) => !current)}
+        >
           <View style={[styles.calTop, !showCalendar && styles.calTopCollapsed]}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${showCalendar ? '收起' : '展开'}${MONTH_NAMES_CN[month]}日历`}
-              accessibilityState={{ expanded: showCalendar }}
-              onPress={() => setShowCalendar((current) => !current)}
+              accessibilityLabel={`选择月份，当前${year}年${month + 1}月`}
+              accessibilityHint="打开月份和年份选择"
+              onPress={() => setShowMonthPicker(true)}
               hitSlop={9}
               style={({ pressed }) => [
                 styles.monthTrigger,
@@ -298,6 +350,7 @@ export default function HomeScreen() {
             </>
           ) : null}
         </View>
+        </GestureDetector>
 
         {/* Grouped transaction list */}
         <View style={styles.listArea}>
@@ -332,7 +385,9 @@ export default function HomeScreen() {
                 />
               ) : null}
               <Text style={styles.emptyText}>
-                {filterDate ? '这一天还没有记录' : '本月还没有收支记录'}
+                {filterDate
+                  ? '这一天还没有记录'
+                  : `${year === today.getFullYear() && month === today.getMonth() ? '本月' : `${month + 1}月`}还没有收支记录`}
               </Text>
               {filterDate ? (
                 <Pressable
@@ -357,6 +412,16 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <MonthPickerSheet
+        visible={showMonthPicker}
+        year={year}
+        month={month}
+        currentYear={today.getFullYear()}
+        firstRecordYear={firstRecordYear}
+        onSelect={showMonth}
+        onClose={() => setShowMonthPicker(false)}
+      />
 
       <Modal
         visible={showDaySheet}

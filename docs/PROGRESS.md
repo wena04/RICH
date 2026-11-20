@@ -112,7 +112,7 @@ Completed on November 19, 2026 (local workspace):
 
 ```text
 TypeScript:              npx tsc --noEmit                         PASS
-Unit + storage tests:    npm test                                 PASS (89/89, incl. 19 SQLite integration tests)
+Unit + storage tests:    npm test                                 PASS (100/100, incl. 20 SQLite integration tests)
 Category icon registry:  npm run icons:check                      PASS (123 vector glyphs)
 Icon fidelity vs original rasters at 3x                            mean IoU 0.955, colour Δ 1.4/255
 Native bundles:          npx expo export --platform ios,android   PASS (Hermes, both platforms)
@@ -218,6 +218,26 @@ is held, and a quick swipe on a row does nothing (it needs the hold). Added
 must be rebuilt). Found and avoided a gesture-handler web quirk where a first move of exactly 15pt
 skipped the long-press wait. Device check still needed: drag inside the scroll view on iOS and
 Android, and VoiceOver/TalkBack using the buttons.
+
+## Original captures, deletes on web, redrawn icons — November 19, 2026
+
+- **Home month:** the month pill opens the original 选择时间 wheel sheet (month + year); Home was
+  previously stuck on the current month. Swipe the summary card up/down to fold the calendar.
+- **Budget creation** follows the original three-step wizard (type cards → name + emoji → green
+  amount keypad); the old form is edit-only. Budget detail has a coral 删除该预算 bar, and deleting
+  from the editor returns to the list.
+- **Web preview dialogs:** React Native Web's `Alert.alert` is a no-op, so every confirmation
+  (delete budget/record/transfer/category, restore) did nothing in the browser.
+  `src/platform/webAlert.ts` maps alerts to `window.alert` / `window.confirm` on web only.
+- **我的:** icons drawn at their original sizes, the mismatched filled clipboards replaced, and the
+  duplicate 导出数据 / 导入数据 rows (same screen) merged into 导入与导出.
+- **Category icons:** 15 rough originals redrawn as stroked SVG in the original style (see
+  `docs/reference/rich-screens/icon-catalog.md`).
+- **Pixel pass on the new captures:** the 选择时间 sheet and the three budget-creation screens were
+  measured from the owner's saved captures (402pt iPhone) and now match within about 1pt; see
+  `design-qa.md`.
+- Verified: 100 tests; browser flows walkthrough 15/15, trends 13/13, transfers 8/8, sorting 8/8,
+  Home month 11/11, budget wizard + deletes 12/12, no page errors; iOS and Android bundles export.
 
 ## Future idea needing user research: a personal AI assistant for logging
 

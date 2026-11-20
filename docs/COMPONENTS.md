@@ -185,6 +185,17 @@ Source: `components/charts/CategoryBreakdownList.tsx` (data from `src/features/c
   directly. Hover lightens the row on web.
 - Identity comes from the glyph and name, not colour, so the list never needs more than one hue.
 
+### `MonthPickerSheet` and `WheelPicker`
+
+Sources: `components/rich/MonthPickerSheet.tsx`, `components/rich/WheelPicker.tsx`
+
+- The original 选择时间 sheet (owner capture): white sheet over a 20% black scrim; Cancel (black,
+  left) · 选择时间 (gray, centre) · OK (`#3FDEAE`, right); a month wheel and a year wheel over one
+  #F3F3F4 rounded band. Labels follow the phone language like the system picker did (11月 / 2026年,
+  or November / 2026 with Cancel / OK).
+- `WheelPicker`: 36pt rows, seven visible, rows shrink and fade away from the centre; snaps on
+  scroll, tap a row to jump to it, VoiceOver adjusts it.
+
 ### `SortableList`
 
 Source: `components/rich/SortableList.tsx` (`react-native-gesture-handler`; drop math in

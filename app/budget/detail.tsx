@@ -2,6 +2,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -22,6 +23,7 @@ import { ScreenHeader } from '@/components/rich/ScreenHeader';
 import {
   CARD_BACKGROUND,
   CATEGORY_FRAME_BACKGROUND,
+  DESTRUCTIVE_CORAL,
   EXPENSE_RED,
   PAGE_BACKGROUND,
   PRIMARY_GREEN,
@@ -30,7 +32,7 @@ import {
 } from '@/constants/Colors';
 import { RICH_NUMERAL_FONT } from '@/constants/Design';
 import { getDb } from '@/src/db/db';
-import { getEnvelopeSummary } from '@/src/db/repo/envelopes';
+import { deleteEnvelope, getEnvelopeSummary } from '@/src/db/repo/envelopes';
 import { listTransactions, type TransactionListItem } from '@/src/db/repo/transactions';
 import type { BudgetEnvelopeSummary } from '@/src/domain/types';
 import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
@@ -65,7 +67,9 @@ export default function BudgetDetailScreen() {
       const summary = await getEnvelopeSummary(db, id, period);
       if (request !== requestRef.current) return;
       if (!summary) {
-        setState('missing');
+        // Deleted (here or in the editor): leave instead of showing an empty page.
+        if (router.canGoBack()) router.back();
+        else setState('missing');
         return;
       }
       // Monthly budgets count the month; special budgets count every record ever assigned.
@@ -84,7 +88,7 @@ export default function BudgetDetailScreen() {
       console.error('Failed to load budget detail:', error);
       if (request === requestRef.current) setState('error');
     }
-  }, [id, period]);
+  }, [id, period, router]);
 
   useFocusEffect(
     useCallback(() => {
@@ -117,6 +121,30 @@ export default function BudgetDetailScreen() {
       },
     });
   };
+
+  function confirmDelete() {
+    if (!envelope) return;
+    Alert.alert(`删除「${envelope.name}」？`, '已归入该预算的支出会保留，但不再属于任何预算。', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteEnvelope(await getDb(), envelope.id);
+            router.back();
+          } catch (error) {
+            Alert.alert(
+              '无法删除',
+              String(error).includes('FOREIGN KEY')
+                ? '有计划正在冻结这个预算，请先结束相关计划。'
+                : '预算没有删除，请稍后再试。',
+            );
+          }
+        },
+      },
+    ]);
+  }
 
   const edit = envelope ? (
     <Pressable
@@ -247,6 +275,15 @@ export default function BudgetDetailScreen() {
                 <LedgerDays days={days} onOpen={(t) => router.push(`/transaction/${t.id}`)} />
               </View>
             ) : null}
+
+            <Pressable
+              onPress={confirmDelete}
+              style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`删除${envelope.name}`}
+            >
+              <Text style={styles.deleteText}>删除该预算</Text>
+            </Pressable>
           </>
         )}
       </ScrollView>
@@ -316,6 +353,17 @@ const styles = StyleSheet.create({
   muted: { fontSize: 12, color: TEXT_SECONDARY },
   empty: { paddingHorizontal: 16, paddingVertical: 24, alignItems: 'center', gap: 6 },
   emptyTitle: { fontSize: 13, color: TEXT_PRIMARY, textAlign: 'center' },
+  // The record detail's coral delete bar.
+  deleteButton: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DESTRUCTIVE_CORAL,
+  },
+  deletePressed: { opacity: 0.82 },
+  deleteText: { color: '#FFFFFF', fontSize: 16 },
   retry: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 4, backgroundColor: TEXT_PRIMARY },
   retryText: { color: CARD_BACKGROUND, fontSize: 13 },
 });

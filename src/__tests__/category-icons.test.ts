@@ -31,9 +31,12 @@ describe('category icons', () => {
     for (const name of CATEGORY_ICON_NAMES) {
       const svg = readFileSync(path.join(iconDirectory, `${name}.svg`), 'utf8');
       assert.match(svg, /viewBox="0 0 48 48"/, name);
-      const fills = new Set([...svg.matchAll(/fill="([^"]+)"/g)].map((m) => m[1]));
-      assert.ok(fills.has('#000000'), `${name} has no ink layer`);
-      for (const fill of fills) assert.ok(['#000000', '#02B17B'].includes(fill), `${name} uses ${fill}`);
+      // Traced originals paint with fills; redrawn glyphs (<desc>redrawn</desc>) with strokes.
+      const paints = new Set(
+        [...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1]).filter((paint) => paint !== 'none'),
+      );
+      assert.ok(paints.has('#000000'), `${name} has no ink layer`);
+      for (const paint of paints) assert.ok(['#000000', '#02B17B'].includes(paint), `${name} uses ${paint}`);
       assert.doesNotMatch(svg, /#F7F7F7/i, `${name} still contains the disc`);
     }
   });

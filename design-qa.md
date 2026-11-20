@@ -146,6 +146,26 @@ create special → populated list → edit amount → reload persists → exampl
 Web limitation: React Native Web's `Alert.alert` is a no-op, so the validation alert and delete
 confirmation only appear on native.
 
+## New original captures (November 19, 2026)
+
+The owner captured four more original screens; they replace earlier designs:
+
+| Screen | Original | Now |
+| --- | --- | --- |
+| Home month pill | Opens 选择时间: month + year wheels, Cancel / OK, gray selection band, future years listed | `MonthPickerSheet` + `WheelPicker`; was a calendar toggle, and Home could not leave the current month at all |
+| 创建预算 | Three steps: 选择你想创建的预算类型 (专项 / 月度 cards with `icon_check_button_gray/black`, `icon_examples`, gray example box, 下一步 bar) → 输入预算名称 (emoji disc + field + `icon_describe`, 5-column emoji grid starting 🔴🔵⚫⚪😀) → 设置预算金额 (green, ¥0.00, 请输入…预算金额, 3-column keypad, 完成) | `app/budget/create*.tsx`; was one designed form (now edit-only) |
+
+Captures saved privately as `09-home-month-picker.png` … `12-budget-create-amount.png` (plus
+`13-add-expense-tray-402pt.png`) in the off-repo screenshot folder: 1206 × 2622, a 402pt iPhone at
+3×. Measured with column/row pixel scans against the web export rendered at 402 × 874; positions
+are anchored to the navigation title (the browser has no safe areas) or, for the keypad, to the
+home indicator. Result: within about 1pt everywhere — picker sheet, band (37.7pt, radius 5.5),
+wheel rows (cylinder offsets 36 / 65.3 / 84.5pt, greying and leaning toward the centre), header
+items, type cards, check squares, 示例 tag and example box, 下一步 bar (#1F6E56, text #9FEED6),
+name field and emoji grid, amount, prompt, and keypad (which spans the width less 11.6pt, as in the
+original). Not captured: how the original folds the calendar (swipe on the card here), the
+enabled 下一步 colour (black here), and the emoji grid past its fifth row.
+
 ## Trends and budget detail (November 19, 2026) — designed, not source-verified
 
 No capture exists for the original 趋势图 or a budget detail page; the bundle only has

@@ -56,14 +56,17 @@ function validate(name, source) {
   if (!source.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">') || !source.endsWith('</svg>')) {
     throw new Error(`Icon "${name}" must be a complete SVG on the 48-unit viewBox.`);
   }
-  // Glyph only: the #F7F7F7 disc is drawn by the caller, so the art may use just the two original inks.
-  const fills = [...source.matchAll(/fill="([^"]+)"/g)].map((m) => m[1].toUpperCase());
-  const unexpected = fills.filter((fill) => fill !== INK && fill !== ACCENT);
-  if (!fills.includes(INK) || unexpected.length) {
-    throw new Error(`Icon "${name}" must use only ${INK} and ${ACCENT} fills (found ${[...new Set(fills)].join(', ')}).`);
+  // Glyph only: the #F7F7F7 disc is drawn by the caller, so the art may use just the two original
+  // inks, as fills (traced originals) or strokes (redrawn glyphs, <desc>redrawn</desc>).
+  const paints = [...source.matchAll(/(?:fill|stroke)="([^"]+)"/g)]
+    .map((m) => m[1].toUpperCase())
+    .filter((paint) => paint !== 'NONE');
+  const unexpected = paints.filter((paint) => paint !== INK && paint !== ACCENT);
+  if (!paints.includes(INK) || unexpected.length) {
+    throw new Error(`Icon "${name}" must use only ${INK} and ${ACCENT} (found ${[...new Set(paints)].join(', ')}).`);
   }
-  if (/stroke=|<image|<circle[^>]*fill="#F7F7F7"/i.test(source)) {
-    throw new Error(`Icon "${name}" must be filled paths without a background disc.`);
+  if (/<image|<circle[^>]*fill="#F7F7F7"/i.test(source)) {
+    throw new Error(`Icon "${name}" must be glyph shapes without a background disc.`);
   }
 }
 

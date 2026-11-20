@@ -314,3 +314,12 @@ export async function updateTransfer(db: AppDb, groupId: string, input: Transfer
 export async function deleteTransfer(db: AppDb, groupId: string) {
   await db.runAsync('DELETE FROM transactions WHERE transfer_group_id = ?', [groupId]);
 }
+
+/** `YYYY-MM` months that have at least one expense or income record, oldest first. */
+export async function listRecordMonths(db: AppDb): Promise<string[]> {
+  const rows = await db.getAllAsync<{ ym: string }>(
+    `SELECT DISTINCT substr(date, 1, 7) AS ym FROM transactions
+     WHERE type IN ('expense', 'income') ORDER BY ym ASC`,
+  );
+  return rows.map((r) => r.ym);
+}

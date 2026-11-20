@@ -6,15 +6,28 @@ export const ENVELOPE_DESCRIPTION_MAX = 30;
 const MAX_AMOUNT_CENTS = 9_999_999_999; // ¥99,999,999.99
 
 /**
- * Emoji choices for budgets. The original app used emoji as budget icons; this set
- * starts with every emoji shown in its budget help examples and tips.
+ * The first five rows of the original 输入预算名称 emoji grid, in its order (owner capture,
+ * November 2026). The rest of that grid wasn't captured.
  */
-export const BUDGET_EMOJI = [
+const ORIGINAL_EMOJI_HEAD = [
+  '🔴', '🔵', '⚫️', '⚪️', '😀',
+  '😆', '🤣', '😇', '😍', '😘',
+  '🤫', '🤔', '😶', '😷', '😭',
+  '👋', '👀', '💏', '🚻', '👱',
+  '👶', '😈', '🤱', '🤰', '👰',
+] as const;
+
+/** Every emoji shown in the original budget help pages, tips, and type cards. */
+const HELP_EXAMPLE_EMOJI = [
   '💰', '🍚', '🛒', '✈️', '💗', '🌞', '🎮', '📖', '❤️', '👜', '💅', '🥳',
-  '👨‍👩‍👦', '🏠', '💌', '🌈', '📅', '🍑', '🎹', '☕️', '🍜', '🚗', '🎁', '👶',
+  '👨‍👩‍👦', '🏠', '💌', '🌈', '📅', '🍑', '🎹', '☕️', '🍜', '🚗', '🎁',
   '🐶', '💊', '🏋️', '🎬', '📱', '💻', '🧳', '🎓', '💄', '👗', '🍰', '🏖️',
 ] as const;
 
+/** Emoji choices for budgets: the original grid's captured rows first, then the help examples. */
+export const BUDGET_EMOJI: readonly string[] = [...new Set<string>([...ORIGINAL_EMOJI_HEAD, ...HELP_EXAMPLE_EMOJI])];
+
+/** The original preselects the first emoji (🔴). */
 export const DEFAULT_BUDGET_EMOJI = BUDGET_EMOJI[0];
 
 export type EnvelopeFormInput = {

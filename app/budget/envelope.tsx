@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -74,7 +74,14 @@ function trimToCharacters(value: string, max: number): string {
   return characterCount(value) > max ? Array.from(value).slice(0, max).join('') : value;
 }
 
-export default function BudgetEnvelopeScreen() {
+/** Edits an existing budget (`?id=`). New budgets go through the original three-step wizard. */
+export default function BudgetEnvelopeRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  if (!id) return <Redirect href="/budget/create" />;
+  return <BudgetEnvelopeScreen />;
+}
+
+function BudgetEnvelopeScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEdit = Boolean(id);

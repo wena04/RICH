@@ -199,7 +199,7 @@ export default function BudgetScreen() {
   const ready = loadState === 'ready' && summary;
 
   function openCreate() {
-    router.push('/budget/envelope');
+    router.push('/budget/create');
   }
 
   function openEnvelope(id: string) {

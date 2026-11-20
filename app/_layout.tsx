@@ -9,6 +9,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StartupError } from '@/components/rich/StartupError';
 import { CARD_BACKGROUND } from '@/constants/Colors';
 import { initDb } from '@/src/db';
+import { installWebAlert } from '@/src/platform/webAlert';
+
+// Browser preview only: give Alert.alert real dialogs (React Native Web leaves it empty).
+installWebAlert();
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -104,6 +108,9 @@ function RootLayoutNav() {
             <Stack.Screen name="transaction/transfer" options={{ headerShown: false }} />
             <Stack.Screen name="categories" options={{ headerShown: false }} />
             <Stack.Screen name="categories/add" options={{ headerShown: false }} />
+            <Stack.Screen name="budget/create" options={{ headerShown: false }} />
+            <Stack.Screen name="budget/create-name" options={{ headerShown: false }} />
+            <Stack.Screen name="budget/create-amount" options={{ headerShown: false }} />
             <Stack.Screen name="budget/envelope" options={{ headerShown: false }} />
             <Stack.Screen name="budget/detail" options={{ headerShown: false }} />
             <Stack.Screen name="records" options={{ headerShown: false }} />

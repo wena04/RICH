@@ -58,6 +58,7 @@ Local-first: SQLite is the only source of truth. No backend, sign-in, analytics,
   - Spend is always derived from transactions, never stored twice.
 - `components/rich/` — the RICH visual system (headers, month stepper, numpad, progress bars, `RichChevron`, `LedgerList` record rows). `components/charts/` — `MonthlyColumns` and `CategoryBreakdownList` (data from `src/features/charts/breakdown.ts`; colour tokens in `components/charts/tokens.ts`). `components/icons/` — `CategoryIcon` and its generated registry (`scripts/icons/generate-category-icons.mjs`); edit the SVG sources and regenerate, don't hand-edit. Icon resolution (stored id → name → legacy id → 其他) lives in `src/domain/categoryIcons/`.
 - Screens use `SafeAreaView` from `react-native-safe-area-context` (React Native's own is iOS-only), and Modals set `onRequestClose` for the Android back button.
+- In the web preview `Alert.alert` is backed by `window.alert`/`confirm` (`src/platform/webAlert.ts`, installed in `app/_layout.tsx`); native alerts are unchanged.
 
 Key invariants spread across files:
 
