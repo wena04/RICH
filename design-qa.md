@@ -166,6 +166,25 @@ name field and emoji grid, amount, prompt, and keypad (which spans the width les
 original). Not captured: how the original folds the calendar (swipe on the card here), the
 enabled 下一步 colour (black here), and the emoji grid past its fifth row.
 
+## Add entry across screen widths (November 19, 2026)
+
+Comparing the 402pt add-entry capture (`13-…`) with the 393pt ones (`04`/`05`) showed the original
+sizes its composer with the screen width: from the header centre down to the dashed rule, the
+category rows (86.7 → 88.6pt), the art (48 → 49.1pt) and the labels all grow by 402/393; the
+header and keypad stay fixed. `app/transaction/new.tsx` now scales those values by `width / 393`
+(`composerGrid`), with the tray band re-measured on the 402pt capture (74.6pt at 393). Also fixed
+while measuring: keypad digits were 18.7pt tall against the original's 16pt (now 20.4pt type, on
+add, transfer and adjust; budget keypad 20.3pt), and the account/note divider is the original's
+36pt #D9D9D9 line instead of a full-height border. Result: within about 1.5pt on both captures.
+
+Home behaves the same way (the month-picker capture shows it at 402pt behind the sheet): the
+header art and buttons, the card margins, its internal offsets, day rows (38 → 38.7pt) and circles
+scale with the width, while text sizes stay fixed. `app/(tabs)/index.tsx` builds its styles with
+`makeStyles(width / 393)`. Re-measuring also showed the wordmark 3pt high on the 393pt captures
+(its lettering sits 29.7pt below the safe area on both phones, so the header's top padding is a
+fixed 14.3pt). Now within about 1pt at both widths: wordmark, buttons, card top, month pill,
+weekdays, all six day rows, and the card bottom.
+
 ## Trends and budget detail (November 19, 2026) — designed, not source-verified
 
 No capture exists for the original 趋势图 or a budget detail page; the bundle only has

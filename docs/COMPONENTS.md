@@ -137,7 +137,7 @@ Source: `components/rich/MoneyNumpad.tsx`
 | Layout | 3:1 digit grid to operator column |
 | Digit rows | Four rows, 54 px each by default |
 | Key surface | Flat light-gray field, no rounded key rectangles or grid borders |
-| Digits | 22 px, weight 500 |
+| Digits | RichRounded 20.4pt (the original's digits are 16pt tall, "4" 8.7pt wide) |
 | Operators | 28 px; caller supplies `+/-` or `+/- sign` actions |
 | Confirm | Black, spans all operator-column space below operators |
 | Backspace | Black tag-shaped key with white multiplication mark, matching the original control |

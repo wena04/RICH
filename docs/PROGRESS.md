@@ -233,6 +233,11 @@ Android, and VoiceOver/TalkBack using the buttons.
   duplicate 导出数据 / 导入数据 rows (same screen) merged into 导入与导出.
 - **Category icons:** 15 rough originals redrawn as stroked SVG in the original style (see
   `docs/reference/rich-screens/icon-catalog.md`).
+- **Add entry on every screen width:** the original scales the composer (amount line, grid,
+  tray) with the screen width; ours now does too, keypad digits were reduced to the original
+  size, and the account/note divider matches. Within about 1.5pt of the 393pt and 402pt captures.
+- **Home on every screen width:** the header and calendar card scale the same way (text stays
+  fixed); the wordmark was 3pt high. Within about 1pt of both captures.
 - **Pixel pass on the new captures:** the 选择时间 sheet and the three budget-creation screens were
   measured from the owner's saved captures (402pt iPhone) and now match within about 1pt; see
   `design-qa.md`.

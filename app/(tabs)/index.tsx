@@ -9,6 +9,7 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -54,6 +55,9 @@ function fmt(year: number, month: number, day: number): string {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  const k = Math.max(0.9, Math.min(windowWidth, 430) / 393);
+  const styles = useMemo(() => makeStyles(k), [k]);
   const today = new Date();
   // The month Home shows; the month pill opens a picker to change it.
   const [year, setYear] = useState(today.getFullYear());
@@ -201,10 +205,10 @@ export default function HomeScreen() {
         inner = [
           styles.dayBand,
           {
-            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14,
-            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14,
-            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14,
-            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14,
+            borderTopLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14 * k,
+            borderBottomLeftRadius: leftJoin || (wd === 0 && hasPrevious) ? 0 : 14 * k,
+            borderTopRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14 * k,
+            borderBottomRightRadius: rightJoin || (wd === 6 && hasNext) ? 0 : 14 * k,
           },
         ];
       } else {
@@ -243,7 +247,7 @@ export default function HomeScreen() {
         onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
       >
         <View style={styles.brandRow}>
-          <RichBrandName size={40} />
+          <RichBrandName size={40 * k} />
           <Pressable
             style={styles.brandDd}
             onPress={() => router.push("/accounts")}
@@ -501,38 +505,45 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/**
+ * Home's styles at a screen-width scale `k` (width / 393). The original sizes the header, calendar
+ * card and day grid with the screen width (measured on 393pt and 402pt iPhones); text sizes stay
+ * fixed. Numbers inside z(…) are the 393pt measurements.
+ */
+function makeStyles(k: number) {
+  const z = (value: number) => Math.round(value * k * 100) / 100;
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
 
   // Header
-  // Measured from the original at 3x: title art at (23.7, 11.3) below the safe area, the 40pt
-  // account menu and profile buttons level with its lettering, and the card 22.4pt below it.
+  // Measured from the original at 3x (393pt and 402pt captures): the wordmark's lettering 29.7pt
+  // below the safe area, the 40pt account menu and profile buttons level with it, the card below.
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingLeft: 23.7,
-    paddingRight: 18.3,
-    paddingTop: 11.3,
-    paddingBottom: 22.4,
+    paddingLeft: z(23.7),
+    paddingRight: z(18.3),
+    paddingTop: 14.3, // the wordmark sits 29.7pt below the safe area on both captured widths
+    paddingBottom: z(19.4),
     backgroundColor: PRIMARY_GREEN,
   },
   brandRow: { flexDirection: "row", alignItems: "flex-start" },
   brandDd: {
-    width: 40,
-    height: 40,
-    marginTop: 16.9,
-    marginBottom: -2.9, // keep the header as tall as the title art
-    marginLeft: 2,
+    width: z(40),
+    height: z(40),
+    marginTop: z(13.9),
+    marginBottom: z(-2.9), // keep the header as tall as the title art
+    marginLeft: z(2),
   },
-  brandMenuImage: { width: 40, height: 40 },
+  brandMenuImage: { width: z(40), height: z(40) },
   avatar: {
-    width: 40,
-    height: 40,
-    marginTop: 15.4,
-    marginBottom: -1.4,
+    width: z(40),
+    height: z(40),
+    marginTop: z(11.7),
+    marginBottom: z(-1.4),
   },
-  avatarImage: { width: 40, height: 40 },
+  avatarImage: { width: z(40), height: z(40) },
 
   scroll: { flex: 1, backgroundColor: PRIMARY_GREEN },
   scrollContent: { flexGrow: 1 },
@@ -543,29 +554,29 @@ const styles = StyleSheet.create({
   // 4pt under the last row, then 20.3pt of green before the list.
   calCard: {
     backgroundColor: "#FFFFFF",
-    marginHorizontal: 20,
+    marginHorizontal: z(20),
     borderRadius: 0,
-    paddingBottom: 4,
+    paddingBottom: z(4),
   },
   calTop: {
     flexDirection: "row",
     alignItems: "flex-start",
-    height: 45.6,
-    paddingLeft: 10.3,
-    paddingRight: 17,
+    height: z(45.6),
+    paddingLeft: z(10.3),
+    paddingRight: z(17),
   },
-  calTopCollapsed: { height: 46 },
+  calTopCollapsed: { height: z(46) },
   calCardCollapsed: { paddingBottom: 0 },
   monthTrigger: {
-    minWidth: 52.2,
-    height: 23.3,
-    marginTop: 11.3,
+    minWidth: z(52.2),
+    height: z(23.3),
+    marginTop: z(11.3),
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingLeft: 8.4,
-    paddingRight: 7.5,
-    borderRadius: 11.65,
+    gap: z(8),
+    paddingLeft: z(8.4),
+    paddingRight: z(7.5),
+    borderRadius: z(11.65),
     backgroundColor: '#F6F7F8',
   },
   monthTriggerPressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
@@ -580,14 +591,14 @@ const styles = StyleSheet.create({
     borderRightColor: "transparent",
     borderTopColor: "#000000",
   },
-  totals: { flexDirection: "row", marginLeft: "auto", alignItems: "flex-start", marginTop: 11 },
+  totals: { flexDirection: "row", marginLeft: "auto", alignItems: "flex-start", marginTop: z(11) },
   totItem: { alignItems: "flex-end" },
   totDivider: {
     width: 1,
-    height: 26,
-    marginTop: -1,
-    marginLeft: 16.6,
-    marginRight: 14,
+    height: z(26),
+    marginTop: z(-1),
+    marginLeft: z(16.6),
+    marginRight: z(14),
     backgroundColor: "#EAEAEA",
   },
   totLabel: { fontSize: 10, lineHeight: 12, color: "#777777" },
@@ -598,7 +609,7 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
 
-  weekRow: { flexDirection: "row", marginTop: 11.9, marginBottom: 10.1 },
+  weekRow: { flexDirection: "row", marginTop: z(11.9), marginBottom: z(10.1) },
   weekLabel: {
     flex: 1,
     textAlign: "center",
@@ -610,7 +621,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap" },
   dayCell: {
     width: `${100 / 7}%`,
-    height: 38,
+    height: z(38),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -618,49 +629,49 @@ const styles = StyleSheet.create({
   dayTextFuture: { color: "#777777" },
   adjacentMonthText: { fontSize: 14, color: "#C7C7D2" },
   dayPlain: {
-    width: 28,
-    height: 28,
+    width: z(28),
+    height: z(28),
     alignItems: "center",
     justifyContent: "center",
   },
   dayCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: z(28),
+    height: z(28),
+    borderRadius: z(14),
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayBand: {
     width: "100%",
-    height: 28,
+    height: z(28),
     backgroundColor: ENTRY_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   dayToday: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: z(28),
+    height: z(28),
+    borderRadius: z(14),
     borderWidth: 1,
     borderColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
   },
   daySelected: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: z(28),
+    height: z(28),
+    borderRadius: z(14),
     backgroundColor: "#E2E2E2",
     alignItems: "center",
     justifyContent: "center",
   },
   todayDot: {
     position: "absolute",
-    bottom: 2,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+    bottom: z(2),
+    width: z(3),
+    height: z(3),
+    borderRadius: z(1.5),
     backgroundColor: "#000000",
   },
 
@@ -668,7 +679,7 @@ const styles = StyleSheet.create({
   listArea: {
     flexGrow: 1,
     backgroundColor: "#FFFFFF",
-    marginTop: 20.3,
+    marginTop: z(20.3),
     paddingBottom: 24,
   },
   empty: { paddingVertical: 60, alignItems: "center" },
@@ -695,7 +706,7 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: { flex: 1 },
   sheetCloseIcon: { width: 40, height: 40 },
-  calDivider: { height: 2 / 3, backgroundColor: "#F2F2F2", marginHorizontal: 15.3 },
+  calDivider: { height: 2 / 3, backgroundColor: "#F2F2F2", marginHorizontal: z(15.3) },
   sheet: {
     position: "absolute",
     left: 0,
@@ -734,4 +745,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sheetAddText: { fontSize: 15, color: "#000000" },
-});
+  });
+}

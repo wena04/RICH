@@ -309,6 +309,10 @@ export default function NewTransactionScreen() {
   const categoryColumns = viewportWidth < 360 ? 4 : 5;
   const categoryGridWidth = Math.min(viewportWidth, 430);
   const categoryItemWidth = (categoryGridWidth - 28.5) / categoryColumns;
+  // The original sizes the composer (amount line, category grid, subcategory tray) with the screen
+  // width, measured on 393pt and 402pt iPhones; the header and keypad stay fixed. Values below are
+  // the 393pt measurements.
+  const g = useMemo(() => composerGrid(Math.max(0.9, categoryGridWidth / 393)), [categoryGridWidth]);
   const categoryRows: CatCell[][] = [];
   for (let i = 0; i < displayCategories.length; i += categoryColumns) {
     categoryRows.push(displayCategories.slice(i, i + categoryColumns));
@@ -393,10 +397,10 @@ export default function NewTransactionScreen() {
       />
 
       {/* Amount display */}
-      <View style={styles.amountContainer}>
+      <View style={[styles.amountContainer, g.amountContainer]}>
         <View style={styles.amountLine}>
-          <Text style={styles.amountText}>¥{amountStr === "0" && !pendingOp ? "" : amountStr}</Text>
-          <View style={styles.cursor} />
+          <Text style={[styles.amountText, g.amountText]}>¥{amountStr === "0" && !pendingOp ? "" : amountStr}</Text>
+          <View style={[styles.cursor, g.cursor]} />
         </View>
         {pendingOp && pendingValue != null ? (
           <Text style={styles.pendingText}>
@@ -404,7 +408,7 @@ export default function NewTransactionScreen() {
           </Text>
         ) : null}
       </View>
-      <DashedDivider style={styles.amountDivider} dashWidth={7} gap={6.7} thickness={2 / 3} color="#E3E3E3" />
+      <DashedDivider style={[styles.amountDivider, g.amountDivider]} dashWidth={7} gap={6.7} thickness={2 / 3} color="#E3E3E3" />
 
       {choicesError ? (
         <View style={styles.choicesError}>
@@ -437,26 +441,26 @@ export default function NewTransactionScreen() {
                     cat.manage ? (
                       <Pressable
                         key="__manage"
-                        style={[styles.categoryItem, { width: categoryItemWidth }]}
+                        style={[styles.categoryItem, g.categoryItem, { width: categoryItemWidth }]}
                         onPress={() =>
                           router.push({ pathname: "/categories", params: { type } })
                         }
                         accessibilityRole="button"
                         accessibilityLabel="管理分类"
                       >
-                        <View style={[styles.categoryIcon, styles.manageIcon]}>
+                        <View style={[styles.categoryIcon, g.categoryIcon, styles.manageIcon]}>
                           <Image
                             source={require("../../assets/images/ui/icon_setting.png")}
-                            style={styles.manageArt}
+                            style={[styles.manageArt, g.manageArt]}
                             accessible={false}
                           />
                         </View>
-                        <Text style={styles.categoryName}>管理分类</Text>
+                        <Text style={[styles.categoryName, g.categoryName]}>管理分类</Text>
                       </Pressable>
                     ) : (
                       <Pressable
                         key={cat.id}
-                        style={[styles.categoryItem, { width: categoryItemWidth }]}
+                        style={[styles.categoryItem, g.categoryItem, { width: categoryItemWidth }]}
                         onPress={() => {
                           const category = categories.find((item) => item.id === cat.id);
                           if (category) onSelectCategory(category);
@@ -468,16 +472,17 @@ export default function NewTransactionScreen() {
                         <View
                           style={[
                             styles.categoryIcon,
+                            g.categoryIcon,
                             selectedCategoryId && selectedCategoryId !== cat.id && styles.categoryDimmed,
                           ]}
                         >
                           <CategoryIcon
                             id={cat.iconId ?? undefined}
                             name={cat.name}
-                            size={48}
+                            size={g.art}
                           />
                           {selectedCategoryId === cat.id ? (
-                            <View pointerEvents="none" style={styles.categoryRing} />
+                            <View pointerEvents="none" style={[styles.categoryRing, g.categoryRing]} />
                           ) : null}
                           {catsWithSubs.has(cat.id) && (
                             <Pressable
@@ -506,7 +511,7 @@ export default function NewTransactionScreen() {
                             </Pressable>
                           )}
                         </View>
-                        <Text style={styles.categoryName}>{cat.name}</Text>
+                        <Text style={[styles.categoryName, g.categoryName]}>{cat.name}</Text>
                       </Pressable>
                     ),
                   )}
@@ -514,13 +519,14 @@ export default function NewTransactionScreen() {
 
                 {/* Inline subcategory zone — expands under the selected category */}
                 {showZone && (
-                  <View style={styles.subZone}>
+                  <View style={[styles.subZone, g.subZone]}>
                     <Image
                       source={require("../../assets/images/ui/icon_tally_arrow.png")}
                       accessible={false}
                       style={[
                         styles.subZoneCaret,
-                        { left: 16 + selIdx * categoryItemWidth + categoryItemWidth / 2 - 4.5 },
+                        g.subZoneCaret,
+                        { left: 16 + selIdx * categoryItemWidth + categoryItemWidth / 2 - g.caretHalf },
                       ]}
                     />
                     <View style={styles.subGrid}>
@@ -529,22 +535,23 @@ export default function NewTransactionScreen() {
                         return (
                           <Pressable
                             key={s.id}
-                            style={[styles.subItem, { width: categoryItemWidth }]}
+                            style={[styles.subItem, g.subItem, { width: categoryItemWidth }]}
                             onPress={() => setSelectedSubId(active ? null : s.id)}
                             accessibilityRole="button"
                             accessibilityState={{ selected: active }}
                           >
-                            <View style={styles.subItemIcon}>
+                            <View style={[styles.subItemIcon, g.subItemIcon]}>
                               <CategoryIcon
                                 id={s.icon ?? undefined}
                                 name={s.name}
-                                size={40}
+                                size={g.subArt}
                               />
-                              {active ? <View pointerEvents="none" style={styles.subItemRing} /> : null}
+                              {active ? <View pointerEvents="none" style={[styles.subItemRing, g.subItemRing]} /> : null}
                             </View>
                             <Text
                               style={[
                                 styles.subItemName,
+                                g.subItemName,
                                 active && styles.subItemNameSelected,
                               ]}
                             >
@@ -556,17 +563,17 @@ export default function NewTransactionScreen() {
                       {subcategories.length === 0 ? (
                         // Original: a category without subcategories shows only the add entry.
                         <Pressable
-                          style={[styles.subItem, { width: categoryItemWidth }]}
+                          style={[styles.subItem, g.subItem, { width: categoryItemWidth }]}
                           onPress={onAddSubcategory}
                           accessibilityRole="button"
                           accessibilityLabel={`给${selectedCategory?.name ?? row[selIdx]?.name ?? ''}添加子类`}
                         >
                           <Image
                             source={require("../../assets/images/ui/icon_add_custom.png")}
-                            style={styles.subItemIcon}
+                            style={[styles.subItemIcon, g.subItemIcon]}
                             accessible={false}
                           />
-                          <Text style={styles.subItemName}>添加子类</Text>
+                          <Text style={[styles.subItemName, g.subItemName]}>添加子类</Text>
                         </Pressable>
                       ) : null}
                     </View>
@@ -599,6 +606,7 @@ export default function NewTransactionScreen() {
             </Text>
             <RichChevron tone="muted" />
           </Pressable>
+          <View style={styles.barDivider} />
 
           <View style={styles.noteInput}>
             <Image source={require("../../assets/images/ui/icon_describe.png")} style={styles.noteIcon} accessible={false} />
@@ -912,9 +920,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     paddingRight: 14,
-    borderRightWidth: 1,
-    borderRightColor: "#E3E3E3",
   },
+  // The original divider: a 36pt light line, centred on the bar.
+  barDivider: { width: StyleSheet.hairlineWidth * 2, height: 36, backgroundColor: "#D9D9D9" },
   accountIcon: {
     width: 28,
     height: 28,
@@ -1007,9 +1015,6 @@ const styles = StyleSheet.create({
     backgroundColor: CATEGORY_FRAME_BACKGROUND,
     marginHorizontal: -16,
     paddingHorizontal: 16,
-    paddingVertical: 6,
-    marginTop: 4,
-    marginBottom: 4,
   },
   subZoneCaret: {
     position: "absolute",
@@ -1077,3 +1082,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
 });
+
+/**
+ * The composer's width-scaled sizes. Base values are the 393pt measurements; the tray band
+ * (74.6pt) and its spacing were measured on the 402pt capture and converted to that base.
+ */
+function composerGrid(k: number) {
+  const z = (value: number) => Math.round(value * k * 100) / 100;
+  return {
+    art: z(48),
+    subArt: z(40),
+    caretHalf: z(4.5),
+    amountContainer: { paddingTop: z(15.55), paddingBottom: z(12) },
+    amountText: { fontSize: z(35), lineHeight: z(52) },
+    cursor: { height: z(40), marginLeft: z(7) },
+    amountDivider: { marginBottom: z(12.85) },
+    categoryItem: { paddingVertical: z(7.35) },
+    categoryIcon: { width: z(48), height: z(48), borderRadius: z(24), marginBottom: z(5) },
+    categoryRing: { borderRadius: z(24) },
+    manageArt: { width: z(45), height: z(45) },
+    categoryName: { fontSize: z(11.5), lineHeight: z(18.7) },
+    subZone: { paddingTop: z(2.6), paddingBottom: z(4.5), marginTop: z(-2.6), marginBottom: z(2.6) },
+    subZoneCaret: { top: z(-4.5), width: z(9), height: z(4.5) },
+    subItem: { paddingTop: z(6), paddingBottom: z(6) },
+    subItemIcon: { width: z(40), height: z(40), borderRadius: z(20), marginBottom: z(1.2) },
+    subItemRing: { borderRadius: z(20) },
+    subItemName: { fontSize: z(12), lineHeight: z(14.3) },
+  };
+}

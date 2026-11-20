@@ -143,7 +143,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   key: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { backgroundColor: CONTROL_PRESSED_BACKGROUND },
-  keyText: { fontFamily: RICH_NUMERAL_FONT, fontSize: 24, color: TEXT_PRIMARY },
+  // 20.4pt: the original's keypad digits are 16pt tall ("4" 8.7pt wide) on both captured phones.
+  keyText: { fontFamily: RICH_NUMERAL_FONT, fontSize: 20.4, color: TEXT_PRIMARY },
   deleteIcon: { width: 40, height: 40 },
   operatorIcon: { width: 44, height: 44 },
   operations: { flex: 1 },
