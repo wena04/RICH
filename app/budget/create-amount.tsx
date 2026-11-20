@@ -12,11 +12,13 @@ import type { BudgetEnvelopeKind } from '@/src/domain/types';
 import { validateEnvelopeForm } from '@/src/features/budgets/envelopeForm';
 import { backspaceAmount, pressAmountKey } from '@/src/utils/amountInput';
 import { currentMonth } from '@/src/utils/month';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'delete', '0', '.'] as const;
 
 /** Creating a budget, step 3 of 3 (original 设置预算金额): the amount on a green keypad. */
 export default function CreateBudgetAmountScreen() {
+  const styles = useScaledStyles(baseStyles, { measuredAt: 402, keep: FIXED });
   const router = useRouter();
   const params = useLocalSearchParams<{ kind: BudgetEnvelopeKind; name: string; icon: string }>();
   const kind: BudgetEnvelopeKind = params.kind === 'special' ? 'special' : 'monthly';
@@ -110,7 +112,18 @@ export default function CreateBudgetAmountScreen() {
 // Measured from the original capture (402pt iPhone, 3x): the amount's digits start 249.7pt below
 // the title's centre (32pt tall), the prompt 25.7pt under them; three keypad columns across the
 // width less 11.6pt, on 59.6pt rows ending at the home indicator.
-const styles = StyleSheet.create({
+/** Measured on a 402pt phone and scaled with the width; the nav bar and keypad stay fixed. */
+const FIXED = {
+  navTitle: true,
+  headerActionSlot: true,
+  headerAction: true,
+  keypad: true,
+  key: true,
+  keyText: true,
+  deleteArt: true,
+} as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   navTitle: { fontSize: 18 },
   headerActionSlot: { alignSelf: 'stretch', alignItems: 'flex-end', justifyContent: 'center' },

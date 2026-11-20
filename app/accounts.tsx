@@ -47,6 +47,9 @@ import {
 import type { AccountType } from '@/src/domain/types';
 import { getMeta, setMeta } from '@/src/db/repo/meta';
 import { centsToYuan, parseCurrencyToCents } from '@/src/utils/money';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
+import { fitFontSize } from '@/src/utils/fitText';
+import { layoutScale } from '@/src/utils/layoutScale';
 
 type LoadState = 'loading' | 'refreshing' | 'ready' | 'error';
 
@@ -82,13 +85,16 @@ function formatCurrency(cents: number): string {
 }
 
 export default function AccountsScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const { width } = useWindowDimensions();
   const compact = width < 360;
   const insets = useSafeAreaInsets();
-  // Original hero art is about 150 × 186pt on a 393pt-wide screen.
-  const illustrationWidth = Math.min(150, Math.max(110, Math.round(width * 0.38)));
+  // Original hero art is about 150 × 186pt on a 393pt-wide screen, scaled with the width.
+  const illustrationWidth = Math.round(150 * layoutScale(width));
   const illustrationHeight = Math.round(illustrationWidth * (186 / 150));
+  // Width of the info column, so a large total shrinks instead of being cut off.
+  const [infoWidth, setInfoWidth] = useState(0);
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [loadError, setLoadError] = useState('');
@@ -140,6 +146,8 @@ export default function AccountsScreen() {
   const totalAssets = useMemo(() => {
     return accounts.reduce((sum, a) => sum + a.balanceCents, 0);
   }, [accounts]);
+  const totalText = formatCurrency(totalAssets).replace(/\s/g, '');
+  const totalFont = fitFontSize(totalText, 31, infoWidth);
 
   const goalPct =
     goalCents > 0 ? Math.min(100, Math.round((totalAssets / goalCents) * 100)) : 0;
@@ -293,7 +301,7 @@ export default function AccountsScreen() {
           width={illustrationWidth}
           height={illustrationHeight}
         />
-        <View style={styles.assetInfo}>
+        <View style={styles.assetInfo} onLayout={(event) => setInfoWidth(event.nativeEvent.layout.width)}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`编辑目标资产，当前${centsToYuan(goalCents)}元`}
@@ -314,10 +322,10 @@ export default function AccountsScreen() {
           <Text
             numberOfLines={1}
             adjustsFontSizeToFit
-            minimumFontScale={0.65}
-            style={styles.totalValue}
+            minimumFontScale={0.5}
+            style={[styles.totalValue, { fontSize: totalFont, lineHeight: Math.max(totalFont + 5, 24) }]}
           >
-            {formatCurrency(totalAssets).replace(/\s/g, '')}
+            {totalText}
           </Text>
         </View>
       </View>
@@ -702,7 +710,7 @@ export default function AccountsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PRIMARY_GREEN,

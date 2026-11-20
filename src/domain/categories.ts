@@ -35,3 +35,26 @@ export const DEFAULT_INCOME_CATEGORIES: Array<{ name: string; icon: string }> = 
   { name: '收红包', icon: 'icon_shouhongbao' },
   { name: '其他收入', icon: 'icon_qitashouyi' },
 ];
+
+/**
+ * The order categories are shown in on every screen (记一笔, 编辑, 分类管理): the starter
+ * categories in the original order, then the person's own by name. `list` picks whose starter order
+ * applies; 'all' puts the expense starters before the income ones.
+ */
+export function sortCategoriesForDisplay<T extends { name: string }>(
+  categories: readonly T[],
+  list: 'expense' | 'income' | 'all' = 'all',
+): T[] {
+  const starters =
+    list === 'expense'
+      ? DEFAULT_CATEGORIES
+      : list === 'income'
+        ? DEFAULT_INCOME_CATEGORIES
+        : [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES];
+  const order = new Map(starters.map((category, index) => [category.name, index]));
+  return [...categories].sort((a, b) => {
+    const aOrder = order.get(a.name) ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = order.get(b.name) ?? Number.MAX_SAFE_INTEGER;
+    return aOrder === bOrder ? a.name.localeCompare(b.name, 'zh-CN') : aOrder - bOrder;
+  });
+}

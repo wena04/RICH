@@ -57,6 +57,12 @@ Color use is deliberately restrained:
   and the primary label in the budget summary matrix.
 - Dashed separators identify date/amount boundaries. Solid hairlines divide rows inside a card.
 - Transaction rows use whitespace rather than solid separators.
+- **Screen-width scaling.** The original lays out against a 393pt-wide design and scales geometry
+  (sizes, margins, paddings, radii, offsets) by `width / 393`; text sizes, borders and system parts
+  (nav bars, keypads, the 选择时间 picker) stay fixed. Screens wrap their sheet with
+  `useScaledStyles(baseStyles, { measuredAt?, keep? })` from `components/rich/useScaledStyles.ts`
+  (`keep` lists styles or keys measured as fixed; `measuredAt: 402` for the budget wizard, which
+  was measured on a 402pt phone). The rule is `src/utils/layoutScale.ts`, clamped to 0.9-430/393.
 
 ## 2. Reusable primitives
 
@@ -213,8 +219,9 @@ Source: `components/rich/SortableList.tsx` (`react-native-gesture-handler`; drop
 Source: `components/rich/LedgerList.tsx`
 
 - `groupLedgerByDay`, `LedgerDayHeader`, `LedgerRow`, `LedgerDays`: Home's day groups (date,
-  stacked − / + totals, 5.5/4.5 dashed rule, 72.6pt rows, 10pt #F7F7F7 band between days). Home,
-  the day sheet, budget detail, and the filtered records screen all draw records with it.
+  stacked − / + totals, 5.5/4.5 dashed rule, 72.6pt rows, 10pt #F7F7F7 band between days, all
+  at 393pt and scaled with the width). Home, the day sheet, budget detail, and the filtered records
+  screen all draw records with it.
 
 ### `DatePickerModal`
 

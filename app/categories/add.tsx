@@ -31,8 +31,11 @@ import {
 } from "@/src/db/repo/categories";
 import { CATEGORY_ICON_SECTIONS } from "@/src/domain/categoryIcons";
 import type { CategoryKind } from "@/src/domain/types";
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 
 export default function AddCategoryScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
+  const k = useLayoutScale();
   const router = useRouter();
   // With parentId this screen adds a subcategory (添加子类) to that category, like the original app.
   const { type: requestedType, parentId, parentName } = useLocalSearchParams<{
@@ -47,7 +50,7 @@ export default function AddCategoryScreen() {
   const [saving, setSaving] = useState(false);
   const { width: viewportWidth } = useWindowDimensions();
   const gridColumns = viewportWidth < 360 ? 4 : 5;
-  const gridWidth = Math.max(0, Math.min(viewportWidth, 430) - 32);
+  const gridWidth = Math.max(0, Math.min(viewportWidth, 430) - 32 * k); // less the scaled 16pt insets
   const gridItemWidth = gridWidth / gridColumns;
 
   async function onDone() {
@@ -174,7 +177,10 @@ export default function AddCategoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Nav-bar controls keep the system size. */
+const FIXED = { headerAction: true, headerActionPressed: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   head: {
     flexDirection: "row",

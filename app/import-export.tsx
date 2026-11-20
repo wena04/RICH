@@ -24,8 +24,10 @@ import { exportCsvV1, importCsvV1 } from '@/src/features/importExport/csvV1';
 import { exportCsvV2 } from '@/src/features/importExport/csvV2';
 import { exportDatabaseToFile, importDatabaseFromFileUri } from '@/src/features/importExport/dbFile';
 import { RichChevron } from '@/components/rich/RichChevron';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 export default function ImportExportScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [targetAccountId, setTargetAccountId] = useState<string>('');
@@ -283,7 +285,7 @@ export default function ImportExportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F4F4' },
   scroll: { flex: 1 },
   content: { paddingTop: 18, paddingBottom: 40 },

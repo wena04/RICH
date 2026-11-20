@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/rich';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const ITEMS = [
   ['本地存储', '账户、分类、预算和交易默认保存在本设备的 SQLite 数据库中。'],
@@ -14,6 +15,7 @@ const ITEMS = [
 ] as const;
 
 export default function PrivacyScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
 
   return (
@@ -32,7 +34,7 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { paddingHorizontal: 18, paddingBottom: 40 },
   row: { paddingVertical: 18 },

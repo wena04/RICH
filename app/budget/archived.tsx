@@ -20,6 +20,7 @@ import {
 } from '@/src/db/repo/envelopes';
 import type { BudgetEnvelope, SavingsPlan } from '@/src/domain/types';
 import { centsToYuan } from '@/src/utils/money';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 type Row = {
   key: string;
@@ -31,6 +32,7 @@ type Row = {
 };
 
 export default function ArchivedScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [envelopes, setEnvelopes] = useState<BudgetEnvelope[]>([]);
@@ -168,7 +170,7 @@ export default function ArchivedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   head: {
     flexDirection: 'row',

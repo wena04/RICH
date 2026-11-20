@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Alert,
@@ -36,9 +36,11 @@ import { getDb } from '@/src/db/db';
 import { listAccounts } from '@/src/db/repo/accounts';
 import { listAllSubcategories, listCategories } from '@/src/db/repo/categories';
 import { deleteTransaction, getTransaction, updateTransaction } from '@/src/db/repo/transactions';
+import { sortCategoriesForDisplay } from '@/src/domain/categories';
 import type { Account, Category, Subcategory, Transaction, TransactionType } from '@/src/domain/types';
 import { formatIsoDateCN, isIsoDate } from '@/src/utils/date';
 import { centsToCurrencyString, parseCurrencyToCents } from '@/src/utils/money';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 function screenTitle(type: TransactionType): string {
   if (type === 'income') return '编辑收入';
@@ -47,6 +49,7 @@ function screenTitle(type: TransactionType): string {
 }
 
 export default function EditTransactionScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width: viewportWidth } = useWindowDimensions();
@@ -106,16 +109,23 @@ export default function EditTransactionScreen() {
     })();
   }, [id, router]);
 
+  // Same order as 记一笔 and 分类管理.
   const visibleCategories = useMemo(
     () =>
-      categories.filter(
-        (category) =>
-          category.id === categoryId ||
-          category.kind === 'both' ||
-          category.kind === type,
+      sortCategoriesForDisplay(
+        categories.filter(
+          (category) =>
+            category.id === categoryId ||
+            category.kind === 'both' ||
+            category.kind === type,
+        ),
+        type === 'income' ? 'income' : 'expense',
       ),
     [categories, categoryId, type],
   );
+  // Open with the record's own category in view; later taps don't move the row.
+  const chipScrollRef = useRef<ScrollView>(null);
+  const chipScrolled = useRef(false);
 
   const visibleSubcategories = useMemo(
     () => subcategories.filter((subcategory) => subcategory.categoryId === categoryId),
@@ -300,6 +310,7 @@ export default function EditTransactionScreen() {
               </Text>
             </View>
             <ScrollView
+              ref={chipScrollRef}
               horizontal
               contentContainerStyle={styles.chipScroll}
               showsHorizontalScrollIndicator={false}
@@ -316,6 +327,17 @@ export default function EditTransactionScreen() {
                       setCategoryId(category.id);
                       setSubcategoryId(null);
                     }}
+                    onLayout={
+                      active && !chipScrolled.current
+                        ? (event) => {
+                            chipScrolled.current = true;
+                            const x = event.nativeEvent.layout.x;
+                            if (x > 0) {
+                              chipScrollRef.current?.scrollTo({ x: Math.max(0, x - 20), animated: false });
+                            }
+                          }
+                        : undefined
+                    }
                     style={({ pressed }) => [
                       styles.categoryChip,
                       active && styles.categoryChipActive,
@@ -491,7 +513,10 @@ export default function EditTransactionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Nav-bar controls keep the system size. */
+const FIXED = { headerAction: true, headerActionPressed: true } as const;
+
+const baseStyles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: PRIMARY_GREEN },
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   scroll: { flex: 1, backgroundColor: LEDGER_PAPER },

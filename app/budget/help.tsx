@@ -18,6 +18,7 @@ import {
   TEXT_PRIMARY,
   TEXT_SECONDARY,
 } from "@/constants/Colors";
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 // Original Rich 1.1.0 help artwork: four example people and how they split budgets / plans.
 const TOPICS = {
@@ -47,6 +48,7 @@ const TOPICS = {
 } as const;
 
 export default function BudgetHelpScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const router = useRouter();
   const { topic: topicParam } = useLocalSearchParams<{ topic?: string }>();
   const topic = TOPICS[topicParam === "plan" ? "plan" : "budget"];
@@ -120,7 +122,10 @@ export default function BudgetHelpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Nav-bar controls keep the system size. */
+const FIXED = { headerAction: true, headerActionPressed: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   head: {
     flexDirection: "row",

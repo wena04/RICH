@@ -43,7 +43,7 @@ import type {
   Category,
   Subcategory,
 } from "@/src/domain/types";
-import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/src/domain/categories";
+import { sortCategoriesForDisplay } from "@/src/domain/categories";
 import { formatIsoDateCN, isIsoDate, isoDateToday } from "@/src/utils/date";
 import { RICH_NUMERAL_FONT, composerHeaderTuck } from "@/constants/Design";
 import { centsToYuan } from "@/src/utils/money";
@@ -274,30 +274,15 @@ export default function NewTransactionScreen() {
 
   // All categories to display (default + user created), plus the 管理分类 tile.
   type CatCell = { id: string; name: string; iconId?: string | null; manage?: boolean };
-  const defaultOrder = useMemo(
-    () =>
-      new Map(
-        (type === 'income' ? DEFAULT_INCOME_CATEGORIES : DEFAULT_CATEGORIES).map(
-          (category, index) => [category.name, index],
-        ),
-      ),
-    [type],
-  );
   const displayCategories: CatCell[] = useMemo(
     () => [
-      ...categories
-        .filter((category) => category.kind === type || category.kind === 'both')
-        .sort((left, right) => {
-          const leftOrder = defaultOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER;
-          const rightOrder = defaultOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER;
-          return leftOrder === rightOrder
-            ? left.name.localeCompare(right.name, 'zh-CN')
-            : leftOrder - rightOrder;
-        })
-        .map((category) => ({ id: category.id, name: category.name, iconId: category.icon })),
+      ...sortCategoriesForDisplay(
+        categories.filter((category) => category.kind === type || category.kind === 'both'),
+        type,
+      ).map((category) => ({ id: category.id, name: category.name, iconId: category.icon })),
       { id: '__manage', name: '管理分类', manage: true },
     ],
-    [categories, defaultOrder, type],
+    [categories, type],
   );
   const canSaveTransaction =
     !choicesError &&

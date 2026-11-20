@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/rich/ScreenHeader';
 import { PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/Colors';
 import type { BudgetEnvelopeKind } from '@/src/domain/types';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const CHECK_OFF = require('../../assets/images/budget/icon_check_button_gray.png');
 const CHECK_ON = require('../../assets/images/budget/icon_check_button_black.png');
@@ -19,6 +20,7 @@ const TYPES: { kind: BudgetEnvelopeKind; title: string; body: string; examples: 
 
 /** Creating a budget, step 1 of 3 (original 选择你想创建的预算类型). */
 export default function CreateBudgetTypeScreen() {
+  const styles = useScaledStyles(baseStyles, { measuredAt: 402, keep: FIXED });
   const router = useRouter();
   const [kind, setKind] = useState<BudgetEnvelopeKind | null>(null);
 
@@ -85,7 +87,10 @@ export default function CreateBudgetTypeScreen() {
 // Measured from the original capture (402pt iPhone, 3x): 171.3 × 395.4pt cards 152.7pt below the
 // title's centre, 24.7pt margins and a 10pt gap; a 290.6 × 45.3pt 下一步 bar 19.7pt above the home
 // indicator.
-const styles = StyleSheet.create({
+/** Measured on a 402pt phone and scaled with the width; the nav bar stays fixed. */
+const FIXED = { navTitle: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   navTitle: { fontSize: 18 },
   cards: { marginTop: 130.7, marginHorizontal: 24.7, flexDirection: 'row', gap: 10 },

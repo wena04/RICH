@@ -47,6 +47,7 @@ import {
 import { envelopeAmountForPeriod } from '@/src/features/budgets/envelopes';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const KIND_OPTIONS: {
   kind: BudgetEnvelopeKind;
@@ -82,6 +83,8 @@ export default function BudgetEnvelopeRoute() {
 }
 
 function BudgetEnvelopeScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
+  const k = useLayoutScale();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEdit = Boolean(id);
@@ -225,7 +228,7 @@ function BudgetEnvelopeScreen() {
     );
   }
 
-  const emojiSize = Math.floor((Math.min(width, 430) - 32) / EMOJI_COLUMNS);
+  const emojiSize = Math.floor((Math.min(width, 430) - 32 * k) / EMOJI_COLUMNS); // less the scaled 16pt insets
   const kindOption = KIND_OPTIONS.find((option) => option.kind === kind) ?? KIND_OPTIONS[0];
 
   return (
@@ -420,7 +423,10 @@ function BudgetEnvelopeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Nav-bar controls keep the system size. */
+const FIXED = { headerAction: true, headerActionPressed: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   flex: { flex: 1 },
   head: {

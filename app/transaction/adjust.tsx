@@ -24,8 +24,10 @@ import { createTransaction } from "@/src/db/repo/transactions";
 import { isoDateToday } from "@/src/utils/date";
 import { newId } from "@/src/utils/id";
 import { centsToYuan, parseCurrencyToCents } from "@/src/utils/money";
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 export default function AdjustBalanceScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const router = useRouter();
   const params = useLocalSearchParams<{ accountId: string; accountName?: string }>();
   const accountId = params.accountId;
@@ -171,7 +173,10 @@ export default function AdjustBalanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** The keypad stays fixed, as on the add screen. */
+const FIXED = { numpad: true, numpadInner: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: CARD_BACKGROUND,

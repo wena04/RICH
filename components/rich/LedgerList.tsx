@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CategoryIcon } from '@/components/icons/CategoryIcon';
 import { DashedDivider } from '@/components/rich/DashedDivider';
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 import { INCOME_TEXT_GREEN, PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/Colors';
 import type { TransactionListItem } from '@/src/db/repo/transactions';
 import { centsToYuan } from '@/src/utils/money';
@@ -46,6 +47,8 @@ const DATE_RULE = { dashWidth: 5.5, gap: 4.5, thickness: 2 / 3, color: '#D8D8D8'
 
 /** The original day header: date on the left, the day's − / + totals stacked on the right. */
 export function LedgerDayHeader({ day }: { day: LedgerDay }) {
+  const styles = useScaledStyles(baseStyles);
+  const k = useLayoutScale();
   return (
     <>
       <View style={styles.dateHeader}>
@@ -55,7 +58,7 @@ export function LedgerDayHeader({ day }: { day: LedgerDay }) {
           <Text style={styles.dayIncome}>+ ¥ {centsToYuan(day.inc)}</Text>
         </View>
       </View>
-      <DashedDivider style={styles.dateDivider} {...DATE_RULE} />
+      <DashedDivider style={styles.dateDivider} {...DATE_RULE} dashWidth={DATE_RULE.dashWidth * k} gap={DATE_RULE.gap * k} />
     </>
   );
 }
@@ -67,6 +70,8 @@ export function LedgerRow({ t, onPress }: { t: TransactionListItem; onPress: () 
     : (t.category?.name ?? '');
   const sign = t.type === 'expense' || t.amountCents < 0 ? '−' : '+';
   const amount = centsToYuan(Math.abs(t.amountCents));
+  const styles = useScaledStyles(baseStyles);
+  const k = useLayoutScale();
   return (
     <Pressable
       style={styles.txRow}
@@ -75,7 +80,7 @@ export function LedgerRow({ t, onPress }: { t: TransactionListItem; onPress: () 
       accessibilityLabel={`${t.note || t.category?.name || '记录'}，${path}，${sign === '−' ? '支出' : '收入'} ${amount} 元`}
     >
       <View style={styles.txIcon}>
-        <CategoryIcon id={t.category?.icon ?? undefined} name={t.category?.name} size={34} />
+        <CategoryIcon id={t.category?.icon ?? undefined} name={t.category?.name} size={Math.round(34 * k * 100) / 100} />
       </View>
       <View style={styles.txInfo}>
         <Text style={styles.txTitle} numberOfLines={1}>
@@ -99,6 +104,7 @@ export function LedgerDays({
   days: readonly LedgerDay[];
   onOpen: (t: TransactionListItem) => void;
 }) {
+  const styles = useScaledStyles(baseStyles);
   return (
     <>
       {days.map((day, index) => (
@@ -114,10 +120,11 @@ export function LedgerDays({
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   gapBand: { height: 10, backgroundColor: '#F7F7F7' },
-  // List geometry measured from the original at 3x: totals 18pt under the band, 72.6pt rows,
-  // icon circle at 21pt, amounts 22pt from the edge.
+  // List geometry measured from the original at 3x (393pt; scaled with the width, as the 402pt
+  // capture's rule and dashes show): totals 18pt under the band, 72.6pt rows, icon circle at 21pt,
+  // amounts 22pt from the edge.
   dateHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -13,6 +13,7 @@ import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { Text, View } from '@/components/Themed';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
 import { RichChevron } from '@/components/rich/RichChevron';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 interface MenuItemProps {
   icon: ImageSourcePropType;
@@ -23,6 +24,7 @@ interface MenuItemProps {
 }
 
 function MenuItem({ icon, size, label, onPress }: MenuItemProps) {
+  const styles = useScaledStyles(baseStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -40,6 +42,7 @@ function MenuItem({ icon, size, label, onPress }: MenuItemProps) {
 }
 
 export default function MoreScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
 
   return (
@@ -122,7 +125,7 @@ export default function MoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PRIMARY_GREEN,

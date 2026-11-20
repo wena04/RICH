@@ -30,6 +30,7 @@ import { getMonthlyTotals, type MonthlyTotalsRow } from '@/src/features/charts/a
 import { getCategoryBreakdown, type Breakdown } from '@/src/features/charts/breakdown';
 import { centsToYuan } from '@/src/utils/money';
 import { addMonths, currentMonth, monthStartIso, nextMonth } from '@/src/utils/month';
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 
 type Kind = 'expense' | 'income';
 
@@ -46,6 +47,8 @@ function windowEndFor(month: string, end: string): string {
 }
 
 export default function TrendsScreen() {
+  const styles = useScaledStyles(baseStyles);
+  const k = useLayoutScale();
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const [kind, setKind] = useState<Kind>('expense');
@@ -111,7 +114,8 @@ export default function TrendsScreen() {
     });
   };
 
-  const chartWidth = Math.min(windowWidth, 430) - 64;
+  // The card's margins and padding (2 × 16 + 2 × 16pt) scale with the width.
+  const chartWidth = Math.min(windowWidth, 430) - 64 * k;
   const breakdown = loaded?.breakdown;
   // While a new month or type loads, keep the previous render at reduced opacity.
   const stale = loading && loaded !== null;
@@ -211,7 +215,7 @@ export default function TrendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   // One filter row above everything it scopes.
   filters: {

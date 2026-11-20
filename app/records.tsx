@@ -9,6 +9,7 @@ import { CARD_BACKGROUND, PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/
 import { getDb } from '@/src/db/db';
 import { listTransactions, type TransactionFilter, type TransactionListItem } from '@/src/db/repo/transactions';
 import { centsToYuan } from '@/src/utils/money';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 /** Route params. `subcategoryId=none` means records filed under the category itself. */
 export type RecordsParams = {
@@ -35,6 +36,7 @@ function toFilter(params: RecordsParams): TransactionFilter {
 
 /** The records behind a chart row or a budget, grouped by day like Home. */
 export default function RecordsScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const params = useLocalSearchParams<RecordsParams>();
   const filter = useMemo(
@@ -113,7 +115,7 @@ export default function RecordsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   list: { flex: 1, backgroundColor: CARD_BACKGROUND },
   listContent: { paddingBottom: 40 },

@@ -32,6 +32,7 @@ import { createTransfer, getTransfer, updateTransfer } from "@/src/db/repo/trans
 import type { Account } from "@/src/domain/types";
 import { formatIsoDateCN, isoDateToday } from "@/src/utils/date";
 import { centsToCurrencyString, centsToYuan } from "@/src/utils/money";
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 
 /** The note written when the person leaves 添加备注 empty. */
 function autoMemo(fromName: string | null, toName: string | null) {
@@ -40,6 +41,9 @@ function autoMemo(fromName: string | null, toName: string | null) {
 
 /** New transfer, or `?groupId=` to edit both sides of an existing one. */
 export default function TransferScreen() {
+  // Width-scaled like the add screen: the header, note row and keypad stay fixed.
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
+  const k = useLayoutScale();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { groupId } = useLocalSearchParams<{ groupId?: string }>();
@@ -258,7 +262,7 @@ export default function TransferScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.65}
             numberOfLines={1}
-            style={styles.amount}
+            style={[styles.amount, { fontSize: Math.round(35 * k * 100) / 100 }]}
           >
             ¥{amountStr === "0" && !pendingOp ? "" : amountStr}
           </Text>
@@ -334,7 +338,19 @@ export default function TransferScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Measured as fixed on the add screen, which this one mirrors. */
+const FIXED = {
+  header: true,
+  backButton: true,
+  backIcon: true,
+  dateButton: true,
+  amountDivider: ['marginHorizontal'],
+  noteRow: true,
+  noteInput: true,
+  noteIcon: true,
+} as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: CARD_BACKGROUND },
   keyboardArea: { flex: 1, backgroundColor: CARD_BACKGROUND },
   controlPressed: { opacity: 0.76 },

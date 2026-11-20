@@ -34,10 +34,12 @@ import {
   updateSubcategory,
 } from '@/src/db/repo/categories';
 import type { Category, CategoryKind, Subcategory } from '@/src/domain/types';
-import { DEFAULT_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/src/domain/categories';
+import { sortCategoriesForDisplay } from '@/src/domain/categories';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 
 export default function CategoriesScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const { type: requestedType } = useLocalSearchParams<{ type?: string }>();
   const [categories, setCategories] = useState<Array<Category & { subcategoryCount: number }>>([]);
@@ -74,19 +76,7 @@ export default function CategoriesScreen() {
   const refresh = useCallback(async () => {
     const db = await getDb();
     const cats = await listCategoriesWithSubcategoryCounts(db);
-    const order = new Map(
-      [...DEFAULT_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES].map((category, index) => [
-        category.name,
-        index,
-      ]),
-    );
-    setCategories(
-      [...cats].sort((a, b) => {
-        const aOrder = order.get(a.name) ?? Number.MAX_SAFE_INTEGER;
-        const bOrder = order.get(b.name) ?? Number.MAX_SAFE_INTEGER;
-        return aOrder === bOrder ? a.name.localeCompare(b.name, 'zh-CN') : aOrder - bOrder;
-      }),
-    );
+    setCategories(sortCategoriesForDisplay(cats));
 
     if (expandedCategoryId) {
       const subs = await listSubcategories(db, expandedCategoryId);
@@ -439,7 +429,7 @@ export default function CategoriesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

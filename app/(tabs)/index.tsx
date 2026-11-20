@@ -29,6 +29,7 @@ import {
   listTransactions,
   TransactionListItem,
 } from "@/src/db/repo/transactions";
+import { layoutScale } from "@/src/utils/layoutScale";
 import { centsToYuan } from "@/src/utils/money";
 import { RichBrandName } from "@/components/rich";
 import { MonthPickerSheet } from "@/components/rich/MonthPickerSheet";
@@ -56,7 +57,7 @@ function fmt(year: number, month: number, day: number): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
-  const k = Math.max(0.9, Math.min(windowWidth, 430) / 393);
+  const k = layoutScale(windowWidth);
   const styles = useMemo(() => makeStyles(k), [k]);
   const today = new Date();
   // The month Home shows; the month pill opens a picker to change it.

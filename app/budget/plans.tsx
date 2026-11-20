@@ -27,11 +27,13 @@ import { planStatusText } from '@/src/features/budgets/planForm';
 import { centsToYuan } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
 import { RichChevron } from '@/components/rich/RichChevron';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const PLAN_CLOCK = require('../../assets/images/budget/plan_clock.png');
 const PLAN_CLOCK_FINISH = require('../../assets/images/budget/plan_clock_finish.png');
 
 function PlanCard({ summary, onPress }: { summary: SavingsPlanSummary; onPress: () => void }) {
+  const styles = useScaledStyles(baseStyles);
   const { plan, progress, sourceEnvelopeName } = summary;
   const done = plan.status === 'completed' || progress.isFullyFunded;
   const ended = plan.status === 'cancelled';
@@ -83,6 +85,7 @@ function PlanCard({ summary, onPress }: { summary: SavingsPlanSummary; onPress: 
 }
 
 export default function PlanListScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const [period] = useState(currentMonth());
   const [plans, setPlans] = useState<SavingsPlanSummary[]>([]);
@@ -208,7 +211,7 @@ export default function PlanListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   head: {
     flexDirection: 'row',

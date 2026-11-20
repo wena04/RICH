@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RichBrandName, ScreenHeader } from '@/components/rich';
 import { PRIMARY_GREEN, TEXT_PRIMARY, TEXT_SECONDARY } from '@/constants/Colors';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 export default function AboutScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
 
   return (
@@ -34,7 +36,7 @@ export default function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F4F4F4' },
   content: { padding: 20, paddingBottom: 40 },
   version: { marginTop: 4, marginBottom: 24, fontSize: 12, color: TEXT_SECONDARY },

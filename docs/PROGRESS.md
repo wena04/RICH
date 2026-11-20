@@ -244,6 +244,32 @@ Android, and VoiceOver/TalkBack using the buttons.
 - Verified: 100 tests; browser flows walkthrough 15/15, trends 13/13, transfers 8/8, sorting 8/8,
   Home month 11/11, budget wizard + deletes 12/12, no page errors; iOS and Android bundles export.
 
+## Width scaling on every screen — November 20, 2026
+
+- The 402pt capture shows Home's day list scaling with the width too (rule margin 25.3pt, as
+  `24.7 × 402/393`), so the original scales every screen. `src/utils/layoutScale.ts` +
+  `components/rich/useScaledStyles.ts` now apply that rule to every screen: the day list, record
+  detail and edit, 全部账单, 资产管理, transfer, balance adjustment, the budget tab, budget detail
+  and editor, the plan screens, 已归档, help, records, 趋势图, 分类管理 and 添加自定义类目, 我的,
+  数据管理, about, privacy and the budget wizard. Nav bars, keypads and the transfer header/note row
+  stay fixed, as on the add screen. Widths computed in code (趋势图's chart, the emoji and icon
+  grids) subtract the scaled insets, so nothing overflows on a Pro Max.
+- Confirmed against two widths: Home, add entry, the day list. The rest follow the same rule
+  without a second capture.
+- **编辑支出 category row:** listed categories in raw database name order and could open with the
+  record's own category out of view. It now uses the same order as 记一笔 and 分类管理 (one
+  `sortCategoriesForDisplay` in `src/domain/categories.ts`) and opens scrolled to the record's
+  category.
+- **Extreme-value pass (375pt):** ¥9,999,999.99 records, 100-character notes, a 10-character
+  budget at ¥99,999,999.99, a 30-character account name and a 6-character subcategory, through
+  Home, record detail, the budget tab and detail, 趋势图, 资产管理 and 全部账单. Everything stays
+  readable except 资产管理's total, which was cut to "-¥29999…" (React Native Web ignores
+  `adjustsFontSizeToFit`, and native's 0.65 floor was too high for 13 characters). It now sizes
+  itself to its column (`src/utils/fitText.ts`), unchanged for ordinary totals.
+- Verified: 109 tests; browser flows 67/67 at 393pt, walkthrough and transfers at 375pt, trends at
+  375 and 430pt; wizard screenshots identical at 402pt; every screen checked at 375 and 430pt; iOS
+  and Android bundles export.
+
 ## Future idea needing user research: a personal AI assistant for logging
 
 Idea (owner, November 19, 2026): let people pick an AI assistant of their choice and connect phone

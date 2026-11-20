@@ -39,6 +39,7 @@ import { envelopeUsedPercent } from '@/src/features/budgets/envelopeForm';
 import { getCategoryBreakdown, type Breakdown } from '@/src/features/charts/breakdown';
 import { centsToYuan } from '@/src/utils/money';
 import { addMonths, currentMonth, monthStartIso, nextMonth } from '@/src/utils/month';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 type Loaded = {
   summary: BudgetEnvelopeSummary;
@@ -51,6 +52,7 @@ type Loaded = {
  * categories and subcategories the assigned expenses went to, and the records themselves.
  */
 export default function BudgetDetailScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const thisMonth = currentMonth();
@@ -292,6 +294,7 @@ export default function BudgetDetailScreen() {
 }
 
 function Fact({ label, value, text }: { label: string; value?: number; text?: string }) {
+  const styles = useScaledStyles(baseStyles);
   return (
     <View style={styles.fact}>
       <Text style={styles.factLabel}>{label}</Text>
@@ -300,7 +303,7 @@ function Fact({ label, value, text }: { label: string; value?: number; text?: st
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   scroll: { flex: 1, backgroundColor: PAGE_BACKGROUND },
   scrollContent: { paddingTop: 12, paddingBottom: 40 },

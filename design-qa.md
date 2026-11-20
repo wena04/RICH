@@ -185,6 +185,21 @@ scale with the width, while text sizes stay fixed. `app/(tabs)/index.tsx` builds
 fixed 14.3pt). Now within about 1pt at both widths: wordmark, buttons, card top, month pill,
 weekdays, all six day rows, and the card bottom.
 
+## Width scaling everywhere (November 20, 2026)
+
+The 402pt month-picker capture also shows Home's day list behind the sheet: its dashed rule runs
+20.3 → 376.7pt, i.e. a 25.3pt right margin where our fixed 24.7pt would give 24.7 and width-scaling
+gives 25.27. So the list scales too, and the original most likely applies `width / 393` to every
+screen. One rule now does this (`src/utils/layoutScale.ts`, `useScaledStyles`), applied to the day
+list and then every other screen (record detail and edit, 全部账单, 资产管理 with its hero art,
+transfer, balance adjustment, the budget tab, budget detail and editor, plans, 已归档, help,
+records, 趋势图, 分类管理, 添加自定义类目, 我的, 数据管理, about, privacy) and the budget wizard
+(measured at 402pt, so it is unchanged on a 402pt phone and scaled from there). Kept fixed, as measured on the add screen: nav bars, the
+transfer header/date pill/note row, and keypads. At 402pt the list's rule now spans 20.45 →
+376.73pt. Only Home, add entry and the day list are confirmed by two widths; the rest follow the
+same rule without a second capture. Browser check at 375, 393, 402 and 430pt: nothing clips or
+overflows; all flows pass.
+
 ## Trends and budget detail (November 19, 2026) — designed, not source-verified
 
 No capture exists for the original 趋势图 or a budget detail page; the bundle only has

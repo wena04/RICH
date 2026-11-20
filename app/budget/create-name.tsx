@@ -21,9 +21,11 @@ import {
   ENVELOPE_NAME_MAX,
   characterCount,
 } from '@/src/features/budgets/envelopeForm';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 /** Creating a budget, step 2 of 3 (original 输入预算名称): an emoji and a name. */
 export default function CreateBudgetNameScreen() {
+  const styles = useScaledStyles(baseStyles, { measuredAt: 402, keep: FIXED });
   const router = useRouter();
   const { kind } = useLocalSearchParams<{ kind: 'monthly' | 'special' }>();
   const [icon, setIcon] = useState<string>(DEFAULT_BUDGET_EMOJI);
@@ -107,7 +109,10 @@ export default function CreateBudgetNameScreen() {
 // Measured from the original capture (402pt iPhone, 3x): a 352.6 × 56.6pt white field 50pt below
 // the title's centre on a green band ending 43.7pt below it; emoji on a 5-column, 61.8pt grid, the
 // chosen one on a 34.3pt #F6F7F8 disc.
-const styles = StyleSheet.create({
+/** Measured on a 402pt phone and scaled with the width; the nav bar stays fixed. */
+const FIXED = { navTitle: true, headerActionSlot: true, headerAction: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   navTitle: { fontSize: 18 },
   headerActionSlot: { alignSelf: 'stretch', alignItems: 'flex-end', justifyContent: 'center' },

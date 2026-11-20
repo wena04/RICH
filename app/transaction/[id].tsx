@@ -36,6 +36,7 @@ import { listAccounts } from '@/src/db/repo/accounts';
 import { deleteTransaction, deleteTransfer, getTransaction, getTransfer } from '@/src/db/repo/transactions';
 import type { BudgetEnvelopeSummary, TransactionType } from '@/src/domain/types';
 import { centsToCurrencyString } from '@/src/utils/money';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 type TransferView = { groupId: string; fromName: string; toName: string };
 
@@ -56,6 +57,7 @@ function deleteLabelFor(type: TransactionType, transfer: TransferView | null): s
 const CHEVRON = require('../../assets/images/ui/icon_right_unfold.png');
 
 export default function TransactionDetailScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -311,7 +313,7 @@ export default function TransactionDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   scroll: { flex: 1, backgroundColor: PRIMARY_GREEN },
   content: {

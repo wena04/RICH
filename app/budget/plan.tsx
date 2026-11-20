@@ -50,6 +50,7 @@ import {
 import { centsToYuan, parseCurrencyToCents } from '@/src/utils/money';
 import { currentMonth } from '@/src/utils/month';
 import { RichChevron } from '@/components/rich/RichChevron';
+import { useLayoutScale, useScaledStyles } from '@/components/rich/useScaledStyles';
 
 const EMOJI_COLUMNS = 6;
 
@@ -58,6 +59,8 @@ function trimToCharacters(value: string, max: number): string {
 }
 
 export default function PlanScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
+  const k = useLayoutScale();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isDetail = Boolean(id);
@@ -227,7 +230,7 @@ export default function PlanScreen() {
     );
   }
 
-  const emojiSize = Math.floor((Math.min(width, 430) - 32) / EMOJI_COLUMNS);
+  const emojiSize = Math.floor((Math.min(width, 430) - 32 * k) / EMOJI_COLUMNS); // less the scaled 16pt insets
 
   const emojiGrid = (
     <>
@@ -540,7 +543,10 @@ export default function PlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** Nav-bar controls keep the system size. */
+const FIXED = { headerAction: true, headerActionPressed: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   flex: { flex: 1 },
   head: {

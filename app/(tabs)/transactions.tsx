@@ -28,6 +28,7 @@ import { listTransactions, type TransactionListItem } from '@/src/db/repo/transa
 import { formatIsoDateCN } from '@/src/utils/date';
 import { centsToYuan } from '@/src/utils/money';
 import { RichChevron } from '@/components/rich/RichChevron';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 type Section = {
   title: string;
@@ -56,6 +57,7 @@ function signedAmount(item: TransactionListItem): { sign: string; color: string;
 }
 
 export default function TransactionsScreen() {
+  const styles = useScaledStyles(baseStyles);
   const router = useRouter();
   const [items, setItems] = useState<TransactionListItem[] | null>(null);
   const [error, setError] = useState('');
@@ -213,7 +215,7 @@ export default function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: CARD_BACKGROUND },
   headerAction: {
     width: 44,

@@ -28,6 +28,7 @@ import { currentMonth } from '@/src/utils/month';
 import { RichChevron } from '@/components/rich/RichChevron';
 import { SortableList } from '@/components/rich/SortableList';
 import { KIND_BADGE, budgetProgressColor } from '@/components/budget/budgetVisuals';
+import { useScaledStyles } from '@/components/rich/useScaledStyles';
 
 function monthLabel(period: string): string {
   const [year, month] = period.split('-');
@@ -36,6 +37,7 @@ function monthLabel(period: string): string {
 }
 
 function BudgetExampleDonut() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   return (
     <View style={styles.exampleChart}>
       <Image
@@ -57,6 +59,7 @@ function EnvelopeRow({
   first: boolean;
   onPress: () => void;
 }) {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const { envelope, amountCents, availableCents, frozenCents, spentCents, remainingCents } = summary;
   const percent = envelopeUsedPercent(spentCents, availableCents);
   const kindLabel = envelope.kind === 'monthly' ? '月度预算' : '专项预算';
@@ -124,6 +127,7 @@ function SortRow({
   /** Drag handle from `SortableList`. */
   handle: ReactNode;
 }) {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const { envelope } = summary;
   return (
     <View style={[styles.sortRow, !first && styles.envelopeDivider]}>
@@ -159,6 +163,7 @@ function SortRow({
 }
 
 export default function BudgetScreen() {
+  const styles = useScaledStyles(baseStyles, { keep: FIXED });
   const router = useRouter();
   const [month] = useState(currentMonth());
   const [summary, setSummary] = useState<BudgetTabSummary | null>(null);
@@ -416,7 +421,10 @@ export default function BudgetScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+/** The nav bar keeps the system height. */
+const FIXED = { header: true, headerTitle: true } as const;
+
+const baseStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PRIMARY_GREEN },
   header: { height: 46, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '600', color: TEXT_PRIMARY },
